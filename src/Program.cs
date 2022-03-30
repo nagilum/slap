@@ -172,7 +172,7 @@ namespace Slap
                 ConsoleColor.Green,
                 " <milliseconds>   ",
                 (byte) 0x00,
-                "Timeout, in milliseconds, to use for each request. Pass 0 to disable timeout.",
+                "Timeout to use for each request. Pass 0 to disable timeout.",
                 Environment.NewLine);
 
             // Set the report path.
