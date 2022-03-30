@@ -191,16 +191,6 @@ namespace Slap
                 "Set Webkit as the rendering engine. Defaults to Chromium.",
                 Environment.NewLine);
 
-            // Wait for CSS selector before taking screenshots.
-            ConsoleEx.WriteObjects(
-                ConsoleColor.Blue,
-                "  -ws",
-                ConsoleColor.Green,
-                " <selector>      ",
-                (byte) 0x00,
-                "Wait for CSS selector before taking screenshots.",
-                Environment.NewLine);
-
             // Verify that a header exists.
             ConsoleEx.WriteObjects(
                 ConsoleColor.Blue,
@@ -241,7 +231,6 @@ namespace Slap
                     config = new
                     {
                         renderingEngine = AppOptions.RenderingEngine.ToString(),
-                        AppOptions.WaitForCssSelectors,
                         AppOptions.HeadersToVerify
                     },
                     scan = new

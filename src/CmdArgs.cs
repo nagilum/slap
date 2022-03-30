@@ -28,11 +28,6 @@
         public RenderingEngineType RenderingEngine { get; set; } = RenderingEngineType.Chromium;
 
         /// <summary>
-        /// CSS selectors to wait for.
-        /// </summary>
-        public List<string> WaitForCssSelectors { get; set; } = new();
-
-        /// <summary>
         /// Headers to verify.
         /// </summary>
         public Dictionary<string, string?> HeadersToVerify { get; set; } = new();
@@ -111,21 +106,6 @@
                     // Set Webkit as the rendering engine.
                     case "-wk":
                         this.RenderingEngine = RenderingEngineType.Webkit;
-                        break;
-
-                    // Wait for CSS selector before taking screenshots.
-                    case "-ws":
-                        if (i == args.Length - 1)
-                        {
-                            throw new ConsoleObjectsException(
-                                "Argument ",
-                                ConsoleColor.Blue,
-                                "-ws ",
-                                (byte)0x00,
-                                "Must be followed by a CSS selector.");
-                        }
-
-                        this.WaitForCssSelectors.Add(args[i + 1]);
                         break;
 
                     // Verify that a header exists.
