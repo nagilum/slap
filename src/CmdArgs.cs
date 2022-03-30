@@ -28,6 +28,11 @@
         public bool UseParentAsReferer { get; set; }
 
         /// <summary>
+        /// The referer for each request.
+        /// </summary>
+        public string? Referer { get; set; }
+
+        /// <summary>
         /// The base report path.
         /// </summary>
         public string ReportPath { get; set; } = Directory.GetCurrentDirectory();
@@ -106,6 +111,21 @@
                         }
 
                         this.ConnectionTimeout = timeout;
+                        break;
+
+                    // Set the referer for each request.
+                    case "-r":
+                        if (i == args.Length - 1)
+                        {
+                            throw new ConsoleObjectsException(
+                                "Argument ",
+                                ConsoleColor.Blue,
+                                "-r ",
+                                (byte)0x00,
+                                "Must be followed by a URL.");
+                        }
+
+                        this.Referer = args[i + 1];
                         break;
 
                     // Enable to set referer for each request to the parent the link was found on.

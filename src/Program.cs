@@ -57,7 +57,10 @@ namespace Slap
             }
 
             // Init the scanner.
-            QueueEntries.Add(new QueueEntry(AppOptions.BaseUri));
+            QueueEntries.Add(
+                new QueueEntry(
+                    AppOptions.BaseUri,
+                    AppOptions.Referer));
 
             ConsoleEx.WriteObjects(
                 "Scan started ",
@@ -175,6 +178,20 @@ namespace Slap
                 "Timeout to use for each request. Pass 0 to disable timeout.",
                 Environment.NewLine);
 
+            // Set the referer for each request.
+            ConsoleEx.WriteObjects(
+                ConsoleColor.Blue,
+                "  -r",
+                ConsoleColor.Green,
+                " <url>             ",
+                (byte) 0x00,
+                "Set the referer for each request. If used with the ",
+                ConsoleColor.Blue,
+                "-rp",
+                (byte) 0x00,
+                " param, this will only be used for the first request.",
+                Environment.NewLine);
+
             // Enable to set referer for each request to the parent the link was found on.
             ConsoleEx.WriteObjects(
                 ConsoleColor.Blue,
@@ -249,6 +266,7 @@ namespace Slap
                     config = new
                     {
                         AppOptions.ConnectionTimeout,
+                        AppOptions.UseParentAsReferer,
                         renderingEngine = AppOptions.RenderingEngine.ToString(),
                         AppOptions.HeadersToVerify
                     },

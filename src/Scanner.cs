@@ -249,10 +249,30 @@ namespace Slap
                             if (Program.AppOptions.BaseUri.IsBaseOf(uri) &&
                                 !Program.QueueEntries.Any(n => n.Uri == uri))
                             {
-                                Program.QueueEntries.Add(
-                                    new QueueEntry(
-                                        uri,
-                                        entry.Uri));
+                                if (Program.AppOptions.Referer != null)
+                                {
+                                    if (Program.AppOptions.UseParentAsReferer)
+                                    {
+                                        Program.QueueEntries.Add(
+                                            new QueueEntry(
+                                                uri,
+                                                entry.Uri));
+                                    }
+                                    else
+                                    {
+                                        Program.QueueEntries.Add(
+                                            new QueueEntry(
+                                                uri,
+                                                Program.AppOptions.Referer));
+                                    }
+                                }
+                                else
+                                {
+                                    Program.QueueEntries.Add(
+                                        new QueueEntry(
+                                            uri,
+                                            entry.Uri));
+                                }
                             }
                         }
                     }

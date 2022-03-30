@@ -95,12 +95,26 @@ namespace Slap
         /// Create a new instance of a queue entry.
         /// </summary>
         /// <param name="uri">URL to scan.</param>
+        /// <param name="referer">URL to use as referer.</param>
         public QueueEntry(
             Uri uri,
-            Uri? referer = null)
+            Uri referer)
         {
             this.Uri = uri;
             this.Referer = referer?.ToString();
+        }
+
+        /// <summary>
+        /// Create a new instance of a queue entry.
+        /// </summary>
+        /// <param name="uri">URL to scan.</param>
+        /// <param name="referer">URL to use as referer.</param>
+        public QueueEntry(
+            Uri uri,
+            string? referer)
+        {
+            this.Uri = uri;
+            this.Referer = referer;
         }
     }
 }
