@@ -1,4 +1,5 @@
 ﻿using Microsoft.Playwright;
+using System.Text.RegularExpressions;
 
 namespace Slap
 {
@@ -117,6 +118,10 @@ namespace Slap
                 // Save telemetry.
                 entry.Telemetry = res.Request.Timing;
 
+                // Verify the headers.
+                VerifyHeaders(
+                    entry);
+
                 // Save links.
                 await SaveLinks(
                     page,
@@ -131,6 +136,63 @@ namespace Slap
             {
                 ConsoleEx.WriteException(ex);
                 return;
+            }
+        }
+
+        /// <summary>
+        /// Verify the headers.
+        /// </summary>
+        /// <param name="entry">Queue entry.</param>
+        private static void VerifyHeaders(
+            QueueEntry entry)
+        {
+            if (Program.AppOptions.HeadersToVerify.Count == 0 ||
+                entry.Headers == null)
+            {
+                return;
+            }
+
+            entry.HeadersVerified = new();
+            entry.HeadersNotVerified = new();
+
+            foreach (var header in Program.AppOptions.HeadersToVerify)
+            {
+                var key = header.Key.ToLower();
+                var verified = false;
+
+                // Only verify the existence of the header.
+                if (header.Value == null)
+                {
+                    if (entry.Headers.Any(n => n.Key.ToLower().Equals(key)))
+                    {
+                        verified = true;
+                    }
+                }
+
+                // Verify both existence and value of header.
+                else
+                {
+                    if (entry.Headers.Any(n => n.Key.ToLower().Equals(key)))
+                    {
+                        var temp = entry.Headers
+                            .First(n => n.Key.ToLower().Equals(key));
+
+                        var regex = new Regex(header.Value);
+                        var matches = regex.Matches(temp.Value);
+
+                        verified = matches.Count > 0;
+                    }
+                }
+
+                // Update acordingly.
+                if (verified)
+                {
+                    entry.HeadersVerified.Add(header.Key, header.Value);
+                }
+                else
+                {
+                    entry.HeadersNotVerified.Add(header.Key, header.Value);
+                }
             }
         }
 

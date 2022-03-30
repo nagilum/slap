@@ -60,6 +60,28 @@ namespace Slap
         public List<string> Links { get; set; } = new();
 
         /// <summary>
+        /// Headers that have been verified.
+        /// </summary>
+        public Dictionary<string, string?>? HeadersVerified { get; set; }
+
+        /// <summary>
+        /// Header that did not validate.
+        /// </summary>
+        public Dictionary<string, string?>? HeadersNotVerified { get; set; }
+
+        /// <summary>
+        /// Returns whether headers have been verified.
+        /// </summary>
+        public bool HeadersAreVerified
+        {
+            get
+            {
+                return HeadersNotVerified == null ||
+                       HeadersNotVerified.Count == 0;
+            }
+        }
+
+        /// <summary>
         /// Create a new instance of a queue entry.
         /// </summary>
         /// <param name="uri">URL to scan.</param>
