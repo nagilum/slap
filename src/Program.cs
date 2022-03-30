@@ -175,6 +175,14 @@ namespace Slap
                 "Timeout to use for each request. Pass 0 to disable timeout.",
                 Environment.NewLine);
 
+            // Enable to set referer for each request to the parent the link was found on.
+            ConsoleEx.WriteObjects(
+                ConsoleColor.Blue,
+                "  -rp                 ",
+                (byte) 0x00,
+                "Enable to set referer for each request to the parent the link was found on.",
+                Environment.NewLine);
+
             // Set the report path.
             ConsoleEx.WriteObjects(
                 ConsoleColor.Blue,

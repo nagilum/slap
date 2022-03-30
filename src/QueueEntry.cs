@@ -87,12 +87,20 @@ namespace Slap
         public List<string>? Errors { get; set; }
 
         /// <summary>
+        /// Referer for the request.
+        /// </summary>
+        public string? Referer { get; set; }
+
+        /// <summary>
         /// Create a new instance of a queue entry.
         /// </summary>
         /// <param name="uri">URL to scan.</param>
-        public QueueEntry(Uri uri)
+        public QueueEntry(
+            Uri uri,
+            Uri? referer = null)
         {
             this.Uri = uri;
+            this.Referer = referer?.ToString();
         }
     }
 }

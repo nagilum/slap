@@ -23,6 +23,11 @@
         public float ConnectionTimeout { get; set; } = 10000;
 
         /// <summary>
+        /// Set to use parent as referer.
+        /// </summary>
+        public bool UseParentAsReferer { get; set; }
+
+        /// <summary>
         /// The base report path.
         /// </summary>
         public string ReportPath { get; set; } = Directory.GetCurrentDirectory();
@@ -101,6 +106,11 @@
                         }
 
                         this.ConnectionTimeout = timeout;
+                        break;
+
+                    // Enable to set referer for each request to the parent the link was found on.
+                    case "-rp":
+                        this.UseParentAsReferer = true;
                         break;
 
                     // Set the report path.

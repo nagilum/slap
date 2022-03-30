@@ -107,6 +107,8 @@ namespace Slap
 
             try
             {
+                GotoOptions.Referer = entry.Referer;
+
                 page = await PlaywrightBrowser.NewPageAsync();
                 res = await page.GotoAsync(
                     entry.Uri.ToString(),
@@ -248,7 +250,9 @@ namespace Slap
                                 !Program.QueueEntries.Any(n => n.Uri == uri))
                             {
                                 Program.QueueEntries.Add(
-                                    new QueueEntry(uri));
+                                    new QueueEntry(
+                                        uri,
+                                        entry.Uri));
                             }
                         }
                     }
