@@ -3,6 +3,11 @@
     public static class ConsoleEx
     {
         /// <summary>
+        /// Lock object.
+        /// </summary>
+        private static readonly object ConsoleLock = new();
+
+        /// <summary>
         /// Write a custom ConsoleObjectsException objects to console.
         /// </summary>
         /// <param name="ex">ConsoleObjectsException.</param>
@@ -62,30 +67,33 @@
         /// <param name="objects">Objects to write.</param>
         public static void WriteObjects(params object[] objects)
         {
-            foreach (object obj in objects)
+            lock(ConsoleLock)
             {
-                // Check for foreground color.
-                if (obj is ConsoleColor cc)
+                foreach (object obj in objects)
                 {
-                    Console.ForegroundColor = cc;
+                    // Check for foreground color.
+                    if (obj is ConsoleColor cc)
+                    {
+                        Console.ForegroundColor = cc;
+                    }
+
+                    // Check for color-reset.
+                    else if (obj is byte b &&
+                             b == 0x00)
+                    {
+                        Console.ResetColor();
+                    }
+
+                    // Treat rest as text.
+                    else
+                    {
+                        Console.Write(obj);
+                    }
                 }
 
-                // Check for color-reset.
-                else if (obj is byte b &&
-                         b == 0x00)
-                {
-                    Console.ResetColor();
-                }
-
-                // Treat rest as text.
-                else
-                {
-                    Console.Write(obj);
-                }
+                // Always reset the color after manipulating the console.
+                Console.ResetColor();
             }
-
-            // Always reset the color after manipulating the console.
-            Console.ResetColor();
         }
     }
 }
