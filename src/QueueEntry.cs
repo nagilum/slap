@@ -82,6 +82,11 @@ namespace Slap
         }
 
         /// <summary>
+        /// Errors occurred during request and processing.
+        /// </summary>
+        public List<string>? Errors { get; set; }
+
+        /// <summary>
         /// Create a new instance of a queue entry.
         /// </summary>
         /// <param name="uri">URL to scan.</param>

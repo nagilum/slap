@@ -144,10 +144,15 @@ namespace Slap
                     page,
                     entry);
             }
+            catch (TimeoutException)
+            {
+                entry.Errors ??= new();
+                entry.Errors.Add($"Timeout after {Program.AppOptions.ConnectionTimeout}ms.");
+            }
             catch (Exception ex)
             {
-                ConsoleEx.WriteException(ex);
-                return;
+                entry.Errors ??= new();
+                entry.Errors.Add($"{ex.Message}");
             }
         }
 
