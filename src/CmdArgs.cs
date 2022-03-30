@@ -18,6 +18,11 @@
         public Uri BaseUri { get; set; } = null!;
 
         /// <summary>
+        /// Timeout, in milliseconds, to use for each request.
+        /// </summary>
+        public float ConnectionTimeout { get; set; } = 10000;
+
+        /// <summary>
         /// The base report path.
         /// </summary>
         public string ReportPath { get; set; } = Directory.GetCurrentDirectory();
@@ -73,6 +78,31 @@
             {
                 switch (args[i])
                 {
+                    // Timeout, in milliseconds, to use for each request.
+                    case "-t":
+                        if (i == args.Length - 1)
+                        {
+                            throw new ConsoleObjectsException(
+                                "Argument ",
+                                ConsoleColor.Blue,
+                                "-t ",
+                                (byte) 0x00,
+                                "Must be followed by a number of milliseconds.");
+                        }
+
+                        if (!float.TryParse(args[i + 1], out float timeout))
+                        {
+                            throw new ConsoleObjectsException(
+                                "Argument ",
+                                ConsoleColor.Blue,
+                                args[i + 1],
+                                (byte) 0x00,
+                                " cannot be parsed.");
+                        }
+
+                        this.ConnectionTimeout = timeout;
+                        break;
+
                     // Set the report path.
                     case "-p":
                         if (i == args.Length - 1)
@@ -117,7 +147,7 @@
                                 "Argument ",
                                 ConsoleColor.Blue,
                                 "-vh ",
-                                (byte)0x00,
+                                (byte) 0x00,
                                 "Must be followed by a header name and optional value.");
                         }
 

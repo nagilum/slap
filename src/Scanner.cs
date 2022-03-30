@@ -16,6 +16,11 @@ namespace Slap
         private static IBrowser PlaywrightBrowser { get; set; } = null!;
 
         /// <summary>
+        /// Options for each request.
+        /// </summary>
+        private static PageGotoOptions GotoOptions { get; set; } = null!;
+
+        /// <summary>
         /// Init the scan.
         /// </summary>
         public static async Task Init()
@@ -61,6 +66,11 @@ namespace Slap
         /// </summary>
         private static async Task SetupPlaywrightObjects()
         {
+            GotoOptions ??= new()
+            {
+                Timeout = Program.AppOptions.ConnectionTimeout
+            };
+
             PlaywrightInstance ??= await Playwright.CreateAsync();
 
             if (PlaywrightBrowser != null)
@@ -98,7 +108,9 @@ namespace Slap
             try
             {
                 page = await PlaywrightBrowser.NewPageAsync();
-                res = await page.GotoAsync(entry.Uri.ToString());
+                res = await page.GotoAsync(
+                    entry.Uri.ToString(),
+                    GotoOptions);
 
                 if (res == null)
                 {

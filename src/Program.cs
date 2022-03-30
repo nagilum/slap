@@ -165,6 +165,16 @@ namespace Slap
                 "Options:",
                 Environment.NewLine);
 
+            // Timeout, in milliseconds, to use for each request.
+            ConsoleEx.WriteObjects(
+                ConsoleColor.Blue,
+                "  -t",
+                ConsoleColor.Green,
+                " <milliseconds>   ",
+                (byte) 0x00,
+                "Timeout, in milliseconds, to use for each request. Pass 0 to disable timeout.",
+                Environment.NewLine);
+
             // Set the report path.
             ConsoleEx.WriteObjects(
                 ConsoleColor.Blue,
@@ -230,6 +240,7 @@ namespace Slap
                     AppOptions.BaseUri,
                     config = new
                     {
+                        AppOptions.ConnectionTimeout,
                         renderingEngine = AppOptions.RenderingEngine.ToString(),
                         AppOptions.HeadersToVerify
                     },
