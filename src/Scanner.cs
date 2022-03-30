@@ -157,6 +157,8 @@ namespace Slap
                         continue;
                     }
 
+                    entry.Links.Add(href);
+
                     try
                     {
                         if (Program.AppOptions.BaseUri != null)
