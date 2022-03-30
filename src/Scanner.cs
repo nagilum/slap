@@ -19,6 +19,12 @@ namespace Slap
         /// </summary>
         public static async Task Init()
         {
+            ConsoleEx.WriteObjects(
+                "Scan from ",
+                ConsoleColor.Blue,
+                Program.AppOptions.BaseUri,
+                Environment.NewLine);
+
             var index = -1;
 
             while (true)
@@ -40,7 +46,7 @@ namespace Slap
                 await PerformPlaywrightRequest(entry);
 
                 // Update console with current request.
-                // TODO
+                WriteRequestToConsole(entry);
 
                 // Analyze HTML and extract further links.
                 // TODO
@@ -153,6 +159,41 @@ namespace Slap
                 {
                     Path = entry.ScreenshotFullPath
                 });
+        }
+
+        /// <summary>
+        /// Write the request to console.
+        /// </summary>
+        /// <param name="entry">Queue entry.</param>
+        private static void WriteRequestToConsole(
+            QueueEntry entry)
+        {
+            var statusColor = ConsoleColor.Red;
+            var status = "---";
+
+            if (entry.StatusCode.HasValue)
+            {
+                status = entry.StatusCode.Value.ToString();
+
+                if (status.StartsWith("2"))
+                {
+                    statusColor = ConsoleColor.Green;
+                }
+                else if (status.StartsWith("3"))
+                {
+                    statusColor = ConsoleColor.Yellow;
+                }
+            }
+
+            ConsoleEx.WriteObjects(
+                "[",
+                statusColor,
+                status,
+                (byte) 0x00,
+                "] ",
+                ConsoleColor.Blue,
+                entry.Uri,
+                Environment.NewLine);
         }
     }
 }
