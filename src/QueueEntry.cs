@@ -55,6 +55,11 @@ namespace Slap
         public string? ScreenshotFullPath { get; set; }
 
         /// <summary>
+        /// Links found on this page.
+        /// </summary>
+        public List<string> Links { get; set; } = new();
+
+        /// <summary>
         /// Create a new instance of a queue entry.
         /// </summary>
         /// <param name="uri">URL to scan.</param>

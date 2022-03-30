@@ -46,10 +46,9 @@ namespace Slap
                 await PerformPlaywrightRequest(entry);
 
                 // Update console with current request.
-                WriteRequestToConsole(entry);
-
-                // Analyze HTML and extract further links.
-                // TODO
+                WriteRequestToConsole(
+                    entry,
+                    index);
 
                 // Finished.
                 entry.Finished = DateTimeOffset.Now;
@@ -118,6 +117,11 @@ namespace Slap
                 // Save telemetry.
                 entry.Telemetry = res.Request.Timing;
 
+                // Save links.
+                await SaveLinks(
+                    page,
+                    entry);
+
                 // Save screenshot.
                 await SaveScreenshot(
                     page,
@@ -127,6 +131,55 @@ namespace Slap
             {
                 ConsoleEx.WriteException(ex);
                 return;
+            }
+        }
+
+        /// <summary>
+        /// Save links for further analysis.
+        /// </summary>
+        /// <param name="page">Playwright page.</param>
+        /// <param name="entry">Queue entry.</param>
+        private static async Task SaveLinks(
+            IPage page,
+            QueueEntry entry)
+        {
+            try
+            {
+                var hrefs = page.Locator("//a[@href]");
+                var count = await hrefs.CountAsync();
+
+                for (var i = 0; i < count; i++)
+                {
+                    var href = await hrefs.Nth(i).GetAttributeAsync("href");
+
+                    if (href == null)
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        if (Program.AppOptions.BaseUri != null)
+                        {
+                            var uri = new Uri(entry.Uri, href);
+
+                            if (Program.AppOptions.BaseUri.IsBaseOf(uri) &&
+                                !Program.QueueEntries.Any(n => n.Uri == uri))
+                            {
+                                Program.QueueEntries.Add(
+                                    new QueueEntry(uri));
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        //
+                    }
+                }
+            }
+            catch
+            {
+                //
             }
         }
 
@@ -165,8 +218,10 @@ namespace Slap
         /// Write the request to console.
         /// </summary>
         /// <param name="entry">Queue entry.</param>
+        /// <param name="index">Index in queue.</param>
         private static void WriteRequestToConsole(
-            QueueEntry entry)
+            QueueEntry entry,
+            int index)
         {
             var statusColor = ConsoleColor.Red;
             var status = "---";
@@ -187,6 +242,14 @@ namespace Slap
 
             ConsoleEx.WriteObjects(
                 "[",
+                ConsoleColor.Blue,
+                index + 1,
+                (byte) 0x00,
+                "/",
+                ConsoleColor.Blue,
+                Program.QueueEntries.Count,
+                (byte) 0x00,
+                "] [",
                 statusColor,
                 status,
                 (byte) 0x00,
