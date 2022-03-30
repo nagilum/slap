@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Text.Json;
 
 [assembly:AssemblyVersion("1.0.*")]
 namespace Slap
@@ -83,7 +84,9 @@ namespace Slap
                 Environment.NewLine);
 
             // Write JSON report.
-            // TODO
+            await WriteJsonReport(
+                end,
+                duration);
 
             // Write HTML report.
             // TODO
@@ -217,6 +220,86 @@ namespace Slap
                 (byte)0x00,
                 "Verify that a header and value exists. Value can be regex.",
                 Environment.NewLine);
+        }
+
+        /// <summary>
+        /// Write JSON files that represent the data in the report.
+        /// </summary>
+        /// <param name="end">When scanning ended.</param>
+        /// <param name="duration">How long the scanning took.</param>
+        private static async Task WriteJsonReport(
+            DateTimeOffset end,
+            TimeSpan duration)
+        {
+            // Write metadata.
+            await WriteJsonReport(
+                Path.Combine(
+                    GetReportPath(),
+                    "metadata.json"),
+                new {
+                    AppOptions.BaseUri,
+                    config = new
+                    {
+                        renderingEngine = AppOptions.RenderingEngine.ToString(),
+                        AppOptions.WaitForCssSelectors,
+                        AppOptions.HeadersToVerify
+                    },
+                    scan = new
+                    {
+                        started = AppStarted,
+                        ended = end,
+                        took = duration
+                    }
+                });
+
+            // Remove some of the properties before writing.
+            foreach (var entry in QueueEntries)
+            {
+                entry.Content = null;
+            }
+
+            // Write queue.
+            await WriteJsonReport(
+                Path.Combine(
+                    GetReportPath(),
+                    "queue.json"),
+                QueueEntries);
+        }
+
+        /// <summary>
+        /// Write the data to disk.
+        /// </summary>
+        /// <param name="path">Path to filename.</param>
+        /// <param name="data">Data to write.</param>
+        private static async Task WriteJsonReport(
+            string path,
+            object data)
+        {
+            try
+            {
+                ConsoleEx.WriteObjects(
+                    "Writing JSON report to ",
+                    ConsoleColor.Blue,
+                    path,
+                    Environment.NewLine);
+
+                using var fileStream = File.Create(path);
+                
+                await JsonSerializer.SerializeAsync(
+                    fileStream,
+                    data,
+                    new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        WriteIndented = true
+                    });
+
+                await fileStream.DisposeAsync();
+            }
+            catch (Exception ex)
+            {
+                ConsoleEx.WriteException(ex);
+            }
         }
     }
 }
