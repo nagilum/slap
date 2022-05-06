@@ -13,10 +13,10 @@ $ dotnet build
 ## Usage
 
 ```
-slap <url> [<options>]
+Usage:
+ slap <url> [<options>]
 
 Options:
-
  -t <milliseconds>   Timeout to use for each request. Pass 0 to disable timeout.
  -r <url>            Set the referer for each request. If used with the -rp param, this will only be used for the first request.
  -rp                 Enable to set referer for each request to the parent the link was found on.
@@ -40,8 +40,8 @@ This will scan https://microsoft.com/ and continue scanning all URLs found on th
 $ slap https://microsoft.com/
 ```
 
-This will scan https://microsoft.com/ using the Firefox engine, it will set the origin page as referer for each request, and it will wait for the DOMContentLoaded event to consider a request successful.
+This will scan https://microsoft.com/ using the Firefox engine, it will disable the timeout for each request, it will set the origin page as referer for each request, and it will wait for the DOMContentLoaded event to consider a request successful.
 
 ```
-$ slap https://microsoft.com/ -ff -rp -wu domcontentloaded
+$ slap https://microsoft.com/ -t 0 -ff -rp -wu domcontentloaded
 ```
