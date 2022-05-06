@@ -183,7 +183,7 @@ namespace Slap
                 ConsoleColor.Blue,
                 "  -r",
                 ConsoleColor.Green,
-                " <url>             ",
+                " <url>            ",
                 (byte) 0x00,
                 "Set the referer for each request. If used with the ",
                 ConsoleColor.Blue,
