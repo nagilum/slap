@@ -12,6 +12,6 @@
 
 * Option to set UserAgent for all requests.
 
-## 1.0.0 - 2022-05-06
+## [1.0.0](/releases/tag/v1.0.0) - 2022-05-06
 
 *Initial release*
