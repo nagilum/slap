@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Reflection;
+using System.Text.Json;
 
 namespace Slap
 {
@@ -119,7 +120,16 @@ namespace Slap
         /// <returns>Version.</returns>
         private static string GetVersion()
         {
-            return "1.0.0";
+            var assembly = Assembly.GetExecutingAssembly();
+            var version = assembly.GetName().Version;
+
+            if (version == null)
+            {
+                throw new Exception(
+                    "Panic. Unable to get assembly version.");
+            }
+
+            return $"{version.Major}.{version.Minor}.{version.Build}";
         }
 
         /// <summary>
