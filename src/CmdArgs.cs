@@ -1,4 +1,6 @@
-﻿namespace Slap
+﻿using Microsoft.Playwright;
+
+namespace Slap
 {
     public class CmdArgs
     {
@@ -53,6 +55,11 @@
         public Dictionary<string, string?> HeadersToVerify { get; set; } = new();
 
         /// <summary>
+        /// When to consider the request operation succeeded.
+        /// </summary>
+        public WaitUntilState? WaitUntil { get; set; } = null;
+
+        /// <summary>
         /// Whether to show the app options.
         /// </summary>
         public bool ShowAppOptions { get; set; } = true;
@@ -87,6 +94,8 @@
                     Environment.NewLine,
                     ex.Message);
             }
+
+            string? value;
 
             // Remaining params.
             for (var i = 1; i < args.Length; i++)
@@ -188,7 +197,8 @@
                                 "Must be followed by a header name and optional value.");
                         }
 
-                        var value = args[i + 1];
+                        value = args[i + 1];
+
                         var sp = value.IndexOf(':');
 
                         var key = sp == -1
@@ -200,6 +210,34 @@
                             : value.Substring(sp + 1);
 
                         this.HeadersToVerify[key] = value;
+                        break;
+
+                    case "-wu":
+                        if (i == args.Length -1)
+                        {
+                            throw new ConsoleObjectsException(
+                                "Argument ",
+                                ConsoleColor.Blue,
+                                "-wu ",
+                                (byte)0x00,
+                                "Must be followed by the name of the state to wait for.");
+                        }
+
+                        value = args[i + 1];
+
+                        this.WaitUntil = value switch
+                        {
+                            "domcontentloaded" => WaitUntilState.DOMContentLoaded,
+                            "load" => WaitUntilState.Load,
+                            "networkidle" => WaitUntilState.NetworkIdle,
+                            "commit" => WaitUntilState.Commit,
+                            _ => throw new ConsoleObjectsException(
+                                ConsoleColor.Blue,
+                                value,
+                                (byte)0x00,
+                                " is an invalid state."),
+                        };
+
                         break;
                 }
             }

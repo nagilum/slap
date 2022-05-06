@@ -245,6 +245,40 @@ namespace Slap
                 (byte)0x00,
                 "Verify that a header and value exists. Value can be regex.",
                 Environment.NewLine);
+
+            // When to consider the request operation succeeded.
+            ConsoleEx.WriteObjects(
+                ConsoleColor.Blue,
+                "  -wu",
+                ConsoleColor.Green,
+                " <state>         ",
+                (byte)0x00,
+                "When to consider the request operation succeeded. Defaults to 'load'. Possible states are:",
+                Environment.NewLine,
+                "                       * ",
+                ConsoleColor.Green,
+                "domcontentloaded",
+                (byte)0x00,
+                " - When the DOMContentLoaded event is fired.",
+                Environment.NewLine,
+                "                       * ",
+                ConsoleColor.Green,
+                "load",
+                (byte)0x00,
+                " - When the load event is fired.",
+                Environment.NewLine,
+                "                       * ",
+                ConsoleColor.Green,
+                "networkidle",
+                (byte)0x00,
+                " - When there are no network connections for at least 500 ms.",
+                Environment.NewLine,
+                "                       * ",
+                ConsoleColor.Green,
+                "commit",
+                (byte)0x00,
+                " - When network response is received and the document started loading.",
+                Environment.NewLine);
         }
 
         /// <summary>
@@ -270,7 +304,8 @@ namespace Slap
                         AppOptions.UseParentAsReferer,
                         initialReferer = AppOptions.Referer,
                         renderingEngine = AppOptions.RenderingEngine.ToString(),
-                        AppOptions.HeadersToVerify
+                        AppOptions.HeadersToVerify,
+                        waitUntil = AppOptions.WaitUntil?.ToString()
                     },
                     scan = new
                     {

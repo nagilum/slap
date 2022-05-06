@@ -199,7 +199,7 @@ namespace Slap
                 if (Program.AppOptions.UseReferer)
                 {
                     GotoOptions.Referer = entry.Referer;
-                }                
+                }
 
                 page = await PlaywrightBrowser.NewPageAsync();
                 res = await page.GotoAsync(
@@ -293,7 +293,8 @@ namespace Slap
         {
             GotoOptions ??= new()
             {
-                Timeout = Program.AppOptions.ConnectionTimeout
+                Timeout = Program.AppOptions.ConnectionTimeout,
+                WaitUntil = Program.AppOptions.WaitUntil
             };
 
             PlaywrightInstance ??= await Playwright.CreateAsync();
