@@ -87,22 +87,24 @@ namespace Slap
         public List<string>? Errors { get; set; }
 
         /// <summary>
+        /// Warnings occurred during request and processing.
+        /// </summary>
+        public List<string>? Warnings { get; set; }
+
+        /// <summary>
         /// Referer for the request.
         /// </summary>
         public string? Referer { get; set; }
 
         /// <summary>
-        /// Create a new instance of a queue entry.
+        /// HTML title tag content.
         /// </summary>
-        /// <param name="uri">URL to scan.</param>
-        /// <param name="referer">URL to use as referer.</param>
-        public QueueEntry(
-            Uri uri,
-            Uri referer)
-        {
-            this.Uri = uri;
-            this.Referer = referer?.ToString();
-        }
+        public string? HtmlTitle { get; set; }
+
+        /// <summary>
+        /// HTML meta tag entries.
+        /// </summary>
+        public Dictionary<string, string>? HtmlMetaEntries { get; set; }
 
         /// <summary>
         /// Create a new instance of a queue entry.

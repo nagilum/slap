@@ -266,7 +266,9 @@ namespace Slap
                     config = new
                     {
                         AppOptions.ConnectionTimeout,
+                        AppOptions.UseReferer,
                         AppOptions.UseParentAsReferer,
+                        initialReferer = AppOptions.Referer,
                         renderingEngine = AppOptions.RenderingEngine.ToString(),
                         AppOptions.HeadersToVerify
                     },

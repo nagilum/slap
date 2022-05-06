@@ -21,6 +21,125 @@ namespace Slap
         private static PageGotoOptions GotoOptions { get; set; } = null!;
 
         /// <summary>
+        /// Extract the HTML title and meta tags.
+        /// </summary>
+        /// <param name="page">Playwright page.</param>
+        /// <param name="entry">Queue entry.</param>
+        private static async Task ExtractHtmlData(
+            IPage page,
+            QueueEntry entry)
+        {
+            int count;
+
+            try
+            {
+                // HTML title.
+                var titles = page.Locator("//title");
+
+                count = await titles.CountAsync();
+
+                if (count > 0)
+                {
+                    var contents = await titles.Nth(0).AllTextContentsAsync();
+
+                    if (contents.Count > 0)
+                    {
+                        entry.HtmlTitle = contents[0];
+                    }
+                }
+
+                // Meta tag entries.
+                var metas = page.Locator("//meta");
+
+                count = await metas.CountAsync();
+
+                entry.HtmlMetaEntries = new();
+
+                for (var i = 0; i < count; i++)
+                {
+                    var name = await metas.Nth(i).GetAttributeAsync("name");
+                    var property = await metas.Nth(i).GetAttributeAsync("property");
+                    var content = await metas.Nth(i).GetAttributeAsync("content");
+
+                    var key = name ?? property;
+
+                    if (string.IsNullOrWhiteSpace(key) ||
+                        string.IsNullOrWhiteSpace(content) ||
+                        entry.HtmlMetaEntries.ContainsKey(key))
+                    {
+                        continue;
+                    }
+
+                    entry.HtmlMetaEntries.Add(
+                        key,
+                        content);
+                }
+            }
+            catch
+            {
+                //
+            }
+        }
+
+        /// <summary>
+        /// Extract links for further analysis.
+        /// </summary>
+        /// <param name="page">Playwright page.</param>
+        /// <param name="entry">Queue entry.</param>
+        private static async Task ExtractLinks(
+            IPage page,
+            QueueEntry entry)
+        {
+            try
+            {
+                var hrefs = page.Locator("//a[@href]");
+                var count = await hrefs.CountAsync();
+
+                for (var i = 0; i < count; i++)
+                {
+                    var href = await hrefs.Nth(i).GetAttributeAsync("href");
+
+                    if (href == null)
+                    {
+                        continue;
+                    }
+
+                    entry.Links.Add(href);
+
+                    try
+                    {
+                        if (Program.AppOptions.BaseUri != null)
+                        {
+                            var uri = new Uri(entry.Uri, href);
+
+                            if (Program.AppOptions.BaseUri.IsBaseOf(uri) &&
+                                !Program.QueueEntries.Any(n => n.Uri == uri))
+                            {
+                                var referer = Program.AppOptions.Referer != null &&
+                                              !Program.AppOptions.UseParentAsReferer
+                                    ? Program.AppOptions.Referer
+                                    : entry.Uri.ToString();
+
+                                Program.QueueEntries.Add(
+                                    new QueueEntry(
+                                        uri,
+                                        referer));
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        //
+                    }
+                }
+            }
+            catch
+            {
+                //
+            }
+        }
+
+        /// <summary>
         /// Init the scan.
         /// </summary>
         public static async Task Init()
@@ -62,6 +181,112 @@ namespace Slap
         }
 
         /// <summary>
+        /// Perform the playwright request, get telemetry, and take a screenshot.
+        /// </summary>
+        /// <param name="entry">Queue entry.</param>
+        private static async Task PerformPlaywrightRequest(
+            QueueEntry entry)
+        {
+            // Setup the Playwright wrapper and browser.
+            await SetupPlaywrightObjects();
+
+            // Navigate to the page.
+            IPage page;
+            IResponse? res;
+
+            try
+            {
+                if (Program.AppOptions.UseReferer)
+                {
+                    GotoOptions.Referer = entry.Referer;
+                }                
+
+                page = await PlaywrightBrowser.NewPageAsync();
+                res = await page.GotoAsync(
+                    entry.Uri.ToString(),
+                    GotoOptions);
+
+                if (res == null)
+                {
+                    throw new Exception("Unable to get a response to the request.");
+                }
+
+                // Save status.
+                entry.StatusCode = res.Status;
+                entry.StatusDescription = res.StatusText;
+
+                // Save headers.
+                entry.Headers = await res.AllHeadersAsync();
+
+                // Save body.
+                entry.Content = await res.BodyAsync();
+
+                // Save telemetry.
+                entry.Telemetry = res.Request.Timing;
+
+                // Extract the HTML title and meta tags.
+                await ExtractHtmlData(
+                    page,
+                    entry);
+
+                // Verify the headers set in app options.
+                VerifyHeaders(
+                    entry);
+
+                // Extract links for further analysis.
+                await ExtractLinks(
+                    page,
+                    entry);
+
+                // Take a screenshot of the current page and save to disk.
+                await SaveScreenshot(
+                    page,
+                    entry);
+            }
+            catch (TimeoutException)
+            {
+                entry.Errors ??= new();
+                entry.Errors.Add($"Timeout after {Program.AppOptions.ConnectionTimeout}ms.");
+            }
+            catch (Exception ex)
+            {
+                entry.Errors ??= new();
+                entry.Errors.Add($"{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Take a screenshot of the current page and save to disk.
+        /// </summary>
+        /// <param name="page">Playwright page.</param>
+        /// <param name="entry">Queue entry.</param>
+        private static async Task SaveScreenshot(
+            IPage page,
+            QueueEntry entry)
+        {
+            var path = Path.Combine(
+                Program.GetReportPath(),
+                "assets",
+                "img",
+                "screenshots");
+
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+
+            entry.ScreenshotFullPath = Path.Combine(
+                path,
+                $"screenshot-{entry.Id}.png");
+
+            await page.ScreenshotAsync(
+                new()
+                {
+                    Path = entry.ScreenshotFullPath
+                });
+        }
+
+        /// <summary>
         /// Setup the Playwright wrapper and browser.
         /// </summary>
         private static async Task SetupPlaywrightObjects()
@@ -92,74 +317,7 @@ namespace Slap
         }
 
         /// <summary>
-        /// Perform the playwright request, get telemetry, and take a screenshot.
-        /// </summary>
-        /// <param name="entry">Queue entry.</param>
-        private static async Task PerformPlaywrightRequest(
-            QueueEntry entry)
-        {
-            // Setup the Playwright wrapper and browser.
-            await SetupPlaywrightObjects();
-
-            // Navigate to the page.
-            IPage page;
-            IResponse? res;
-
-            try
-            {
-                GotoOptions.Referer = entry.Referer;
-
-                page = await PlaywrightBrowser.NewPageAsync();
-                res = await page.GotoAsync(
-                    entry.Uri.ToString(),
-                    GotoOptions);
-
-                if (res == null)
-                {
-                    throw new Exception("Unable to get a response to the request.");
-                }
-
-                // Save status.
-                entry.StatusCode = res.Status;
-                entry.StatusDescription = res.StatusText;
-
-                // Save headers.
-                entry.Headers = await res.AllHeadersAsync();
-
-                // Save body.
-                entry.Content = await res.BodyAsync();
-
-                // Save telemetry.
-                entry.Telemetry = res.Request.Timing;
-
-                // Verify the headers.
-                VerifyHeaders(
-                    entry);
-
-                // Save links.
-                await SaveLinks(
-                    page,
-                    entry);
-
-                // Save screenshot.
-                await SaveScreenshot(
-                    page,
-                    entry);
-            }
-            catch (TimeoutException)
-            {
-                entry.Errors ??= new();
-                entry.Errors.Add($"Timeout after {Program.AppOptions.ConnectionTimeout}ms.");
-            }
-            catch (Exception ex)
-            {
-                entry.Errors ??= new();
-                entry.Errors.Add($"{ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Verify the headers.
+        /// Verify the headers set in app options.
         /// </summary>
         /// <param name="entry">Queue entry.</param>
         private static void VerifyHeaders(
@@ -213,110 +371,6 @@ namespace Slap
                     entry.HeadersNotVerified.Add(header.Key, header.Value);
                 }
             }
-        }
-
-        /// <summary>
-        /// Save links for further analysis.
-        /// </summary>
-        /// <param name="page">Playwright page.</param>
-        /// <param name="entry">Queue entry.</param>
-        private static async Task SaveLinks(
-            IPage page,
-            QueueEntry entry)
-        {
-            try
-            {
-                var hrefs = page.Locator("//a[@href]");
-                var count = await hrefs.CountAsync();
-
-                for (var i = 0; i < count; i++)
-                {
-                    var href = await hrefs.Nth(i).GetAttributeAsync("href");
-
-                    if (href == null)
-                    {
-                        continue;
-                    }
-
-                    entry.Links.Add(href);
-
-                    try
-                    {
-                        if (Program.AppOptions.BaseUri != null)
-                        {
-                            var uri = new Uri(entry.Uri, href);
-
-                            if (Program.AppOptions.BaseUri.IsBaseOf(uri) &&
-                                !Program.QueueEntries.Any(n => n.Uri == uri))
-                            {
-                                if (Program.AppOptions.Referer != null)
-                                {
-                                    if (Program.AppOptions.UseParentAsReferer)
-                                    {
-                                        Program.QueueEntries.Add(
-                                            new QueueEntry(
-                                                uri,
-                                                entry.Uri));
-                                    }
-                                    else
-                                    {
-                                        Program.QueueEntries.Add(
-                                            new QueueEntry(
-                                                uri,
-                                                Program.AppOptions.Referer));
-                                    }
-                                }
-                                else
-                                {
-                                    Program.QueueEntries.Add(
-                                        new QueueEntry(
-                                            uri,
-                                            entry.Uri));
-                                }
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        //
-                    }
-                }
-            }
-            catch
-            {
-                //
-            }
-        }
-
-        /// <summary>
-        /// Take a screenshot of the current page and save to disk.
-        /// </summary>
-        /// <param name="page">Playwright page.</param>
-        /// <param name="entry">Queue entry.</param>
-        private static async Task SaveScreenshot(
-            IPage page,
-            QueueEntry entry)
-        {
-            var path = Path.Combine(
-                Program.GetReportPath(),
-                "assets",
-                "img",
-                "screenshots");
-
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-            }
-
-            entry.ScreenshotFullPath = Path.Combine(
-                path,
-                $"screenshot-{entry.Id}.png");
-
-            await page.ScreenshotAsync(
-                new()
-                {
-                    Path = entry.ScreenshotFullPath
-                });
         }
 
         /// <summary>

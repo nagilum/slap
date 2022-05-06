@@ -28,6 +28,11 @@
         public bool UseParentAsReferer { get; set; }
 
         /// <summary>
+        /// Whether to use referer.
+        /// </summary>
+        public bool UseReferer { get; set; }
+
+        /// <summary>
         /// The referer for each request.
         /// </summary>
         public string? Referer { get; set; }
@@ -125,7 +130,9 @@
                                 "Must be followed by a URL.");
                         }
 
+                        this.UseReferer = true;
                         this.Referer = args[i + 1];
+
                         break;
 
                     // Enable to set referer for each request to the parent the link was found on.
