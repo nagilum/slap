@@ -59,3 +59,4 @@ $ slap https://microsoft.com/ -t 0 -ff -rp -wu domcontentloaded
 * Add option for HTTP authentication credentials.
 * Add option for setting screen-size.
 * Add option for setting viewport-size.
+* Add an image, either static or gif to show app in use.
