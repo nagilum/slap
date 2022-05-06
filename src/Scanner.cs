@@ -16,6 +16,11 @@ namespace Slap
         private static IBrowser PlaywrightBrowser { get; set; } = null!;
 
         /// <summary>
+        /// Options for each new page.
+        /// </summary>
+        private static BrowserNewPageOptions NewPageOptions { get; set; } = null!;
+
+        /// <summary>
         /// Options for each request.
         /// </summary>
         private static PageGotoOptions GotoOptions { get; set; } = null!;
@@ -201,7 +206,9 @@ namespace Slap
                     GotoOptions.Referer = entry.Referer;
                 }
 
-                page = await PlaywrightBrowser.NewPageAsync();
+                page = await PlaywrightBrowser.NewPageAsync(
+                    NewPageOptions);
+
                 res = await page.GotoAsync(
                     entry.Uri.ToString(),
                     GotoOptions);
@@ -291,6 +298,11 @@ namespace Slap
         /// </summary>
         private static async Task SetupPlaywrightObjects()
         {
+            NewPageOptions ??= new()
+            {
+                UserAgent = Program.AppOptions.UserAgent
+            };
+
             GotoOptions ??= new()
             {
                 Timeout = Program.AppOptions.ConnectionTimeout,

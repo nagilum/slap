@@ -40,6 +40,11 @@ namespace Slap
         public string? Referer { get; set; }
 
         /// <summary>
+        /// User agent for all requests.
+        /// </summary>
+        public string? UserAgent { get; set; }
+
+        /// <summary>
         /// The base report path.
         /// </summary>
         public string ReportPath { get; set; } = Directory.GetCurrentDirectory();
@@ -182,6 +187,21 @@ namespace Slap
                     // Set Webkit as the rendering engine.
                     case "-wk":
                         this.RenderingEngine = RenderingEngineType.Webkit;
+                        break;
+
+                    // Specify the user agent to use for all requests.
+                    case "-ua":
+                        if (i == args.Length - 1)
+                        {
+                            throw new ConsoleObjectsException(
+                                "Argument ",
+                                ConsoleColor.Blue,
+                                "-ua ",
+                                (byte)0x00,
+                                "Must be followed by a string that is to be used as UserAgent.");
+                        }
+
+                        this.UserAgent = args[i + 1];
                         break;
 
                     // Verify that a header exists.

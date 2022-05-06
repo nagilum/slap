@@ -223,6 +223,16 @@ namespace Slap
                 "Set Webkit as the rendering engine. Defaults to Chromium.",
                 Environment.NewLine);
 
+            // Specify the user agent to use for all requests.
+            ConsoleEx.WriteObjects(
+                ConsoleColor.Blue,
+                "  -ua",
+                ConsoleColor.Green,
+                " <agent>         ",
+                (byte)0x00,
+                "Specify the user agent to use for all requests.",
+                Environment.NewLine);
+
             // Verify that a header exists.
             ConsoleEx.WriteObjects(
                 ConsoleColor.Blue,
@@ -302,6 +312,7 @@ namespace Slap
                         initialReferer = AppOptions.Referer,
                         renderingEngine = AppOptions.RenderingEngine.ToString(),
                         AppOptions.HeadersToVerify,
+                        AppOptions.UserAgent,
                         waitUntil = AppOptions.WaitUntil?.ToString()
                     },
                     scan = new
