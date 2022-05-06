@@ -1,7 +1,5 @@
-﻿using System.Reflection;
-using System.Text.Json;
+﻿using System.Text.Json;
 
-[assembly:AssemblyVersion("1.0.*")]
 namespace Slap
 {
     public static class Program
@@ -121,8 +119,7 @@ namespace Slap
         /// <returns>Version.</returns>
         private static string GetVersion()
         {
-            return Assembly.GetExecutingAssembly()?.GetName()?.Version?.ToString()
-                   ?? "0.1";
+            return "1.0.0.0";
         }
 
         /// <summary>

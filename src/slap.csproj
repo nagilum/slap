@@ -5,9 +5,6 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>$(MSBuildProjectName)</AssemblyName>
-    <RootNamespace>Slap</RootNamespace>
-	<Deterministic>False</Deterministic>
   </PropertyGroup>
 
   <ItemGroup>
