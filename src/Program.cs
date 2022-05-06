@@ -119,7 +119,7 @@ namespace Slap
         /// <returns>Version.</returns>
         private static string GetVersion()
         {
-            return "1.0.0.0";
+            return "1.0.0";
         }
 
         /// <summary>
