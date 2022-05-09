@@ -53,7 +53,6 @@ $ slap https://example.com/ -t 0 -ff -rp -wu domcontentloaded
 ## Planned Updates
 
 * Add option to bypass Content-Security-Policy.
-* Add option to set device scale factor. Defaults to 1.
 * Add option to set specific request headers.
 * Figure out what the default request headers are and list them.
 * Add option for HTTP authentication credentials.
