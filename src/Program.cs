@@ -279,6 +279,14 @@ namespace Slap
                 "Warn if HTML meta keywords tag is missing or empty.",
                 Environment.NewLine);
 
+            // Warn if HTML meta description tag is missing or empty.
+            ConsoleEx.WriteObjects(
+                ConsoleColor.Blue,
+                "  -whd                ",
+                (byte)0x00,
+                "Warn if HTML meta description tag is missing or empty.",
+                Environment.NewLine);
+
             // When to consider the request operation succeeded.
             ConsoleEx.WriteObjects(
                 ConsoleColor.Blue,
@@ -341,7 +349,8 @@ namespace Slap
                         AppOptions.UserAgent,
                         waitUntil = AppOptions.WaitUntil?.ToString(),
                         AppOptions.WarnHtmlTitle,
-                        AppOptions.WarnHtmlMetaKeywords
+                        AppOptions.WarnHtmlMetaKeywords,
+                        AppOptions.WarnHtmlMetaDescription
                     },
                     scan = new
                     {

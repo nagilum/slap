@@ -69,7 +69,8 @@ namespace Slap
 
                 entry.HtmlMetaEntries = new();
 
-                var htmlMetaFound = false;
+                var htmlMetaKeywordsFound = false;
+                var htmlMetaDescriptionFound = false;
 
                 for (var i = 0; i < count; i++)
                 {
@@ -82,7 +83,7 @@ namespace Slap
                     // Check for keywords.
                     if (key == "keywords")
                     {
-                        htmlMetaFound = true;
+                        htmlMetaKeywordsFound = true;
 
                         if (Program.AppOptions.WarnHtmlMetaKeywords &&
                             string.IsNullOrWhiteSpace(content))
@@ -90,6 +91,20 @@ namespace Slap
                             entry.Warnings ??= new();
                             entry.Warnings.Add(
                                 "HTML meta tag for keywords is missing or empty.");
+                        }
+                    }
+
+                    // Check for description.
+                    if (key == "description")
+                    {
+                        htmlMetaDescriptionFound = true;
+
+                        if (Program.AppOptions.WarnHtmlMetaDescription &&
+                            string.IsNullOrWhiteSpace(content))
+                        {
+                            entry.Warnings ??= new();
+                            entry.Warnings.Add(
+                                "HTML meta tag for description is missing or empty.");
                         }
                     }
 
@@ -108,11 +123,20 @@ namespace Slap
 
                 // Keywords is missing.
                 if (Program.AppOptions.WarnHtmlMetaKeywords &&
-                    !htmlMetaFound)
+                    !htmlMetaKeywordsFound)
                 {
                     entry.Warnings ??= new();
                     entry.Warnings.Add(
                         "HTML meta tag for keywords is missing or empty.");
+                }
+
+                // Description is missing.
+                if (Program.AppOptions.WarnHtmlMetaDescription &&
+                    !htmlMetaDescriptionFound)
+                {
+                    entry.Warnings ??= new();
+                    entry.Warnings.Add(
+                        "HTML meta tag for description is missing or empty.");
                 }
             }
             catch
