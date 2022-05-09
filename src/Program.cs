@@ -273,6 +273,16 @@ namespace Slap
                 "Add request header and value.",
                 Environment.NewLine);
 
+            // Add HTTP authentication username and password credentials.
+            ConsoleEx.WriteObjects(
+                ConsoleColor.Blue,
+                "  -hac",
+                ConsoleColor.Green,
+                " <user:pwd>     ",
+                (byte)0x00,
+                "Add HTTP authentication username and password credentials.",
+                Environment.NewLine);
+
             // Warn if HTML title tag is missing or empty.
             ConsoleEx.WriteObjects(
                 ConsoleColor.Blue,
@@ -370,7 +380,9 @@ namespace Slap
                         AppOptions.WarnHtmlTitle,
                         AppOptions.WarnHtmlMetaKeywords,
                         AppOptions.WarnHtmlMetaDescription,
-                        AppOptions.BypassContentSecurityPolicy
+                        AppOptions.BypassContentSecurityPolicy,
+                        AppOptions.HttpAuthUsername,
+                        AppOptions.HttpAuthPassword
                     },
                     scan = new
                     {

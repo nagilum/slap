@@ -27,6 +27,7 @@ Options:
  -vh <header>        Verify that a header exists.
  -vh <header:value>  Verify that a header and value exists. Value can be regex.
  -rh <header:value>  Add request header and value.
+ -hac <user:pwd>     Add HTTP authentication username and password credentials.
  -wht                Warn if HTML title tag is missing or empty.
  -whk                Warn if HTML meta keywords tag is missing or empty.
  -whd                Warn if HTML meta description tag is missing or empty.
@@ -55,7 +56,6 @@ $ slap https://example.com/ -t 0 -ff -rp -wu domcontentloaded
 ## Planned Updates
 
 * Figure out what the default request headers are and list them.
-* Add option for HTTP authentication credentials.
 * Add option for setting screen-size.
 * Add option for setting viewport-size.
 * Add an image, either static or gif to show app in use.

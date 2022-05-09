@@ -90,6 +90,16 @@ namespace Slap
         public bool BypassContentSecurityPolicy { get; set; }
 
         /// <summary>
+        /// HTTP authentication username.
+        /// </summary>
+        public string? HttpAuthUsername { get; set; }
+
+        /// <summary>
+        /// HTTP authentication password.
+        /// </summary>
+        public string? HttpAuthPassword { get; set; }
+
+        /// <summary>
         /// Whether to show the app options.
         /// </summary>
         public bool ShowAppOptions { get; set; } = true;
@@ -288,6 +298,39 @@ namespace Slap
 
                         this.RequestHeaders ??= new();
                         this.RequestHeaders[key] = value;
+
+                        break;
+
+                    // Add HTTP authentication username and password credentials.
+                    case "-hac":
+                        if (i == args.Length - 1)
+                        {
+                            throw new ConsoleObjectsException(
+                                "Argument ",
+                                ConsoleColor.Blue,
+                                "-hac ",
+                                (byte)0x00,
+                                "Must be followed by a username and password in format username:password");
+                        }
+
+                        value = args[i + 1];
+                        sp = value.IndexOf(':');
+
+                        if (sp == -1)
+                        {
+                            throw new ConsoleObjectsException(
+                                "Argument ",
+                                ConsoleColor.Blue,
+                                "-hac ",
+                                (byte)0x00,
+                                "Must be followed by a username and password in format username:password");
+                        }
+
+                        key = value.Substring(0, sp);
+                        value = value.Substring(sp + 1);
+
+                        this.HttpAuthUsername = key;
+                        this.HttpAuthPassword = value;
 
                         break;
 

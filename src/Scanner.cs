@@ -273,6 +273,17 @@ namespace Slap
                     newPageOptions.BypassCSP = true;
                 }
 
+                // Add HTTP authentication username and password credentials.
+                if (Program.AppOptions.HttpAuthUsername != null &&
+                    Program.AppOptions.HttpAuthPassword != null)
+                {
+                    newPageOptions.HttpCredentials = new HttpCredentials
+                    {
+                        Username = Program.AppOptions.HttpAuthUsername,
+                        Password = Program.AppOptions.HttpAuthPassword
+                    };
+                }
+
                 // Setup request.
                 page = await PlaywrightBrowser.NewPageAsync(
                     newPageOptions);

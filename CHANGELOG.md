@@ -9,6 +9,7 @@
 * Add option to warn if HTML meta description is missing or empty.
 * Add option to bypass Content-Security-Policy.
 * Add option to set request headers.
+* Add option for HTTP authentication credentials.
 
 ## 1.1.1 - 2022-05-06
 
