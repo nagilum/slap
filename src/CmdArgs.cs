@@ -70,6 +70,11 @@ namespace Slap
         public bool WarnHtmlTitle { get; set; }
 
         /// <summary>
+        /// Warn if HTML meta keywords tag is missing or empty.
+        /// </summary>
+        public bool WarnHtmlMetaKeywords { get; set; }
+
+        /// <summary>
         /// Whether to show the app options.
         /// </summary>
         public bool ShowAppOptions { get; set; } = true;
@@ -240,6 +245,11 @@ namespace Slap
                     // Warn if HTML title tag is missing or empty.
                     case "-wht":
                         this.WarnHtmlTitle = true;
+                        break;
+
+                    // Warn if HTML meta keywords tag is missing or empty.
+                    case "-whk":
+                        this.WarnHtmlMetaKeywords = true;
                         break;
 
                     // When to consider the request operation succeeded.

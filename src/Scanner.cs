@@ -69,6 +69,8 @@ namespace Slap
 
                 entry.HtmlMetaEntries = new();
 
+                var htmlMetaFound = false;
+
                 for (var i = 0; i < count; i++)
                 {
                     var name = await metas.Nth(i).GetAttributeAsync("name");
@@ -77,6 +79,21 @@ namespace Slap
 
                     var key = name ?? property;
 
+                    // Check for keywords.
+                    if (key == "keywords")
+                    {
+                        htmlMetaFound = true;
+
+                        if (Program.AppOptions.WarnHtmlMetaKeywords &&
+                            string.IsNullOrWhiteSpace(content))
+                        {
+                            entry.Warnings ??= new();
+                            entry.Warnings.Add(
+                                "HTML meta tag for keywords is missing or empty.");
+                        }
+                    }
+
+                    // If it has content, keep it.
                     if (string.IsNullOrWhiteSpace(key) ||
                         string.IsNullOrWhiteSpace(content) ||
                         entry.HtmlMetaEntries.ContainsKey(key))
@@ -87,6 +104,15 @@ namespace Slap
                     entry.HtmlMetaEntries.Add(
                         key,
                         content);
+                }
+
+                // Keywords is missing.
+                if (Program.AppOptions.WarnHtmlMetaKeywords &&
+                    !htmlMetaFound)
+                {
+                    entry.Warnings ??= new();
+                    entry.Warnings.Add(
+                        "HTML meta tag for keywords is missing or empty.");
                 }
             }
             catch
