@@ -263,6 +263,16 @@ namespace Slap
                 "Verify that a header and value exists. Value can be regex.",
                 Environment.NewLine);
 
+            // Add request header and value.
+            ConsoleEx.WriteObjects(
+                ConsoleColor.Blue,
+                "  -rh",
+                ConsoleColor.Green,
+                " <header:value>  ",
+                (byte)0x00,
+                "Add request header and value.",
+                Environment.NewLine);
+
             // Warn if HTML title tag is missing or empty.
             ConsoleEx.WriteObjects(
                 ConsoleColor.Blue,
@@ -354,6 +364,7 @@ namespace Slap
                         initialReferer = AppOptions.Referer,
                         renderingEngine = AppOptions.RenderingEngine.ToString(),
                         AppOptions.HeadersToVerify,
+                        AppOptions.RequestHeaders,
                         AppOptions.UserAgent,
                         waitUntil = AppOptions.WaitUntil?.ToString(),
                         AppOptions.WarnHtmlTitle,

@@ -8,6 +8,7 @@
 * Add option to warn if HTML meta keywords is missing or empty.
 * Add option to warn if HTML meta description is missing or empty.
 * Add option to bypass Content-Security-Policy.
+* Add option to set request headers.
 
 ## 1.1.1 - 2022-05-06
 

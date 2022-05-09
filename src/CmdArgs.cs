@@ -60,6 +60,11 @@ namespace Slap
         public Dictionary<string, string?> HeadersToVerify { get; set; } = new();
 
         /// <summary>
+        /// Manually added request headers.
+        /// </summary>
+        public Dictionary<string, string>? RequestHeaders { get; set;}
+
+        /// <summary>
         /// When to consider the request operation succeeded.
         /// </summary>
         public WaitUntilState? WaitUntil { get; set; } = null;
@@ -120,7 +125,9 @@ namespace Slap
                     ex.Message);
             }
 
+            string? key;
             string? value;
+            int sp;
 
             // Remaining params.
             for (var i = 1; i < args.Length; i++)
@@ -238,10 +245,9 @@ namespace Slap
                         }
 
                         value = args[i + 1];
+                        sp = value.IndexOf(':');
 
-                        var sp = value.IndexOf(':');
-
-                        var key = sp == -1
+                        key = sp == -1
                             ? value
                             : value.Substring(0, sp);
 
@@ -250,6 +256,39 @@ namespace Slap
                             : value.Substring(sp + 1);
 
                         this.HeadersToVerify[key] = value;
+                        break;
+
+                    // Add request header and value.
+                    case "-rh":
+                        if (i == args.Length - 1)
+                        {
+                            throw new ConsoleObjectsException(
+                                "Argument ",
+                                ConsoleColor.Blue,
+                                "-rh ",
+                                (byte)0x00,
+                                "Must be followed by a header name and value in format key:value");
+                        }
+
+                        value = args[i + 1];
+                        sp = value.IndexOf(':');
+
+                        if (sp == -1)
+                        {
+                            throw new ConsoleObjectsException(
+                                "Argument ",
+                                ConsoleColor.Blue,
+                                "-rh ",
+                                (byte)0x00,
+                                "Must be followed by a header name and value in format key:value");
+                        }
+
+                        key = value.Substring(0, sp);
+                        value = value.Substring(sp + 1);
+
+                        this.RequestHeaders ??= new();
+                        this.RequestHeaders[key] = value;
+
                         break;
 
                     // Warn if HTML title tag is missing or empty.

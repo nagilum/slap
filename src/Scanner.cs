@@ -16,16 +16,6 @@ namespace Slap
         private static IBrowser PlaywrightBrowser { get; set; } = null!;
 
         /// <summary>
-        /// Options for each new page.
-        /// </summary>
-        private static BrowserNewPageOptions NewPageOptions { get; set; } = null!;
-
-        /// <summary>
-        /// Options for each request.
-        /// </summary>
-        private static PageGotoOptions GotoOptions { get; set; } = null!;
-
-        /// <summary>
         /// Extract the HTML title and meta tags.
         /// </summary>
         /// <param name="page">Playwright page.</param>
@@ -260,22 +250,44 @@ namespace Slap
 
             try
             {
+                var gotoOptions = new PageGotoOptions
+                {
+                    Timeout = Program.AppOptions.ConnectionTimeout,
+                    WaitUntil = Program.AppOptions.WaitUntil
+                };
+
+                var newPageOptions = new BrowserNewPageOptions
+                {
+                    UserAgent = Program.AppOptions.UserAgent
+                };
+
+                // Use referer?
                 if (Program.AppOptions.UseReferer)
                 {
-                    GotoOptions.Referer = entry.Referer;
+                    gotoOptions.Referer = entry.Referer;
                 }
 
+                // Bypass Content-Security-Policy?
                 if (Program.AppOptions.BypassContentSecurityPolicy)
                 {
-                    NewPageOptions.BypassCSP = true;
+                    newPageOptions.BypassCSP = true;
                 }
 
+                // Setup request.
                 page = await PlaywrightBrowser.NewPageAsync(
-                    NewPageOptions);
+                    newPageOptions);
 
+                // Add custom request headers?
+                if (Program.AppOptions.RequestHeaders != null)
+                {
+                    await page.SetExtraHTTPHeadersAsync(
+                        Program.AppOptions.RequestHeaders);
+                }
+
+                // Perform request.
                 res = await page.GotoAsync(
                     entry.Uri.ToString(),
-                    GotoOptions);
+                    gotoOptions);
 
                 if (res == null)
                 {
@@ -362,17 +374,6 @@ namespace Slap
         /// </summary>
         private static async Task SetupPlaywrightObjects()
         {
-            NewPageOptions ??= new()
-            {
-                UserAgent = Program.AppOptions.UserAgent
-            };
-
-            GotoOptions ??= new()
-            {
-                Timeout = Program.AppOptions.ConnectionTimeout,
-                WaitUntil = Program.AppOptions.WaitUntil
-            };
-
             PlaywrightInstance ??= await Playwright.CreateAsync();
 
             if (PlaywrightBrowser != null)
