@@ -265,6 +265,11 @@ namespace Slap
                     GotoOptions.Referer = entry.Referer;
                 }
 
+                if (Program.AppOptions.BypassContentSecurityPolicy)
+                {
+                    NewPageOptions.BypassCSP = true;
+                }
+
                 page = await PlaywrightBrowser.NewPageAsync(
                     NewPageOptions);
 

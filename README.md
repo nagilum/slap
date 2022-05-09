@@ -29,6 +29,7 @@ Options:
  -wht                Warn if HTML title tag is missing or empty.
  -whk                Warn if HTML meta keywords tag is missing or empty.
  -whd                Warn if HTML meta description tag is missing or empty.
+ -bcsp               Bypass Content-Security-Policy.
  -wu <state>         When to consider the request operation succeeded. Defaults to 'load'. Possible states are:
                       * domcontentloaded - When the DOMContentLoaded event is fired.
                       * load - When the load event is fired.
@@ -52,7 +53,6 @@ $ slap https://example.com/ -t 0 -ff -rp -wu domcontentloaded
 
 ## Planned Updates
 
-* Add option to bypass Content-Security-Policy.
 * Add option to set specific request headers.
 * Figure out what the default request headers are and list them.
 * Add option for HTTP authentication credentials.

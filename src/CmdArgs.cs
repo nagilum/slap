@@ -80,6 +80,11 @@ namespace Slap
         public bool WarnHtmlMetaDescription { get; set; }
 
         /// <summary>
+        /// Bypass Content-Security-Policy.
+        /// </summary>
+        public bool BypassContentSecurityPolicy { get; set; }
+
+        /// <summary>
         /// Whether to show the app options.
         /// </summary>
         public bool ShowAppOptions { get; set; } = true;
@@ -260,6 +265,11 @@ namespace Slap
                     // Warn if HTML meta description tag is missing or empty.
                     case "-whd":
                         this.WarnHtmlMetaDescription = true;
+                        break;
+
+                    // Bypass Content-Security-Policy.
+                    case "-bcsp":
+                        this.BypassContentSecurityPolicy = true;
                         break;
 
                     // When to consider the request operation succeeded.

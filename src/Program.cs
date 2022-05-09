@@ -287,6 +287,14 @@ namespace Slap
                 "Warn if HTML meta description tag is missing or empty.",
                 Environment.NewLine);
 
+            // Bypass Content-Security-Policy.
+            ConsoleEx.WriteObjects(
+                ConsoleColor.Blue,
+                "  -bcsp               ",
+                (byte)0x00,
+                "Bypass Content-Security-Policy.",
+                Environment.NewLine);
+
             // When to consider the request operation succeeded.
             ConsoleEx.WriteObjects(
                 ConsoleColor.Blue,
@@ -350,7 +358,8 @@ namespace Slap
                         waitUntil = AppOptions.WaitUntil?.ToString(),
                         AppOptions.WarnHtmlTitle,
                         AppOptions.WarnHtmlMetaKeywords,
-                        AppOptions.WarnHtmlMetaDescription
+                        AppOptions.WarnHtmlMetaDescription,
+                        AppOptions.BypassContentSecurityPolicy
                     },
                     scan = new
                     {
