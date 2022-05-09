@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0 - 2022-05-09
+
+### Added
+
+* Add option to warn if HTML title tag is missing or empty.
+
 ## 1.1.1 - 2022-05-06
 
 ### Changed

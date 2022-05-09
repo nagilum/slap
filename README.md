@@ -26,6 +26,7 @@ Options:
  -ua <agent>         Specify the user agent to use for all requests.
  -vh <header>        Verify that a header exists.
  -vh <header:value>  Verify that a header and value exists. Value can be regex.
+ -wht                Warn if HTML title tag is missing or empty.
  -wu <state>         When to consider the request operation succeeded. Defaults to 'load'. Possible states are:
                       * domcontentloaded - When the DOMContentLoaded event is fired.
                       * load - When the load event is fired.
@@ -35,21 +36,20 @@ Options:
 
 ## Examples
 
-This will scan https://microsoft.com/ and continue scanning all URLs found on that and proceeding pages.
+This will scan https://example.com/ and continue scanning all URLs found on that and proceeding pages.
 
 ```
-$ slap https://microsoft.com/
+$ slap https://example.com/
 ```
 
-This will scan https://microsoft.com/ using the Firefox engine, it will disable the timeout for each request, it will set the origin page as referer for each request, and it will wait for the DOMContentLoaded event to consider a request successful.
+This will scan https://example.com/ using the Firefox engine, it will disable the timeout for each request, it will set the origin page as referer for each request, and it will wait for the DOMContentLoaded event to consider a request successful.
 
 ```
-$ slap https://microsoft.com/ -t 0 -ff -rp -wu domcontentloaded
+$ slap https://example.com/ -t 0 -ff -rp -wu domcontentloaded
 ```
 
 ## Planned Updates
 
-* Add option to warn if HTML title tag is missing or empty.
 * Add option to warn if HTML meta keywords is missing or empty.
 * Add option to warn if HTML meta description is missing or empty.
 * Add option to bypass Content-Security-Policy.

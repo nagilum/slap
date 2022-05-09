@@ -65,6 +65,11 @@ namespace Slap
         public WaitUntilState? WaitUntil { get; set; } = null;
 
         /// <summary>
+        /// Warn if HTML title tag is missing or empty.
+        /// </summary>
+        public bool WarnHtmlTitle { get; set; }
+
+        /// <summary>
         /// Whether to show the app options.
         /// </summary>
         public bool ShowAppOptions { get; set; } = true;
@@ -232,6 +237,12 @@ namespace Slap
                         this.HeadersToVerify[key] = value;
                         break;
 
+                    // Warn if HTML title tag is missing or empty.
+                    case "-wht":
+                        this.WarnHtmlTitle = true;
+                        break;
+
+                    // When to consider the request operation succeeded.
                     case "-wu":
                         if (i == args.Length -1)
                         {

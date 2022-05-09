@@ -53,6 +53,15 @@ namespace Slap
                     }
                 }
 
+                // Verify title.
+                if (Program.AppOptions.WarnHtmlTitle &&
+                    string.IsNullOrWhiteSpace(entry.HtmlTitle))
+                {
+                    entry.Warnings ??= new();
+                    entry.Warnings.Add(
+                        "HTML title tag is missing or empty.");
+                }
+
                 // Meta tag entries.
                 var metas = page.Locator("//meta");
 

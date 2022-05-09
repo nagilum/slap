@@ -263,6 +263,14 @@ namespace Slap
                 "Verify that a header and value exists. Value can be regex.",
                 Environment.NewLine);
 
+            // Warn if HTML title tag is missing or empty.
+            ConsoleEx.WriteObjects(
+                ConsoleColor.Blue,
+                "  -wht                ",
+                (byte)0x00,
+                "Warn if HTML title tag is missing or empty.",
+                Environment.NewLine);
+
             // When to consider the request operation succeeded.
             ConsoleEx.WriteObjects(
                 ConsoleColor.Blue,
@@ -323,7 +331,8 @@ namespace Slap
                         renderingEngine = AppOptions.RenderingEngine.ToString(),
                         AppOptions.HeadersToVerify,
                         AppOptions.UserAgent,
-                        waitUntil = AppOptions.WaitUntil?.ToString()
+                        waitUntil = AppOptions.WaitUntil?.ToString(),
+                        AppOptions.WarnHtmlTitle
                     },
                     scan = new
                     {
