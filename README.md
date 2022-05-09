@@ -56,6 +56,7 @@ $ slap https://example.com/ -t 0 -ff -rp -wu domcontentloaded
 ## Planned Updates
 
 * Figure out what the default request headers are and list them.
+* Add option for setting device scale factor.
 * Add option for setting screen-size.
 * Add option for setting viewport-size.
 * Add an image, either static or gif to show app in use.
