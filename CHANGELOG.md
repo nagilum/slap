@@ -5,6 +5,8 @@
 ### Added
 
 * Add option to warn if HTML title tag is missing or empty.
+* Add option to warn if HTML meta keywords is missing or empty.
+* Add option to warn if HTML meta description is missing or empty.
 
 ## 1.1.1 - 2022-05-06
 
