@@ -60,3 +60,4 @@ $ slap https://example.com/ -t 0 -ff -rp -wu domcontentloaded
 * Add option for setting screen-size.
 * Add option for setting viewport-size.
 * Add an image, either static or gif to show app in use.
+* Add output for document size.

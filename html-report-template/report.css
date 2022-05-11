@@ -1,0 +1,158 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: sans-serif;
+    font-size: 14px;
+}
+
+h1 {
+    margin: auto;
+    width: 1024px;
+}
+
+header {
+    margin: auto;
+    width: 1024px;
+}
+
+header div {
+}
+
+header h2 {
+}
+
+header div table tbody tr td {
+    padding: 1px 0;
+}
+
+header div table tbody tr td:first-child {
+    width: 150px;
+}
+
+footer {
+    font-size: 12px;
+    margin: 50px auto 0;
+    width: 1024px;
+}
+
+article {
+    margin: 25px auto 0;
+    width: 1024px;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+table thead {
+}
+
+table thead tr {
+}
+
+table thead tr th {
+    text-align: left;
+}
+
+table thead tr th.width-100 {
+    width: 100px;
+}
+
+table thead tr th.width-50 {
+    width: 50px;
+}
+
+table tbody {
+}
+
+table tbody tr.info {
+    background-color: #eee;
+}
+
+table tbody tr.info td {
+    padding: 5px;
+}
+
+table tbody tr.overview {
+    background-color: #eee;
+}
+
+table tbody tr.overview td:first-child {
+    padding-left: 5px;
+}
+
+table tbody tr.overview td:last-child {
+    padding-right: 5px;
+}
+
+table tbody tr.alt {
+    background-color: #ddd;
+}
+
+table tbody tr.collapsed {
+    display: none;
+}
+
+table tbody tr td {
+    padding: 5px 0;
+}
+
+table tbody tr td.right-content {
+    text-align: right;
+}
+
+table tbody tr td span {
+    border-bottom: 1px dotted;
+}
+
+table tbody tr td span.http-status-red {
+    color: red;
+    font-family: monospace;
+}
+
+table tbody tr td span.http-status-green {
+    color: green;
+    font-family: monospace;
+}
+
+table tbody tr td span.http-status-yellow {
+    color: yellowgreen;
+    font-family: monospace;
+}
+
+table tbody tr td span.error {
+    background-image: url('error.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    border-bottom: none;
+    display: inline-block;
+    height: 24px;
+    width: 24px;
+}
+
+table tbody tr td span.warning {
+    background-image: url('warning.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    border-bottom: none;
+    display: inline-block;
+    height: 24px;
+    width: 24px;
+}
+
+table tbody tr td a.toggle-info-panel {
+    background-image: url('settings.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    border-bottom: none;
+    cursor: pointer;
+    display: inline-block;
+    height: 24px;
+    width: 24px;
+}
