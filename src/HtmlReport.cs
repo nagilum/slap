@@ -155,6 +155,36 @@
         }
 
         /// <summary>
+        /// Transfor the number of bytes to a more human readable format.
+        /// </summary>
+        /// <param name="bytes">Total bytes.</param>
+        /// <returns>Human readable format.</returns>
+        private static string HumanReadableSize(int? bytes)
+        {
+            if (!bytes.HasValue)
+            {
+                return string.Empty;
+            }
+
+            string? str;
+
+            if (bytes > Math.Pow(1024, 2))
+            {
+                str = (int)(bytes / Math.Pow(1024, 2)) + " mB";
+            }
+            else if (bytes > 1024)
+            {
+                str = (int)(bytes / 1024) + " kB";
+            }
+            else
+            {
+                str = bytes + " bytes";
+            }
+
+            return str;
+        }
+
+        /// <summary>
         /// Write HTML and compile a report that represent the data.
         /// </summary>
         public static async Task Write()
@@ -285,8 +315,9 @@
                 "        <thead>" +
                 "          <tr>" +
                 "            <th>&nbsp;</th>" +
-                "            <th class=\"width-100\">&nbsp;</th>" +
-                "            <th class=\"width-100\">&nbsp;</th>" +
+                "            <th class=\"width-50\">&nbsp;</th>" +
+                "            <th class=\"width-50\">&nbsp;</th>" +
+                "            <th class=\"width-50\">&nbsp;</th>" +
                 "            <th class=\"width-50\">&nbsp;</th>" +
                 "            <th class=\"width-50\">&nbsp;</th>" +
                 "          </tr>" +
@@ -342,7 +373,10 @@
                     $"    <span class=\"{httpStatusCssClass}\" title=\"{httpStatusTooltip}\">{httpStatusText}</span>" +
                     "  </td>" +
                     "  <td>" +
-                    $"    <span class=\"{requestTime}\">{requestTime?.HumanReadable()}</span>" +
+                    $"    <span title=\"{requestTime}\">{requestTime?.HumanReadable()}</span>" +
+                    "  </td>" +
+                    "  <td>" +
+                    $"    <span title=\"{entry.ContentLength} bytes\">{HumanReadableSize(entry.ContentLength)}</span>" +
                     "  </td>" +
                     "  <td class=\"right-content\">" +
                     $"    <span class=\"{errorCssClass}\" title=\"{errorText}\"></span>" +
@@ -352,7 +386,7 @@
                     "  </td>" +
                     "</tr>" +
                     $"<tr class=\"info collapsed\" id=\"{entry.Id}\">" +
-                    "  <td colspan=\"5\">" +
+                    "  <td colspan=\"6\">" +
                     "    * HTML" +
                     "      - META ENTRIES" +
                     "    * TELEMITRY" +

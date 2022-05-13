@@ -45,6 +45,11 @@ namespace Slap
         public byte[]? Content { get; set; }
 
         /// <summary>
+        /// Document size.
+        /// </summary>
+        public int? ContentLength { get; set; }
+
+        /// <summary>
         /// Request telemetry.
         /// </summary>
         public RequestTimingResult? Telemetry { get; set; }

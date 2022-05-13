@@ -367,6 +367,11 @@ namespace Slap
                 // Save body.
                 entry.Content = await res.BodyAsync();
 
+                if (entry.Content != null)
+                {
+                    entry.ContentLength = entry.Content.Length;
+                }
+
                 // Save telemetry.
                 entry.Telemetry = res.Request.Timing;
 
