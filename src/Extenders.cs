@@ -5,7 +5,11 @@
         /// <summary>
         /// Write the duration in a more human readable way.
         /// </summary>
-        public static string HumanReadable(this TimeSpan ts)
+        /// <param name="skipMilliseconds">Include milliseconds.</param>
+        /// <returns>Human readable string.</returns>
+        public static string HumanReadable(
+            this TimeSpan ts,
+            bool includeMilliseconds = true)
         {
             var hr = string.Empty;
 
@@ -34,7 +38,8 @@
             }
 
             // Milliseconds.
-            if (ts.Milliseconds > 0)
+            if (includeMilliseconds &&
+                ts.Milliseconds > 0)
             {
                 hr += $"{ts.Milliseconds}ms";
             }

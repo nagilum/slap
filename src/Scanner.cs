@@ -16,6 +16,21 @@ namespace Slap
         private static IBrowser PlaywrightBrowser { get; set; } = null!;
 
         /// <summary>
+        /// When the scan started.
+        /// </summary>
+        public static DateTimeOffset? ScanStarted { get; set; }
+
+        /// <summary>
+        /// When the scan ended.
+        /// </summary>
+        public static DateTimeOffset? ScanEnded { get; set; }
+
+        /// <summary>
+        /// How long the scan took.
+        /// </summary>
+        public static TimeSpan? ScanTook { get; set; }
+
+        /// <summary>
         /// Extract the HTML title and meta tags.
         /// </summary>
         /// <param name="page">Playwright page.</param>
@@ -198,11 +213,28 @@ namespace Slap
         /// </summary>
         public static async Task Init()
         {
+            // Add the first URL to the queue.
+            Program.QueueEntries.Add(
+                new QueueEntry(
+                    Program.AppOptions.BaseUri,
+                    Program.AppOptions.Referer));
+
+            // Mark the start of the scan.
+            Scanner.ScanStarted = DateTimeOffset.Now;
+
+            ConsoleEx.WriteObjects(
+                "Scan started ",
+                ConsoleColor.Blue,
+                Scanner.ScanStarted,
+                Environment.NewLine);
+
             ConsoleEx.WriteObjects(
                 "Scan from ",
                 ConsoleColor.Blue,
                 Program.AppOptions.BaseUri,
                 Environment.NewLine);
+
+            Console.WriteLine();
 
             var index = -1;
 
@@ -232,6 +264,26 @@ namespace Slap
                 // Finished.
                 entry.Finished = DateTimeOffset.Now;
             }
+
+            Console.WriteLine();
+
+            // Mark the end of the scan.
+            Scanner.ScanEnded = DateTimeOffset.Now;
+            Scanner.ScanTook = Scanner.ScanEnded - Scanner.ScanStarted;
+
+            ConsoleEx.WriteObjects(
+                "Scan ended ",
+                ConsoleColor.Blue,
+                Scanner.ScanEnded,
+                Environment.NewLine);
+
+            ConsoleEx.WriteObjects(
+                "Scan took ",
+                ConsoleColor.Blue,
+                Scanner.ScanTook,
+                Environment.NewLine);
+
+            Console.WriteLine();
         }
 
         /// <summary>
@@ -457,6 +509,9 @@ namespace Slap
                 }
                 else
                 {
+                    entry.Errors ??= new();
+                    entry.Errors.Add($"Unable to verify header: {header.Key}");
+
                     entry.HeadersNotVerified.Add(header.Key, header.Value);
                 }
             }

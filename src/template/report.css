@@ -8,7 +8,8 @@ body {
 }
 
 h1 {
-    margin: auto;
+    font-family: serif;
+    margin: 0 auto 50px;
     width: 1024px;
 }
 
@@ -18,9 +19,16 @@ header {
 }
 
 header div {
+    width: 45%;
+}
+
+header div.right-box {
+    float: right;
 }
 
 header h2 {
+    font-family: serif;
+    margin: 0 0 20px;
 }
 
 header div table tbody tr td {
@@ -28,7 +36,7 @@ header div table tbody tr td {
 }
 
 header div table tbody tr td:first-child {
-    width: 150px;
+    width: 225px;
 }
 
 footer {
@@ -155,4 +163,9 @@ table tbody tr td a.toggle-info-panel {
     display: inline-block;
     height: 24px;
     width: 24px;
+}
+
+ul {
+    margin: 0;
+    padding: 0 0 0 16px;
 }
