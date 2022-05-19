@@ -253,17 +253,46 @@
                     "  </td>" +
                     "</tr>" +
                     $"<tr class=\"info collapsed\" id=\"{entry.Id}\">" +
-                    "  <td colspan=\"6\">" +
-                    "    * HTML" +
-                    "      - META ENTRIES" +
-                    "    * TELEMITRY" +
-                    "    * HEADERS" +
-                    "    * HEADERS VERIFIED" +
-                    "    * HEADERS NOT VERIFIED" +
-                    "    * SCREENSHOT" +
-                    "    * LINKED FROM" +
-                    "    * WARNINGS" +
-                    "    * ERRORS" +
+                    "  <td colspan=\"6\">";
+
+                // HTML meta entries.
+                if (entry.HtmlMetaEntries != null)
+                {
+                    html +=
+                        "<div class=\"box\">" +
+                        "<table>" +
+                        "<tbody>";
+
+                    foreach (var item in entry.HtmlMetaEntries)
+                    {
+                        html +=
+                            $"<tr><td>{item.Key}</td><td>{item.Value}</td></tr>";
+                    }
+
+                    html +=
+                        "</tbody>" +
+                        "</table>" +
+                        "</div>";
+                }
+
+                // Telemitry.
+
+                // Headers.
+
+                // Headers verified.
+
+                // Headers not verified.
+
+                // Screenshot.
+
+                // Linked from.
+
+                // Warnings.
+
+                // Errors.
+
+                // Done.
+                html +=
                     "  </td>" +
                     "</tr>";
             }
