@@ -52,142 +52,9 @@
         }
 
         /// <summary>
-        /// Compile a dictionary of config key and values.
-        /// </summary>
-        /// <returns>Dictionary of config key and values.</returns>
-        private static Dictionary<string, string> GetConfigValues()
-        {
-            var dict = new Dictionary<string, string>();
-
-            // Connection Timeout.
-            dict.Add(
-                "<span title=\"Timeout used for each request\">Timeout</span>",
-                new TimeSpan(0, 0, 0, 0, (int)Program.AppOptions.ConnectionTimeout).HumanReadable());
-
-            // Use Referer.
-            dict.Add(
-                "<span title=\"Set the referer for each request\">Use Referer</span>",
-                Program.AppOptions.UseReferer ? "Yes" : "No");
-
-            // Parent as Referer.
-            dict.Add(
-                "<span title=\"Set referer for each request to the parent the link was found on\">Parent as Referer</span>",
-                Program.AppOptions.UseParentAsReferer ? "Yes" : "No");
-
-            // Initial Referer.
-            dict.Add(
-                "<span title=\"Referer set on first request and possibly all\">Initial Referer</span>",
-                Program.AppOptions.Referer ?? "<i>Not Set</i>");
-
-            // Rendering Engine.
-            dict.Add(
-                "<span title=\"Which rendering engine was used for each request\">Rendering Engine</span>",
-                Program.AppOptions.RenderingEngine.ToString());
-
-            // Headers to Verify.
-            var list = Program.AppOptions.HeadersToVerify
-                .Select(n => $"<li>{n.Key}{(n.Value != null ? $": {n.Value}" : "")}</li>")
-                .ToList();
-
-            dict.Add(
-                "<span title=\"Headers that were verified with each request\">Headers to Verify</span>",
-                list.Count > 0
-                    ? $"<ul>{string.Concat(list)}</li>"
-                    : "<i>None</i>");
-
-            // Request Headers.
-            list = Program.AppOptions.RequestHeaders?
-                .Select(n => $"<li>{n.Key}{(n.Value != null ? $": {n.Value}" : "")}</li>")
-                .ToList() ?? new();
-
-            dict.Add(
-                "<span title=\"Headers added to each request\">Request Headers</span>",
-                list.Count > 0
-                    ? $"<ul>{string.Concat(list)}</li>"
-                    : "<i>None</i>");
-
-            // User Agent.
-            dict.Add(
-                "<span title=\"User agent sent with each request\">User Agent</span>",
-                Program.AppOptions.UserAgent ?? "<i>Not Set</i>");
-
-            // Wait Until.
-            dict.Add(
-                "<span title=\"When to consider the request operation succeeded\">Wait Until</span>",
-                Program.AppOptions.WaitUntil?.ToString() ?? "<i>Not Set</i>");
-
-            // Verify Html Title.
-            dict.Add(
-                "<span title=\"Warn if HTML title tag is missing or empty\">Verify HTML Title</span>",
-                Program.AppOptions.WarnHtmlTitle ? "Yes" : "No");
-
-            // Verify Meta Keywords Tag.
-            dict.Add(
-                "<span title=\"Warn if HTML meta keywords tag is missing or empty\">Verify Meta Keywords Tag</span>",
-                Program.AppOptions.WarnHtmlMetaKeywords ? "Yes" : "No");
-
-            // Verify Meta Description Tag.
-            dict.Add(
-                "<span title=\"Warn if HTML meta description tag is missing or empty\">Verify Meta Description Tag</span>",
-                Program.AppOptions.WarnHtmlMetaDescription ? "Yes" : "No");
-
-            // Bypass CSP.
-            dict.Add(
-                "<span title=\"Bypass Content-Security-Policy\">Bypass CSP</span>",
-                Program.AppOptions.BypassContentSecurityPolicy ? "Yes" : "No");
-
-            // HTTP Authentication Username.
-            dict.Add(
-                "<span title=\"HTTP authentication username\">HTTP Authentication Username</span>",
-                Program.AppOptions.HttpAuthUsername != null
-                    ? $"<a class=\"toggle-text\" data-text=\"{Program.AppOptions.HttpAuthUsername}\">Click to Reveal</a>"
-                    : "<i>Not Set</i>");
-
-            // HTTP Authentication Password.
-            dict.Add(
-                "<span title=\"HTTP authentication password\">HTTP Authentication Password</span>",
-                Program.AppOptions.HttpAuthPassword != null
-                    ? $"<a class=\"toggle-text\" data-text=\"{Program.AppOptions.HttpAuthPassword}\">Click to Reveal</a>"
-                    : "<i>Not Set</i>");
-
-            // Done.
-            return dict;
-        }
-
-        /// <summary>
-        /// Transfor the number of bytes to a more human readable format.
-        /// </summary>
-        /// <param name="bytes">Total bytes.</param>
-        /// <returns>Human readable format.</returns>
-        private static string HumanReadableSize(int? bytes)
-        {
-            if (!bytes.HasValue)
-            {
-                return string.Empty;
-            }
-
-            string? str;
-
-            if (bytes > Math.Pow(1024, 2))
-            {
-                str = (int)(bytes / Math.Pow(1024, 2)) + " mB";
-            }
-            else if (bytes > 1024)
-            {
-                str = (int)(bytes / 1024) + " kB";
-            }
-            else
-            {
-                str = bytes + " bytes";
-            }
-
-            return str;
-        }
-
-        /// <summary>
         /// Write HTML and compile a report that represent the data.
         /// </summary>
-        public static async Task Write()
+        public static async Task Create()
         {
             // Header and Config.
             var html =
@@ -425,6 +292,139 @@
 
             // Copy the rest of the HTML report files to the correct folder.
             await CopyReportFiles();
+        }
+
+        /// <summary>
+        /// Compile a dictionary of config key and values.
+        /// </summary>
+        /// <returns>Dictionary of config key and values.</returns>
+        private static Dictionary<string, string> GetConfigValues()
+        {
+            var dict = new Dictionary<string, string>();
+
+            // Connection Timeout.
+            dict.Add(
+                "<span title=\"Timeout used for each request\">Timeout</span>",
+                new TimeSpan(0, 0, 0, 0, (int)Program.AppOptions.ConnectionTimeout).HumanReadable());
+
+            // Use Referer.
+            dict.Add(
+                "<span title=\"Set the referer for each request\">Use Referer</span>",
+                Program.AppOptions.UseReferer ? "Yes" : "No");
+
+            // Parent as Referer.
+            dict.Add(
+                "<span title=\"Set referer for each request to the parent the link was found on\">Parent as Referer</span>",
+                Program.AppOptions.UseParentAsReferer ? "Yes" : "No");
+
+            // Initial Referer.
+            dict.Add(
+                "<span title=\"Referer set on first request and possibly all\">Initial Referer</span>",
+                Program.AppOptions.Referer ?? "<i>Not Set</i>");
+
+            // Rendering Engine.
+            dict.Add(
+                "<span title=\"Which rendering engine was used for each request\">Rendering Engine</span>",
+                Program.AppOptions.RenderingEngine.ToString());
+
+            // Headers to Verify.
+            var list = Program.AppOptions.HeadersToVerify
+                .Select(n => $"<li>{n.Key}{(n.Value != null ? $": {n.Value}" : "")}</li>")
+                .ToList();
+
+            dict.Add(
+                "<span title=\"Headers that were verified with each request\">Headers to Verify</span>",
+                list.Count > 0
+                    ? $"<ul>{string.Concat(list)}</li>"
+                    : "<i>None</i>");
+
+            // Request Headers.
+            list = Program.AppOptions.RequestHeaders?
+                .Select(n => $"<li>{n.Key}{(n.Value != null ? $": {n.Value}" : "")}</li>")
+                .ToList() ?? new();
+
+            dict.Add(
+                "<span title=\"Headers added to each request\">Request Headers</span>",
+                list.Count > 0
+                    ? $"<ul>{string.Concat(list)}</li>"
+                    : "<i>None</i>");
+
+            // User Agent.
+            dict.Add(
+                "<span title=\"User agent sent with each request\">User Agent</span>",
+                Program.AppOptions.UserAgent ?? "<i>Not Set</i>");
+
+            // Wait Until.
+            dict.Add(
+                "<span title=\"When to consider the request operation succeeded\">Wait Until</span>",
+                Program.AppOptions.WaitUntil?.ToString() ?? "<i>Not Set</i>");
+
+            // Verify Html Title.
+            dict.Add(
+                "<span title=\"Warn if HTML title tag is missing or empty\">Verify HTML Title</span>",
+                Program.AppOptions.WarnHtmlTitle ? "Yes" : "No");
+
+            // Verify Meta Keywords Tag.
+            dict.Add(
+                "<span title=\"Warn if HTML meta keywords tag is missing or empty\">Verify Meta Keywords Tag</span>",
+                Program.AppOptions.WarnHtmlMetaKeywords ? "Yes" : "No");
+
+            // Verify Meta Description Tag.
+            dict.Add(
+                "<span title=\"Warn if HTML meta description tag is missing or empty\">Verify Meta Description Tag</span>",
+                Program.AppOptions.WarnHtmlMetaDescription ? "Yes" : "No");
+
+            // Bypass CSP.
+            dict.Add(
+                "<span title=\"Bypass Content-Security-Policy\">Bypass CSP</span>",
+                Program.AppOptions.BypassContentSecurityPolicy ? "Yes" : "No");
+
+            // HTTP Authentication Username.
+            dict.Add(
+                "<span title=\"HTTP authentication username\">HTTP Authentication Username</span>",
+                Program.AppOptions.HttpAuthUsername != null
+                    ? $"<a class=\"toggle-text\" data-text=\"{Program.AppOptions.HttpAuthUsername}\">Click to Reveal</a>"
+                    : "<i>Not Set</i>");
+
+            // HTTP Authentication Password.
+            dict.Add(
+                "<span title=\"HTTP authentication password\">HTTP Authentication Password</span>",
+                Program.AppOptions.HttpAuthPassword != null
+                    ? $"<a class=\"toggle-text\" data-text=\"{Program.AppOptions.HttpAuthPassword}\">Click to Reveal</a>"
+                    : "<i>Not Set</i>");
+
+            // Done.
+            return dict;
+        }
+
+        /// <summary>
+        /// Transfor the number of bytes to a more human readable format.
+        /// </summary>
+        /// <param name="bytes">Total bytes.</param>
+        /// <returns>Human readable format.</returns>
+        private static string HumanReadableSize(int? bytes)
+        {
+            if (!bytes.HasValue)
+            {
+                return string.Empty;
+            }
+
+            string? str;
+
+            if (bytes > Math.Pow(1024, 2))
+            {
+                str = (int)(bytes / Math.Pow(1024, 2)) + " mB";
+            }
+            else if (bytes > 1024)
+            {
+                str = (int)(bytes / 1024) + " kB";
+            }
+            else
+            {
+                str = bytes + " bytes";
+            }
+
+            return str;
         }
 
         /// <summary>

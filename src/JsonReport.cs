@@ -7,7 +7,7 @@ namespace Slap
         /// <summary>
         /// Write JSON files that represent the data in the report.
         /// </summary>
-        public static async Task Write()
+        public static async Task Create()
         {
             // Write metadata.
             await Write(

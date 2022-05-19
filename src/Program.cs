@@ -53,10 +53,10 @@ namespace Slap
             await Scanner.Init();
 
             // Write JSON report.
-            await JsonReport.Write();
+            await JsonReport.Create();
 
             // Write HTML report.
-            await HtmlReport.Write();
+            await HtmlReport.Create();
         }
 
         /// <summary>
