@@ -6,9 +6,19 @@
  */
 const toggleInfoPanel = (e) => {
     const id = e.target.getAttribute('data-id');
-    const tr = document.getElementById(id);
 
-    tr.classList.toggle('collapsed');
+    document
+        .querySelectorAll('div.info-panel')
+        .forEach(d => {
+            const did = d.getAttribute('id');
+
+            if (did === id) {
+                d.classList.remove('hidden');
+            }
+            else {
+                d.classList.add('hidden');
+            }
+        });
 };
 
 /**

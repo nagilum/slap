@@ -9,12 +9,12 @@ body {
 
 h1 {
     font-family: serif;
-    margin: 0 auto 50px;
+    margin: 0 0 50px 0;
     width: 1024px;
 }
 
 header {
-    margin: auto;
+    margin: 0;
     width: 1024px;
 }
 
@@ -41,12 +41,12 @@ header div table tbody tr td:first-child {
 
 footer {
     font-size: 12px;
-    margin: 50px auto 0;
+    margin: 50px 0 0 0;
     width: 1024px;
 }
 
 article {
-    margin: 25px auto 0;
+    margin: 25px 0 0 0;
     width: 1024px;
 }
 
@@ -168,4 +168,24 @@ table tbody tr td a.toggle-info-panel {
 ul {
     margin: 0;
     padding: 0 0 0 16px;
+}
+
+div.info-panel {
+    left: 1100px;
+    position: absolute;
+    top: 0;
+    width: 1024px;
+}
+
+div.info-panel.hidden {
+    display: none;
+}
+
+div.info-panel div.box h2 {
+    font-family: serif;
+    margin: 0 0 20px;
+}
+
+div.info-panel div.box table tbody tr td:first-child {
+    width: 225px;
 }

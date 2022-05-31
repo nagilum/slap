@@ -193,6 +193,7 @@
 
             // Cycle queue entries.
             var isAlt = true;
+            var infoPanels = string.Empty;
 
             foreach (var entry in Program.QueueEntries)
             {
@@ -251,50 +252,246 @@
                     "  <td class=\"right-content\">" +
                     $"    <a class=\"toggle-info-panel\" data-id=\"{entry.Id}\"></a>" +
                     "  </td>" +
-                    "</tr>" +
-                    $"<tr class=\"info collapsed\" id=\"{entry.Id}\">" +
-                    "  <td colspan=\"6\">";
+                    "</tr>";
+
+                // Start info panel.
+                infoPanels +=
+                    $"<div id=\"{entry.Id}\" class=\"info-panel hidden\">";
+
+                // Screenshot.
+                infoPanels +=
+                    $"<div class=\"box screenshot\"><img src=\"screenshots/screenshot-{entry.Id}.png\"></div>";
+
+                // Request info.
+                infoPanels +=
+                    "<div class=\"box\">" +
+                    "  <h2>Request</h2>" +
+                    "  <table>" +
+                    "    <tbody>" +
+                    $"      <tr><td>Title</td><td>{entry.HtmlTitle}</td></tr>" +
+                    $"      <tr><td>URI</td><td>{entry.Uri}</td></tr>" +
+                    $"      <tr><td>HTTP Status</td><td>{httpStatusText} {httpStatusTooltip}</td></tr>" +
+                    $"      <tr><td>Request Time</td><td><span title=\"{requestTime}\">{requestTime?.HumanReadable()}</span></td></tr>" +
+                    $"      <tr><td>Content Length</td><td><span title=\"{entry.ContentLength}\">{HumanReadableSize(entry.ContentLength)}</span></td></tr>" +
+                    "    </tbody>" +
+                    "  </table>" +
+                    "</div>";
 
                 // HTML meta entries.
                 if (entry.HtmlMetaEntries != null)
                 {
-                    html +=
+                    infoPanels +=
                         "<div class=\"box\">" +
-                        "<table>" +
-                        "<tbody>";
+                        "  <h2>Meta Entries</h2>" +
+                        "  <table>" +
+                        "    <tbody>";
 
                     foreach (var item in entry.HtmlMetaEntries)
                     {
-                        html +=
+                        infoPanels +=
                             $"<tr><td>{item.Key}</td><td>{item.Value}</td></tr>";
                     }
 
-                    html +=
-                        "</tbody>" +
-                        "</table>" +
+                    infoPanels +=
+                        "    </tbody>" +
+                        "  </table>" +
                         "</div>";
                 }
 
                 // Telemitry.
+                if (entry.Telemetry != null)
+                {
+                    infoPanels +=
+                        "<div class=\"box\">" +
+                        "  <h2>Telemetry</h2>" +
+                        "  <table>" +
+                        "    <tbody>" +
+                        $"      <tr><td>StartTime</td><td>{entry.Telemetry.StartTime}</td></tr>" +
+                        $"      <tr><td>SecureConnectionStart</td><td>{entry.Telemetry.SecureConnectionStart}</td></tr>" +
+                        $"      <tr><td>DomainLookupStart</td><td>{entry.Telemetry.DomainLookupStart}</td></tr>" +
+                        $"      <tr><td>DomainLookupEnd</td><td>{entry.Telemetry.DomainLookupEnd}</td></tr>" +
+                        $"      <tr><td>RequestStart</td><td>{entry.Telemetry.RequestStart}</td></tr>" +
+                        $"      <tr><td>ResponseStart</td><td>{entry.Telemetry.ResponseStart}</td></tr>" +
+                        $"      <tr><td>ResponseEnd</td><td>{entry.Telemetry.ResponseEnd}</td></tr>" +
+                        $"      <tr><td>ConnectStart</td><td>{entry.Telemetry.ConnectStart}</td></tr>" +
+                        $"      <tr><td>ConnectEnd</td><td>{entry.Telemetry.ConnectEnd}</td></tr>" +
+                        "    </tbody>" +
+                        "  </table>" +
+                        "</div>";
+                }
 
                 // Headers.
+                if (entry.Headers != null)
+                {
+                    infoPanels +=
+                        "<div class=\"box\">" +
+                        "  <h2>Headers</h2>" +
+                        "  <table>" +
+                        "    <tbody>";
+
+                    foreach (var item in entry.Headers)
+                    {
+                        infoPanels +=
+                            $"<tr><td>{item.Key}</td><td>{item.Value}</td></tr>";
+                    }
+
+                    infoPanels +=
+                        "    </tbody>" +
+                        "  </table>" +
+                        "</div>";
+                }
 
                 // Headers verified.
+                if (entry.HeadersVerified != null)
+                {
+                    infoPanels +=
+                        "<div class=\"box\">" +
+                        "  <h2>Headers (Verified)</h2>" +
+                        "  <table>" +
+                        "    <tbody>";
+
+                    foreach (var item in entry.HeadersVerified)
+                    {
+                        infoPanels +=
+                            $"<tr><td>{item.Key}</td><td>{item.Value}</td></tr>";
+                    }
+
+                    infoPanels +=
+                        "    </tbody>" +
+                        "  </table>" +
+                        "</div>";
+                }
 
                 // Headers not verified.
+                if (entry.HeadersNotVerified != null)
+                {
+                    infoPanels +=
+                        "<div class=\"box\">" +
+                        "  <h2>Headers (Not Verified)</h2>" +
+                        "  <table>" +
+                        "    <tbody>";
 
-                // Screenshot.
+                    foreach (var item in entry.HeadersNotVerified)
+                    {
+                        infoPanels +=
+                            $"<tr><td>{item.Key}</td><td>{item.Value}</td></tr>";
+                    }
+
+                    infoPanels +=
+                        "    </tbody>" +
+                        "  </table>" +
+                        "</div>";
+                }
+
+                // Links.
+                if (entry.Links.Count > 0)
+                {
+                    infoPanels +=
+                        "<div class=\"box\">" +
+                        "  <h2>Links</h2>" +
+                        "  <ul>";
+
+                    foreach (var link in entry.Links)
+                    {
+                        infoPanels +=
+                            $"<li>{link}</li>";
+                    }
+
+                    infoPanels +=
+                        "  </ul>" +
+                        "</div>";
+                }
 
                 // Linked from.
+                var linkedFrom = new List<Uri>();
+
+                foreach (var checkEntry in Program.QueueEntries)
+                {
+                    Uri? foundUri = null;
+
+                    if (checkEntry.Links.Count > 0)
+                    {
+                        foreach (var link in checkEntry.Links)
+                        {
+                            var uri = new Uri(checkEntry.Uri, link);
+
+                            if (uri == entry.Uri)
+                            {
+                                foundUri = uri;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (foundUri == null)
+                    {
+                        continue;
+                    }
+
+                    if (!linkedFrom.Contains(foundUri))
+                    {
+                        linkedFrom.Add(foundUri);
+                    }
+                }
+
+                if (linkedFrom.Count > 0)
+                {
+                    infoPanels +=
+                        "<div class=\"box\">" +
+                        "  <h2>Linked From</h2>" +
+                        "  <ul>";
+
+                    foreach (var link in linkedFrom)
+                    {
+                        infoPanels +=
+                            $"<li>{link}</li>";
+                    }
+
+                    infoPanels +=
+                        "  </ul>" +
+                        "</div>";
+                }
 
                 // Warnings.
+                if (entry.Warnings != null)
+                {
+                    infoPanels +=
+                        "<div class=\"box\">" +
+                        "  <h2>Warnings</h2>" +
+                        "  <ul>";
+
+                    foreach (var warning in entry.Warnings)
+                    {
+                        infoPanels +=
+                            $"<li>{warning}</li>";
+                    }
+
+                    infoPanels +=
+                        "  </ul>" +
+                        "</div>";
+                }
 
                 // Errors.
+                if (entry.Errors != null)
+                {
+                    infoPanels +=
+                        "<div class=\"box\">" +
+                        "  <h2>Errors</h2>" +
+                        "  <ul>";
 
-                // Done.
-                html +=
-                    "  </td>" +
-                    "</tr>";
+                    foreach (var error in entry.Errors)
+                    {
+                        infoPanels +=
+                            $"<li>{error}</li>";
+                    }
+
+                    infoPanels +=
+                        "  </ul>" +
+                        "</div>";
+                }
+
+                // End info panel.
+                infoPanels += "</div>";
             }
 
             // Footer.
@@ -308,6 +505,7 @@
                 "        <a href=\"https://github.com/nagilum/slap\">https://github.com/nagilum/slap</a>" +
                 "      </p>" +
                 "    </footer>" +
+                $"    {infoPanels}" +
                 "  </body>" +
                 "  <script src=\"report.js\"></script>" +
                 "</html>";

@@ -168,7 +168,8 @@ namespace Slap
                 {
                     var href = await hrefs.Nth(i).GetAttributeAsync("href");
 
-                    if (href == null)
+                    if (href == null ||
+                        entry.Links.Contains(href))
                     {
                         continue;
                     }
@@ -220,12 +221,12 @@ namespace Slap
                     Program.AppOptions.Referer));
 
             // Mark the start of the scan.
-            Scanner.ScanStarted = DateTimeOffset.Now;
+            ScanStarted = DateTimeOffset.Now;
 
             ConsoleEx.WriteObjects(
                 "Scan started ",
                 ConsoleColor.Blue,
-                Scanner.ScanStarted,
+                ScanStarted,
                 Environment.NewLine);
 
             ConsoleEx.WriteObjects(
@@ -268,19 +269,19 @@ namespace Slap
             Console.WriteLine();
 
             // Mark the end of the scan.
-            Scanner.ScanEnded = DateTimeOffset.Now;
-            Scanner.ScanTook = Scanner.ScanEnded - Scanner.ScanStarted;
+            ScanEnded = DateTimeOffset.Now;
+            ScanTook = ScanEnded - ScanStarted;
 
             ConsoleEx.WriteObjects(
                 "Scan ended ",
                 ConsoleColor.Blue,
-                Scanner.ScanEnded,
+                ScanEnded,
                 Environment.NewLine);
 
             ConsoleEx.WriteObjects(
                 "Scan took ",
                 ConsoleColor.Blue,
-                Scanner.ScanTook,
+                ScanTook,
                 Environment.NewLine);
 
             Console.WriteLine();
@@ -417,8 +418,6 @@ namespace Slap
         {
             var path = Path.Combine(
                 Program.GetReportPath(),
-                "assets",
-                "img",
                 "screenshots");
 
             if (!Directory.Exists(path))
