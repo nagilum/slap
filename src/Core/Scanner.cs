@@ -269,8 +269,14 @@ internal class Scanner
             {
                 var url = await hrefs.Nth(i).GetAttributeAsync(attr);
 
+                if (url?.Trim().StartsWith("mailto:", StringComparison.InvariantCultureIgnoreCase) == true)
+                {
+                    continue;
+                }
+
                 if (!Uri.TryCreate(queueEntry.Url, url, out var uri) ||
-                    !uri.IsAbsoluteUri)
+                    !uri.IsAbsoluteUri ||
+                    string.IsNullOrWhiteSpace(uri.DnsSafeHost))
                 {
                     continue;
                 }
@@ -472,6 +478,10 @@ internal class Scanner
 
         queueEntry.Response = new()
         {
+            Headers = res.Headers
+                .ToDictionary(
+                    n => n.Key.ToString(),
+                    n => n.Value.First().ToString()),
             Size = body.Length,
             StatusCode = (int)res.StatusCode,
             StatusCodeIsSuccess = res.IsSuccessStatusCode,
@@ -500,6 +510,7 @@ internal class Scanner
         
         queueEntry.Response = new()
         {
+            Headers = res.Headers,
             Size = body.Length,
             StatusCode = res.Status,
             StatusCodeIsSuccess = res.Status is >= 200 and <= 299,
