@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using Microsoft.Playwright;
 using Slap.Models;
 using Slap.Tools;
 
@@ -7,6 +8,16 @@ namespace Slap.Core;
 internal class Scanner
 {
     #region Properties and constructor
+    
+    /// <summary>
+    /// Playwright browser.
+    /// </summary>
+    private IBrowser? _browser { get; set; }
+    
+    /// <summary>
+    /// Playwright page.
+    /// </summary>
+    private IPage? _page { get; set; }
 
     /// <summary>
     /// Options.
@@ -80,7 +91,46 @@ internal class Scanner
     /// <returns>Success.</returns>
     public async Task<bool> SetupPlaywright()
     {
-        throw new NotImplementedException();
+        try
+        {
+            Microsoft.Playwright.Program.Main(
+                new string[]
+                {
+                    "install"
+                });
+
+            var instance = await Playwright.CreateAsync();
+            
+            this._browser = this._options.RenderingEngine switch
+            {
+                RenderingEngine.Chromium => await instance.Chromium.LaunchAsync(
+                    this._options.PlaywrightConfig?.BrowserTypeLaunchOptions),
+                
+                RenderingEngine.Firefox => await instance.Firefox.LaunchAsync(
+                    this._options.PlaywrightConfig?.BrowserTypeLaunchOptions),
+                
+                RenderingEngine.Webkit => await instance.Webkit.LaunchAsync(
+                    this._options.PlaywrightConfig?.BrowserTypeLaunchOptions),
+                
+                _ => throw new Exception(
+                    "Invalid rendering engine value.")
+            };
+
+            this._page = await this._browser.NewPageAsync(
+                this._options.PlaywrightConfig?.BrowserNewPageOptions);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ConsoleEx.Write(
+                "Error while setting up Playwright. ",
+                Environment.NewLine,
+                ex.Message,
+                Environment.NewLine);
+
+            return false;
+        }
     }
 
     /// <summary>
