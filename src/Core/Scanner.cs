@@ -85,9 +85,6 @@ internal class Scanner
         /*
          * Favicon
          * Console logs
-         * Verify HTML title tag.
-         * Verify HTML meta description.
-         * Verify HTML meta keywords.
          */
 
         ConsoleEx.Write(
@@ -142,6 +139,7 @@ internal class Scanner
             catch (Exception ex)
             {
                 queueEntry.Error = ex.Message;
+                queueEntry.ErrorType = ex.GetType().ToString();
 
                 ConsoleEx.Write(
                     ConsoleColor.Red,

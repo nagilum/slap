@@ -15,6 +15,11 @@ internal class QueueEntry
     public string? Error { get; set; }
     
     /// <summary>
+    /// Type of error.
+    /// </summary>
+    public string? ErrorType { get; set; }
+    
+    /// <summary>
     /// When processing of the entry finished.
     /// </summary>
     public DateTimeOffset? Finished { get; set; }
