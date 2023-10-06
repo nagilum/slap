@@ -624,6 +624,8 @@ internal class Scanner
             path,
             $"{queueEntry.Id}.png");
 
+        queueEntry.Response!.ScreenshotPath = path;
+
         await this.Page!.ScreenshotAsync(
             new()
             {
