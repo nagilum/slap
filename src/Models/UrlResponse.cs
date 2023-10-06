@@ -2,12 +2,21 @@
 
 internal class UrlResponse
 {
+    /// <summary>
+    /// Whether response has a meta description tag.
+    /// </summary>
     public bool HasMetaDescription =>
         this.MetaTags?.Any(n => n.Name == "description") == true;
     
+    /// <summary>
+    /// Whether response has a meta keywords tag.
+    /// </summary>
     public bool HasMetaKeywords =>
         this.MetaTags?.Any(n => n.Name == "keywords") == true;
 
+    /// <summary>
+    /// Whether response has a non-empty document title.
+    /// </summary>
     public bool HasTitle =>
         !string.IsNullOrWhiteSpace(this.Title);
     
