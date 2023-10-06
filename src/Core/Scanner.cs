@@ -466,6 +466,10 @@ internal class Scanner
 
         queueEntry.StatusCode = (int)res.StatusCode;
         queueEntry.StatusCodeIsSuccess = res.IsSuccessStatusCode;
+
+        var body = await res.Content.ReadAsByteArrayAsync(cancellationToken);
+
+        queueEntry.Size = body.Length;
     }
 
     /// <summary>
@@ -484,6 +488,10 @@ internal class Scanner
 
         queueEntry.StatusCode = res.Status;
         queueEntry.StatusCodeIsSuccess = res.Status is >= 200 and <= 299;
+
+        var body = await res.BodyAsync();
+
+        queueEntry.Size = body.Length;
 
         if (queueEntry.UrlType is UrlType.ExternalWebpage)
         {

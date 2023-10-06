@@ -30,6 +30,11 @@ internal class QueueEntry
     public List<Guid> LinkedFrom { get; } = new();
     
     /// <summary>
+    /// Response body size, in bytes.
+    /// </summary>
+    public int? Size { get; set; }
+    
+    /// <summary>
     /// When processing of the entry started.
     /// </summary>
     public DateTimeOffset? Started { get; set; }
