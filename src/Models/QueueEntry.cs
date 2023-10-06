@@ -32,7 +32,7 @@ internal class QueueEntry
     /// <summary>
     /// Response data.
     /// </summary>
-    public QueueEntryResponse? Response { get; set; }
+    public UrlResponse? Response { get; set; }
     
     /// <summary>
     /// When processing of the entry started.

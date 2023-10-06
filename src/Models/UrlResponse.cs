@@ -1,11 +1,25 @@
 ﻿namespace Slap.Models;
 
-internal class QueueEntryResponse
+internal class UrlResponse
 {
+    public bool HasMetaDescription =>
+        this.MetaTags?.Any(n => n.Name == "description") == true;
+    
+    public bool HasMetaKeywords =>
+        this.MetaTags?.Any(n => n.Name == "keywords") == true;
+
+    public bool HasTitle =>
+        !string.IsNullOrWhiteSpace(this.Title);
+    
     /// <summary>
     /// Response headers.
     /// </summary>
     public required Dictionary<string, string> Headers { get; init; }
+    
+    /// <summary>
+    /// HTML meta tags.
+    /// </summary>
+    public List<MetaTag>? MetaTags { get; set; }
     
     /// <summary>
     /// Response body size, in bytes.
@@ -26,4 +40,9 @@ internal class QueueEntryResponse
     /// Response time in milliseconds.
     /// </summary>
     public required long Time { get; init; }
+    
+    /// <summary>
+    /// HTML document title.
+    /// </summary>
+    public string? Title { get; set; }
 }

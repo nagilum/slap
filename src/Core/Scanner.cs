@@ -82,14 +82,11 @@ internal class Scanner
     public async Task ProcessQueue(CancellationToken cancellationToken)
     {
         /*
-         * 2xx status code
          * Favicon
          * Console logs
          * Verify HTML title tag.
          * Verify HTML meta description.
          * Verify HTML meta keywords.
-         * Check asset links
-         * Check external links
          */
         
         ConsoleEx.Write(
@@ -245,6 +242,42 @@ internal class Scanner
     #endregion
 
     #region Helper functions
+
+    /// <summary>
+    /// Extract various HTML metadata.
+    /// </summary>
+    /// <param name="queueEntry">Queue entry.</param>
+    private async Task ExtractHtmlData(QueueEntry queueEntry)
+    {
+        var titles = this.Page!.Locator("//title");
+        var count = await titles.CountAsync();
+
+        for (var i = 0; i < count; i++)
+        {
+            queueEntry.Response!.Title = await titles.Nth(i).TextContentAsync();
+            break;
+        }
+
+        var metas = this.Page!.Locator("//meta");
+        count = await metas.CountAsync();
+
+        if (count > 0)
+        {
+            queueEntry.Response!.MetaTags ??= new();
+        }
+
+        for (var i = 0; i < count; i++)
+        {
+            queueEntry.Response!.MetaTags!.Add(new()
+            {
+                Charset = await metas.Nth(i).GetAttributeAsync("charset"),
+                Content = await metas.Nth(i).GetAttributeAsync("content"),
+                HttpEquiv = await metas.Nth(i).GetAttributeAsync("http-equiv"),
+                Name = await metas.Nth(i).GetAttributeAsync("name"),
+                Property = await metas.Nth(i).GetAttributeAsync("property")
+            });
+        }
+    }
 
     /// <summary>
     /// Extract various links.
@@ -480,7 +513,7 @@ internal class Scanner
         {
             Headers = res.Headers
                 .ToDictionary(
-                    n => n.Key.ToString(),
+                    n => n.Key.ToString().ToLower(),
                     n => n.Value.First().ToString()),
             Size = body.Length,
             StatusCode = (int)res.StatusCode,
@@ -516,6 +549,8 @@ internal class Scanner
             StatusCodeIsSuccess = res.Status is >= 200 and <= 299,
             Time = stopwatch.ElapsedMilliseconds
         };
+        
+        await this.ExtractHtmlData(queueEntry);
 
         if (queueEntry.UrlType is UrlType.ExternalWebpage)
         {
