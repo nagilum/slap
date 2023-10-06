@@ -27,10 +27,5 @@ internal class Options
     /// <summary>
     /// Whether to save screenshots for each URL scanned.
     /// </summary>
-    public bool SaveScreenshots { get; set; }
-    
-    /// <summary>
-    /// Treat links to subdomains as same domain (internal).
-    /// </summary>
-    public bool SubDomainsAreEqual { get; set; }
+    public bool SaveScreenshots { get; set; } // TODO
 }

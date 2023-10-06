@@ -127,11 +127,6 @@ internal static class Program
                     skip = true;
                     break;
                 
-                // Treat links to subdomains as same domain (internal).
-                case "-sd":
-                    options.SubDomainsAreEqual = true;
-                    break;
-                
                 // Add a domain to be treated as an internal domain.
                 case "-ad":
                     if (i == args.Count - 1)
@@ -257,7 +252,6 @@ internal static class Program
 
         Options:
           -re <engine>   Set rendering engine. Defaults to Chromium.
-          -sd            Treat links to subdomains as same domain (internal).
           -ad <domain>   Add a domain to be treated as an internal domain.
           -rp <path>     Set report path. Defaults to current directory.
           -lc <path>     Load Playwright config file. See documentation for structure.
@@ -295,12 +289,6 @@ internal static class Program
             "<engine>   ",
             ConsoleColorEx.ResetColor,
             "Set rendering engine. Defaults to Chromium.",
-            Environment.NewLine);
-        
-        ConsoleEx.Write(
-            "  -sd            ",
-            ConsoleColorEx.ResetColor,
-            "Treat links to subdomains as same domain (internal).",
             Environment.NewLine);
         
         ConsoleEx.Write(
