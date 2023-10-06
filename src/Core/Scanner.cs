@@ -9,22 +9,22 @@ namespace Slap.Core;
 internal class Scanner
 {
     #region Properties and constructor
-    
+
     /// <summary>
     /// Playwright browser.
     /// </summary>
     private IBrowser? Browser { get; set; }
-    
+
     /// <summary>
     /// When the scanner finished.
     /// </summary>
     private DateTimeOffset? Finished { get; set; }
-    
+
     /// <summary>
     /// Playwright page.
     /// </summary>
     private IPage? Page { get; set; }
-    
+
     /// <summary>
     /// When the scanner started.
     /// </summary>
@@ -88,7 +88,7 @@ internal class Scanner
          * Verify HTML meta description.
          * Verify HTML meta keywords.
          */
-        
+
         ConsoleEx.Write(
             "Started ",
             this.Started.ToString("yyyy-MM-dd HH:mm:ss"),
@@ -126,7 +126,7 @@ internal class Scanner
                     ConsoleColor.Yellow,
                     queueEntry.Url,
                     Environment.NewLine);
-                
+
                 queueEntry.Started = DateTimeOffset.Now;
 
                 if (queueEntry.UrlType is UrlType.InternalWebpage or UrlType.ExternalWebpage)
@@ -141,7 +141,7 @@ internal class Scanner
             catch (Exception ex)
             {
                 queueEntry.Error = ex.Message;
-                
+
                 ConsoleEx.Write(
                     ConsoleColor.Red,
                     "Error: ",
@@ -149,10 +149,10 @@ internal class Scanner
                     ex.Message,
                     Environment.NewLine);
             }
-            
+
             queueEntry.Finished = DateTimeOffset.Now;
         }
-        
+
         this.Finished = DateTimeOffset.Now;
     }
 
@@ -171,18 +171,18 @@ internal class Scanner
                 });
 
             var instance = await Playwright.CreateAsync();
-            
+
             this.Browser = this._options.RenderingEngine switch
             {
                 RenderingEngine.Chromium => await instance.Chromium.LaunchAsync(
                     this._options.PlaywrightConfig?.BrowserTypeLaunchOptions),
-                
+
                 RenderingEngine.Firefox => await instance.Firefox.LaunchAsync(
                     this._options.PlaywrightConfig?.BrowserTypeLaunchOptions),
-                
+
                 RenderingEngine.Webkit => await instance.Webkit.LaunchAsync(
                     this._options.PlaywrightConfig?.BrowserTypeLaunchOptions),
-                
+
                 _ => throw new Exception(
                     "Invalid rendering engine value.")
             };
@@ -286,10 +286,10 @@ internal class Scanner
     {
         var selectors = new Dictionary<string, string>
         {
-            {"a", "href"},
-            {"img", "src"},
-            {"link", "href"},
-            {"script", "src"}
+            { "a", "href" },
+            { "img", "src" },
+            { "link", "href" },
+            { "script", "src" }
         };
 
         foreach (var (tag, attr) in selectors)
@@ -327,7 +327,7 @@ internal class Scanner
                         ? UrlType.ExternalWebpage
                         : UrlType.ExternalAsset;
                 }
-                
+
                 var entry = this._queue
                     .FirstOrDefault(n => n.Url == uri);
 
@@ -338,7 +338,7 @@ internal class Scanner
                         ConsoleColor.Green,
                         uri,
                         Environment.NewLine);
-                
+
                     entry = new()
                     {
                         Url = uri,
@@ -398,7 +398,7 @@ internal class Scanner
             101 => "Switching Protocols",
             102 => "Processing",
             103 => "Early Hints",
-            
+
             200 => "Ok",
             201 => "Created",
             202 => "Accepted",
@@ -409,7 +409,7 @@ internal class Scanner
             207 => "Multi-Status",
             208 => "Already Reported",
             226 => "IM Used",
-            
+
             300 => "Multiple Choices",
             301 => "Moved Permanently",
             302 => "Found",
@@ -418,7 +418,7 @@ internal class Scanner
             305 => "Use Proxy",
             307 => "Temporary Redirect",
             308 => "Permanent Redirect",
-            
+
             400 => "Bad Request",
             401 => "Unauthorized",
             402 => "Payment Required",
@@ -448,7 +448,7 @@ internal class Scanner
             429 => "Too Many Requests",
             431 => "Request Header Fields Too Large",
             451 => "Unavailable For Legal Reasons",
-            
+
             500 => "Internal Server Error",
             501 => "Not Implemented",
             502 => "Bad Gateway",
@@ -460,18 +460,49 @@ internal class Scanner
             508 => "Loop Detected",
             510 => "Not Extended",
             511 => "Network Authentication Required",
-            
+
             _ => string.Empty
         };
     }
 
     /// <summary>
-    /// Log the response status code.
+    /// Log response to console.
     /// </summary>
-    /// <param name="statusCode">HTTP status code.</param>
-    private void LogResponseCode(int statusCode)
+    /// <param name="response">Response.</param>
+    private void LogResponse(UrlResponse response)
     {
-        var color = statusCode switch
+        // Size.
+        var sizeColor = response.Size switch
+        {
+            > 10000000 => ConsoleColor.Red,
+            > 5000000 => ConsoleColor.Yellow,
+            _ => ConsoleColor.Green
+        };
+
+        var sizeFormatted = response.Size switch
+        {
+            > 1000000 => $"{response.Size / 1000000M} MB",
+            > 1000 => $"{response.Size / 1000M} KB",
+            _ => $"{response.Size} B"
+        };
+        
+        // Time.
+        var timeColor = response.Time switch
+        {
+            > 1000 => ConsoleColor.Red,
+            > 300 => ConsoleColor.Yellow,
+            _ => ConsoleColor.Green
+        };
+
+        var timeFormatted = response.Time switch
+        {
+            > 60 * 1000 => $"{response.Time / (60M * 1000M)} m",
+            > 1000 => $"{response.Time / 1000M} s",
+            _ => $"{response.Time} ms"
+        };
+
+        // Status.
+        var statusColor = response.StatusCode switch
         {
             >= 200 and <= 299 => ConsoleColor.Green,
             <= 399 => ConsoleColor.Yellow,
@@ -479,12 +510,19 @@ internal class Scanner
             _ => ConsoleColor.White
         };
 
+        // Output.
         ConsoleEx.Write(
             "> ",
-            color,
-            statusCode,
+            sizeColor,
+            sizeFormatted,
+            "   ",
+            timeColor,
+            timeFormatted,
+            "   ",
+            statusColor,
+            response.StatusCode,
             " ",
-            this.GetStatusDescription(statusCode),
+            response.StatusDescription,
             Environment.NewLine);
     }
 
@@ -501,10 +539,8 @@ internal class Scanner
                       cancellationToken)
                   ?? throw new Exception(
                       $"Unable to get a valid HTTP response from {queueEntry.Url}");
-        
-        stopwatch.Stop();
 
-        this.LogResponseCode((int)res.StatusCode);
+        stopwatch.Stop();
 
         var body = await res.Content.ReadAsByteArrayAsync(cancellationToken);
 
@@ -517,8 +553,11 @@ internal class Scanner
             Size = body.Length,
             StatusCode = (int)res.StatusCode,
             StatusCodeIsSuccess = res.IsSuccessStatusCode,
+            StatusDescription = this.GetStatusDescription((int)res.StatusCode),
             Time = stopwatch.ElapsedMilliseconds
         };
+
+        this.LogResponse(queueEntry.Response);
     }
 
     /// <summary>
@@ -533,22 +572,23 @@ internal class Scanner
                       this._options.PlaywrightConfig?.PageGotoOptions)
                   ?? throw new Exception(
                       $"Unable to get valid Playwright response from {queueEntry.Url}");
-        
+
         stopwatch.Stop();
 
-        this.LogResponseCode(res.Status);
-
         var body = await res.BodyAsync();
-        
+
         queueEntry.Response = new()
         {
             Headers = res.Headers,
             Size = body.Length,
             StatusCode = res.Status,
             StatusCodeIsSuccess = res.Status is >= 200 and <= 299,
+            StatusDescription = this.GetStatusDescription(res.Status),
             Time = stopwatch.ElapsedMilliseconds
         };
-        
+
+        this.LogResponse(queueEntry.Response);
+
         await this.ExtractHtmlData(queueEntry);
 
         if (queueEntry.UrlType is UrlType.ExternalWebpage)
@@ -570,7 +610,7 @@ internal class Scanner
         {
             return;
         }
-        
+
         var path = Path.Combine(
             GetReportPath(),
             "screenshots");

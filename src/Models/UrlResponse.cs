@@ -51,6 +51,11 @@ internal class UrlResponse
     public required bool StatusCodeIsSuccess { get; init; }
     
     /// <summary>
+    /// Response status description.
+    /// </summary>
+    public required string StatusDescription { get; init; }
+    
+    /// <summary>
     /// Response time in milliseconds.
     /// </summary>
     public required long Time { get; init; }
