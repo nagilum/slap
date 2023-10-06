@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Globalization;
 using System.Text.Json;
 using Microsoft.Playwright;
 using Slap.Models;
@@ -471,6 +472,8 @@ internal class Scanner
     /// <param name="response">Response.</param>
     private void LogResponse(UrlResponse response)
     {
+        var culture = new CultureInfo("en-US");
+        
         // Size.
         var sizeColor = response.Size switch
         {
@@ -481,8 +484,8 @@ internal class Scanner
 
         var sizeFormatted = response.Size switch
         {
-            > 1000000 => $"{response.Size / 1000000M} MB",
-            > 1000 => $"{response.Size / 1000M} KB",
+            > 1000000 => $"{(response.Size / 1000000M).ToString(culture)} MB",
+            > 1000 => $"{(response.Size / 1000M).ToString(culture)} KB",
             _ => $"{response.Size} B"
         };
         
@@ -496,8 +499,8 @@ internal class Scanner
 
         var timeFormatted = response.Time switch
         {
-            > 60 * 1000 => $"{response.Time / (60M * 1000M)} m",
-            > 1000 => $"{response.Time / 1000M} s",
+            > 60 * 1000 => $"{(response.Time / (60M * 1000M)).ToString(culture)} m",
+            > 1000 => $"{(response.Time / 1000M).ToString(culture)} s",
             _ => $"{response.Time} ms"
         };
 
