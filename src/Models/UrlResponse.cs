@@ -31,6 +31,11 @@ internal class UrlResponse
     public List<MetaTag>? MetaTags { get; set; }
     
     /// <summary>
+    /// Path to the screenshot file.
+    /// </summary>
+    public string? ScreenshotPath { get; set; }
+    
+    /// <summary>
     /// Response body size, in bytes.
     /// </summary>
     public required int Size { get; init; }

@@ -252,10 +252,9 @@ internal class Scanner
         var titles = this.Page!.Locator("//title");
         var count = await titles.CountAsync();
 
-        for (var i = 0; i < count; i++)
+        if (count > 0)
         {
-            queueEntry.Response!.Title = await titles.Nth(i).TextContentAsync();
-            break;
+            queueEntry.Response!.Title = await titles.Nth(0).TextContentAsync();
         }
 
         var metas = this.Page!.Locator("//meta");
@@ -558,6 +557,38 @@ internal class Scanner
         }
 
         await this.ExtractLinks(queueEntry);
+        await this.SaveScreenshot(queueEntry);
+    }
+
+    /// <summary>
+    /// Save screenshot of the page to disk.
+    /// </summary>
+    /// <param name="queueEntry">Queue entry.</param>
+    private async Task SaveScreenshot(QueueEntry queueEntry)
+    {
+        if (!this._options.SaveScreenshots)
+        {
+            return;
+        }
+        
+        var path = Path.Combine(
+            GetReportPath(),
+            "screenshots");
+
+        if (!Directory.Exists(path))
+        {
+            Directory.CreateDirectory(path);
+        }
+
+        path = Path.Combine(
+            path,
+            $"{queueEntry.Id}.png");
+
+        await this.Page!.ScreenshotAsync(
+            new()
+            {
+                Path = path
+            });
     }
 
     /// <summary>

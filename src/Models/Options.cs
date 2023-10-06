@@ -27,5 +27,5 @@ internal class Options
     /// <summary>
     /// Whether to save screenshots for each URL scanned.
     /// </summary>
-    public bool SaveScreenshots { get; set; } // TODO
+    public bool SaveScreenshots { get; set; }
 }
