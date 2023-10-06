@@ -1,11 +1,13 @@
-﻿using Slap.Models;
+﻿using System.Text.Json;
+using Slap.Models;
+using Slap.Tools;
 
 namespace Slap.Core;
 
 internal class Scanner
 {
     #region Properties and constructor
-    
+
     /// <summary>
     /// Options.
     /// </summary>
@@ -33,9 +35,9 @@ internal class Scanner
             }
         };
     }
-    
+
     #endregion
-    
+
     #region Public functions
 
     /// <summary>
@@ -44,18 +46,32 @@ internal class Scanner
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task ProcessQueue(CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
-        
         /*
-          * 2xx status code
-          * Favicon
-          * Console logs
-          * Verify HTML title tag.
-          * Verify HTML meta description.
-          * Verify HTML meta keywords.
-          * Asset links
-          * External links
-        */
+         * 2xx status code
+         * Favicon
+         * Console logs
+         * Verify HTML title tag.
+         * Verify HTML meta description.
+         * Verify HTML meta keywords.
+         * Check asset links
+         * Check external links
+         */
+
+        var queueIndex = -1;
+
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            queueIndex++;
+
+            if (queueIndex == this._queue.Count)
+            {
+                break;
+            }
+
+            var queueEntry = this._queue[queueIndex];
+            
+            throw new NotImplementedException();            
+        }
     }
 
     /// <summary>
@@ -72,11 +88,73 @@ internal class Scanner
     /// </summary>
     public async Task WriteLogs()
     {
-        throw new NotImplementedException();
+        var path = Path.Combine(
+            this._options.LogPath,
+            "logs",
+            this._queue[0].Url.Host);
+
+        // Write options to disk.
+        await this.WriteLog(path, "options.json", this._options);
+
+        // Write queue to disk.
+        await this.WriteLog(path, "queue.json", this._queue);
     }
-    
+
     #endregion
-    
+
     #region Helper functions
+
+    /// <summary>
+    /// Write a single log to disk.
+    /// </summary>
+    /// <param name="path">Path.</param>
+    /// <param name="filename">Filename.</param>
+    /// <param name="data">Data to write.</param>
+    /// <typeparam name="T">Data-type.</typeparam>
+    private async Task WriteLog<T>(
+        string path,
+        string filename,
+        T data)
+    {
+        var fillPath = Path.Combine(
+            path,
+            filename);
+        
+        try
+        {
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+            
+            await using var stream = File.OpenWrite(fillPath);
+            await JsonSerializer.SerializeAsync(
+                stream,
+                data,
+                new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true
+                });
+
+            ConsoleEx.Write(
+                "Wrote to file ",
+                ConsoleColor.Yellow,
+                fillPath,
+                Environment.NewLine);
+        }
+        catch (Exception ex)
+        {
+            ConsoleEx.Write(
+                "Error while writing to file ",
+                ConsoleColor.Yellow,
+                fillPath,
+                Environment.NewLine,
+                ConsoleColor.Red,
+                ex.Message,
+                Environment.NewLine);
+        }
+    }
+
     #endregion
 }

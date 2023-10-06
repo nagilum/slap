@@ -10,6 +10,11 @@ internal class QueueEntry
     public DateTimeOffset Added { get; } = DateTimeOffset.Now;
     
     /// <summary>
+    /// Unique ID.
+    /// </summary>
+    public Guid Id { get; } = Guid.NewGuid();
+    
+    /// <summary>
     /// Type of URL.
     /// </summary>
     public required UrlType UrlType { get; init; }
