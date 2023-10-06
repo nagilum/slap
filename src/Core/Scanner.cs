@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics;
+using System.Text.Json;
 using Microsoft.Playwright;
 using Slap.Models;
 using Slap.Tools;
@@ -456,14 +457,18 @@ internal class Scanner
     /// <param name="cancellationToken">Cancellation token.</param>
     private async Task PerformHttpClientRequest(QueueEntry queueEntry, CancellationToken cancellationToken)
     {
+        var stopwatch = Stopwatch.StartNew();
         var res = await this._httpClient.GetAsync(
                       queueEntry.Url,
                       cancellationToken)
                   ?? throw new Exception(
                       $"Unable to get a valid HTTP response from {queueEntry.Url}");
+        
+        stopwatch.Stop();
 
         this.LogResponseCode((int)res.StatusCode);
 
+        queueEntry.Time = stopwatch.ElapsedMilliseconds;
         queueEntry.StatusCode = (int)res.StatusCode;
         queueEntry.StatusCodeIsSuccess = res.IsSuccessStatusCode;
 
@@ -478,14 +483,18 @@ internal class Scanner
     /// <param name="queueEntry">Queue entry.</param>
     private async Task PerformPlaywrightRequest(QueueEntry queueEntry)
     {
+        var stopwatch = Stopwatch.StartNew();
         var res = await this.Page!.GotoAsync(
                       queueEntry.Url.ToString(),
                       this._options.PlaywrightConfig?.PageGotoOptions)
                   ?? throw new Exception(
                       $"Unable to get valid Playwright response from {queueEntry.Url}");
+        
+        stopwatch.Stop();
 
         this.LogResponseCode(res.Status);
 
+        queueEntry.Time = stopwatch.ElapsedMilliseconds;
         queueEntry.StatusCode = res.Status;
         queueEntry.StatusCodeIsSuccess = res.Status is >= 200 and <= 299;
 

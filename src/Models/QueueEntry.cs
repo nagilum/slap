@@ -50,6 +50,11 @@ internal class QueueEntry
     public bool? StatusCodeIsSuccess { get; set; }
     
     /// <summary>
+    /// Response time in milliseconds.
+    /// </summary>
+    public long? Time { get; set; }
+    
+    /// <summary>
     /// URL.
     /// </summary>
     public required Uri Url { get; init; }
