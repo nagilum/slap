@@ -37,6 +37,13 @@ internal static class Program
 
         Console.CancelKeyPress += (_, eventArgs) =>
         {
+            ConsoleEx.Write(
+                Environment.NewLine,
+                ConsoleColor.Red,
+                "Aborted bu user!",
+                Environment.NewLine,
+                Environment.NewLine);
+            
             try
             {
                 tokenSource.Cancel();
