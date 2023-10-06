@@ -1,0 +1,339 @@
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
+using Slap.Exceptions;
+using Slap.Models;
+using Slap.Tools;
+
+namespace Slap.Core;
+
+internal static class Program
+{
+    /// <summary>
+    /// Init all the things..
+    /// </summary>
+    /// <param name="args">Command-line arguments.</param>
+    private static async Task Main(string[] args)
+    {
+        if (args.Length == 0 ||
+            args.Any(n => n is "-h" or "--help"))
+        {
+            ShowProgramUsage();
+            return;
+        }
+
+        if (!ParseCmdArgs(args, out var url, out var options))
+        {
+            return;
+        }
+
+        var scanner = new Scanner(url, options);
+
+        if (!await scanner.SetupPlaywright())
+        {
+            return;
+        }
+
+        var tokenSource = new CancellationTokenSource();
+
+        Console.CancelKeyPress += (_, eventArgs) =>
+        {
+            try
+            {
+                tokenSource.Cancel();
+            }
+            catch
+            {
+                // Do nothing.
+            }
+            
+            eventArgs.Cancel = true;
+        };
+        
+        await scanner.ProcessQueue(tokenSource.Token);
+        await scanner.WriteLogs();
+    }
+
+    /// <summary>
+    /// Attempt to parse cmd-args to valid options and initial URL.
+    /// </summary>
+    /// <param name="args">Command-line arguments.</param>
+    /// <param name="url">Initial URL.</param>
+    /// <param name="options">Parsed options.</param>
+    /// <returns>Success.</returns>
+    private static bool ParseCmdArgs(
+        IReadOnlyList<string> args,
+        [NotNullWhen(true)] out Uri? url,
+        out Options options)
+    {
+        url = null;
+        options = new();
+        
+        var skip = false;
+
+        for (var i = 0; i < args.Count; i++)
+        {
+            if (skip)
+            {
+                skip = false;
+                continue;
+            }
+
+            switch (args[i])
+            {
+                // Set rendering engine.
+                case "-re":
+                    if (i == args.Count - 1)
+                    {
+                        ConsoleEx.WriteException(
+                            ConsoleObjectsException.From(
+                                "Argument ",
+                                ConsoleColor.Blue,
+                                args[i],
+                                ConsoleColorEx.ResetColor,
+                                " must be followed by a string indicating which rendering engine to use."));
+
+                        return false;
+                    }
+
+                    switch (args[i + 1].ToLower())
+                    {
+                        case "chromium":
+                            options.RenderingEngine = RenderingEngine.Chromium;
+                            break;
+                        
+                        case "firefox":
+                            options.RenderingEngine = RenderingEngine.Firefox;
+                            break;
+                        
+                        case "webkit":
+                            options.RenderingEngine = RenderingEngine.Webkit;
+                            break;
+                        
+                        default:
+                            ConsoleEx.WriteException(
+                                ConsoleObjectsException.From(
+                                    "Invalid value ",
+                                    ConsoleColor.Red,
+                                    args[i + 1],
+                                    ConsoleColorEx.ResetColor,
+                                    " for parameter ",
+                                    ConsoleColor.Blue,
+                                    args[i],
+                                    ConsoleColorEx.ResetColor));
+
+                            return false;
+                    }
+
+                    skip = true;
+                    break;
+                
+                // Treat links to subdomains as same domain (internal).
+                case "-sd":
+                    options.SubDomainsAreEqual = true;
+                    break;
+                
+                // Add a domain to be treated as an internal domain.
+                case "-ad":
+                    if (i == args.Count - 1)
+                    {
+                        ConsoleEx.WriteException(
+                            ConsoleObjectsException.From(
+                                "Argument ",
+                                ConsoleColor.Blue,
+                                args[i],
+                                ConsoleColorEx.ResetColor,
+                                " must be followed by a string indicating a domain to add."));
+
+                        return false;
+                    }
+
+                    options.CustomDomains.Add(args[i + 1]);
+                    skip = true;
+                    
+                    break;
+                
+                // Set log path.
+                case "-lp":
+                    if (i == args.Count - 1)
+                    {
+                        ConsoleEx.WriteException(
+                            ConsoleObjectsException.From(
+                                "Argument ",
+                                ConsoleColor.Blue,
+                                args[i],
+                                ConsoleColorEx.ResetColor,
+                                " must be followed by a valid path."));
+
+                        return false;
+                    }
+
+                    options.LogPath = args[i + 1];
+                    skip = true;
+                    
+                    break;
+                
+                // Load Playwright config.
+                case "-lc":
+                    if (i == args.Count - 1)
+                    {
+                        ConsoleEx.WriteException(
+                            ConsoleObjectsException.From(
+                                "Argument ",
+                                ConsoleColor.Blue,
+                                args[i],
+                                ConsoleColorEx.ResetColor,
+                                " must be followed by a valid path to a Playwright config file."));
+
+                        return false;
+                    }
+
+                    try
+                    {
+                        var json = File.ReadAllText(args[i + 1])
+                                   ?? throw new Exception(
+                                       $"Unable to read from {args[i + 1]}");
+
+                        var obj = JsonSerializer.Deserialize<PlaywrightConfig>(json)
+                                  ?? throw new Exception(
+                                      $"Unable to read Playwright config from {args[i + 1]}");
+
+                        options.PlaywrightConfig = obj;
+                    }
+                    catch (Exception ex)
+                    {
+                        ConsoleEx.WriteException(ex);
+                        return false;
+                    }
+
+                    skip = true;
+                    break;
+                
+                // Save screenshots.
+                case "-ss":
+                    options.SaveScreenshots = true;
+                    break;
+                
+                // Attempt to parse as URL.
+                default:
+                    if (!Uri.TryCreate(args[i], UriKind.Absolute, out var uri))
+                    {
+                        ConsoleEx.WriteException(
+                            ConsoleObjectsException.From(
+                                "Unable to parse ",
+                                ConsoleColor.Red,
+                                args[i],
+                                ConsoleColorEx.ResetColor,
+                                " to a valid URL."));
+
+                        return false;
+                    }
+
+                    url = uri;
+                    break;
+            }
+        }
+
+        return url is not null;
+    }
+
+    /// <summary>
+    /// Show program usage and options.
+    /// </summary>
+    private static void ShowProgramUsage()
+    {
+        /*
+         
+        Slap v0.2-beta
+
+        Slap a site and see what falls out. A simple command-line site check tool. Slap will start with the given URL and scan outwards till it has covered all links from the same domain/subdomain.
+
+        Usage:
+          slap <url> [<options>]
+
+        Options:
+          -re <engine>   Set rendering engine. Defaults to Chromium.
+          -sd            Treat links to subdomains as same domain (internal).
+          -ad <domain>   Add a domain to be treated as an internal domain.
+          -lp <path>     Set log path. Defaults to current directory.
+          -lc <path>     Load Playwright config file. See documentation for structure.
+          -ss            Save screenshot of each webpage URL.
+
+        Source and documentation over at https://github.com/nagilum/slap
+            
+        */
+
+        ConsoleEx.Write(
+            "Slap v0.2-beta",
+            Environment.NewLine,
+            Environment.NewLine,
+            "Slap a site and see what falls out. A simple command-line site check tool. Slap will start with the given URL and scan outwards till it has covered all links from the same domain/subdomain.",
+            Environment.NewLine,
+            Environment.NewLine);
+        
+        ConsoleEx.Write(
+            "Usage:",
+            Environment.NewLine,
+            "  slap ",
+            ConsoleColor.Green,
+            "<url> ",
+            ConsoleColor.Blue,
+            "[<options>]",
+            ConsoleColorEx.ResetColor,
+            Environment.NewLine,
+            Environment.NewLine,
+            "Options:",
+            Environment.NewLine);
+        
+        ConsoleEx.Write(
+            "  -re ",
+            ConsoleColor.Blue,
+            "<engine>   ",
+            ConsoleColorEx.ResetColor,
+            "Set rendering engine. Defaults to Chromium.",
+            Environment.NewLine);
+        
+        ConsoleEx.Write(
+            "  -sd            ",
+            ConsoleColorEx.ResetColor,
+            "Treat links to subdomains as same domain (internal).",
+            Environment.NewLine);
+        
+        ConsoleEx.Write(
+            "  -ad ",
+            ConsoleColor.Blue,
+            "<domain>   ",
+            ConsoleColorEx.ResetColor,
+            "Add a domain to be treated as an internal domain.",
+            Environment.NewLine);
+        
+        ConsoleEx.Write(
+            "  -lp ",
+            ConsoleColor.Blue,
+            "<path>     ",
+            ConsoleColorEx.ResetColor,
+            "Set log path. Defaults to current directory.",
+            Environment.NewLine);
+        
+        ConsoleEx.Write(
+            "  -lc ",
+            ConsoleColor.Blue,
+            "<path>     ",
+            ConsoleColorEx.ResetColor,
+            "Load Playwright config file. See documentation for structure.",
+            Environment.NewLine);
+        
+        ConsoleEx.Write(
+            "  -ss            ",
+            ConsoleColorEx.ResetColor,
+            "Save screenshot of each webpage URL.",
+            Environment.NewLine,
+            Environment.NewLine);
+        
+        ConsoleEx.Write(
+            "Source and documentation over at ",
+            ConsoleColor.Blue,
+            "https://github.com/nagilum/slap",
+            Environment.NewLine,
+            Environment.NewLine);
+    }
+}
