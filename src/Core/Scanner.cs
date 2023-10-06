@@ -140,8 +140,6 @@ internal class Scanner
                 {
                     await this.PerformHttpClientRequest(queueEntry, cancellationToken);
                 }
-
-                queueEntry.Finished = DateTimeOffset.Now;
             }
             catch (Exception ex)
             {
@@ -154,6 +152,8 @@ internal class Scanner
                     ex.Message,
                     Environment.NewLine);
             }
+            
+            queueEntry.Finished = DateTimeOffset.Now;
         }
         
         this.Finished = DateTimeOffset.Now;
@@ -220,7 +220,7 @@ internal class Scanner
         await this.WriteReport(path, "queue.json", this._queue);
 
         var statusCodes = this._queue
-            .Select(n => n.StatusCode ?? 0)
+            .Select(n => n.Response?.StatusCode ?? 0)
             .Distinct()
             .OrderBy(n => n)
             .ToList();
@@ -236,7 +236,7 @@ internal class Scanner
             statusCodes = statusCodes
                 .ToDictionary(
                     n => n,
-                    n => this._queue.Count(m => m.StatusCode == n))
+                    n => this._queue.Count(m => m.Response?.StatusCode == n))
         };
 
         await this.WriteReport(path, "stats.json", obj);
@@ -468,13 +468,15 @@ internal class Scanner
 
         this.LogResponseCode((int)res.StatusCode);
 
-        queueEntry.Time = stopwatch.ElapsedMilliseconds;
-        queueEntry.StatusCode = (int)res.StatusCode;
-        queueEntry.StatusCodeIsSuccess = res.IsSuccessStatusCode;
-
         var body = await res.Content.ReadAsByteArrayAsync(cancellationToken);
 
-        queueEntry.Size = body.Length;
+        queueEntry.Response = new()
+        {
+            Size = body.Length,
+            StatusCode = (int)res.StatusCode,
+            StatusCodeIsSuccess = res.IsSuccessStatusCode,
+            Time = stopwatch.ElapsedMilliseconds
+        };
     }
 
     /// <summary>
@@ -494,13 +496,15 @@ internal class Scanner
 
         this.LogResponseCode(res.Status);
 
-        queueEntry.Time = stopwatch.ElapsedMilliseconds;
-        queueEntry.StatusCode = res.Status;
-        queueEntry.StatusCodeIsSuccess = res.Status is >= 200 and <= 299;
-
         var body = await res.BodyAsync();
-
-        queueEntry.Size = body.Length;
+        
+        queueEntry.Response = new()
+        {
+            Size = body.Length,
+            StatusCode = res.Status,
+            StatusCodeIsSuccess = res.Status is >= 200 and <= 299,
+            Time = stopwatch.ElapsedMilliseconds
+        };
 
         if (queueEntry.UrlType is UrlType.ExternalWebpage)
         {
