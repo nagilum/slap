@@ -5,14 +5,14 @@ namespace Slap.Models;
 internal class Options
 {
     /// <summary>
-    /// Custom added domains to be treated as internal domains.
+    /// All valid domains.
     /// </summary>
-    public List<string> CustomDomains { get; } = new();
+    public List<string> InternalDomains { get; } = new();
 
     /// <summary>
-    /// Log path.
+    /// Report path.
     /// </summary>
-    public string LogPath { get; set; } = Directory.GetCurrentDirectory();
+    public string? ReportPath { get; set; }
     
     /// <summary>
     /// Playwright config.

@@ -13,4 +13,9 @@ internal class PlaywrightConfig
     /// Playwright browser launch options.
     /// </summary>
     public BrowserTypeLaunchOptions? BrowserTypeLaunchOptions { get; init; }
+    
+    /// <summary>
+    /// Playwright page go-to options.
+    /// </summary>
+    public PageGotoOptions? PageGotoOptions { get; init; }
 }

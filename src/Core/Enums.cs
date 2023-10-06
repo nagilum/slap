@@ -1,4 +1,6 @@
-﻿namespace Slap.Core;
+﻿using System.Text.Json.Serialization;
+
+namespace Slap.Core;
 
 public enum ConsoleColorEx
 {
@@ -13,6 +15,7 @@ public enum ConsoleColorEx
     NextColorIsBackground
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum RenderingEngine
 {
     /// <summary>
@@ -31,20 +34,26 @@ public enum RenderingEngine
     Webkit
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum UrlType
 {
     /// <summary>
-    /// Webpage to be scanned.
+    /// External asset.
     /// </summary>
-    Webpage,
+    ExternalAsset,
     
     /// <summary>
-    /// Scripts, stylesheets, etc..
+    /// External webpage.
     /// </summary>
-    Asset,
+    ExternalWebpage,
     
     /// <summary>
-    /// External links.
+    /// Internal asset.
     /// </summary>
-    External
+    InternalAsset,
+    
+    /// <summary>
+    /// Internal webpage.
+    /// </summary>
+    InternalWebpage
 }

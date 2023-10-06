@@ -50,7 +50,7 @@ internal static class Program
         };
         
         await scanner.ProcessQueue(tokenSource.Token);
-        await scanner.WriteLogs();
+        await scanner.WriteReports();
     }
 
     /// <summary>
@@ -147,13 +147,18 @@ internal static class Program
                         return false;
                     }
 
-                    options.CustomDomains.Add(args[i + 1]);
-                    skip = true;
+                    var host = args[i + 1].ToLower();
+
+                    if (!options.InternalDomains.Contains(host))
+                    {
+                        options.InternalDomains.Add(host);
+                    }
                     
+                    skip = true;
                     break;
                 
-                // Set log path.
-                case "-lp":
+                // Set report path.
+                case "-rp":
                     if (i == args.Count - 1)
                     {
                         ConsoleEx.WriteException(
@@ -167,7 +172,7 @@ internal static class Program
                         return false;
                     }
 
-                    options.LogPath = args[i + 1];
+                    options.ReportPath = args[i + 1];
                     skip = true;
                     
                     break;
@@ -254,7 +259,7 @@ internal static class Program
           -re <engine>   Set rendering engine. Defaults to Chromium.
           -sd            Treat links to subdomains as same domain (internal).
           -ad <domain>   Add a domain to be treated as an internal domain.
-          -lp <path>     Set log path. Defaults to current directory.
+          -rp <path>     Set report path. Defaults to current directory.
           -lc <path>     Load Playwright config file. See documentation for structure.
           -ss            Save screenshot of each webpage URL.
 
@@ -307,11 +312,15 @@ internal static class Program
             Environment.NewLine);
         
         ConsoleEx.Write(
-            "  -lp ",
+            "  -rp ",
             ConsoleColor.Blue,
             "<path>     ",
             ConsoleColorEx.ResetColor,
-            "Set log path. Defaults to current directory.",
+            "Set report path. Defaults to ",
+            ConsoleColor.Yellow,
+            "current directory/reports",
+            ConsoleColorEx.ResetColor,
+            ".",
             Environment.NewLine);
         
         ConsoleEx.Write(
