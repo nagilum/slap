@@ -4,7 +4,7 @@ Slap a site and see what falls out. A simple command-line site check tool. Slap 
 
 ## Download and Build
 
-```powershell
+```bash
 git clone https://github.com/nagilum/slap
 cd slap/src
 dotnet build
@@ -17,7 +17,9 @@ dotnet build
 
 Set which rendering engine to use.
 
-> `-re <name-of-engine>`
+```
+-re <name-of-engine>
+```
 
 Valid options are:
 
@@ -32,11 +34,15 @@ The default value is `chromium`.
 
 Add a domain to be treated as an internal domain.
 
-> `-ad <domain>`
+```
+-ad <domain>
+```
 
 Let's say you're scanning `https://example.com` but it links to `docs.example.com` and you want it treated as an internal domain and scanned and followed, then add it, like so:
 
-> `slap https://example.com -ad docs.example.com`
+```
+slap https://example.com -ad docs.example.com
+```
 
 This will follow links on both example.com and docs.example.com.
 
@@ -45,7 +51,9 @@ This will follow links on both example.com and docs.example.com.
 
 Set the folder path to save the report after scanning. It defaults to the current directory.
 
-> `-rp <path>`
+```
+-rp <path>
+```
 
 If the path does not exist, it will be created.
 
@@ -54,9 +62,11 @@ If the path does not exist, it will be created.
 
 Load custom config for the various Playwright objects.
 
-> `-lc <path>`
+```
+-lc <path>
+```
 
-_Structure_
+#### Structure
 
 ```json
 {
@@ -77,6 +87,8 @@ The 3 objects are Playwright objects. Read more about them here:
 
 Set to save screenshots of each internal page that is scanned.
 
-> `-ss`
+```
+-ss
+```
 
 The size of the screenshot can be defined by setting [ScreenSize](https://www.fuget.org/packages/Microsoft.Playwright/1.14.0/lib/netstandard2.0/Microsoft.Playwright.dll/Microsoft.Playwright/ScreenSize) in [BrowserNewPageOptions](https://www.fuget.org/packages/Microsoft.Playwright/1.14.0/lib/netstandard2.0/Microsoft.Playwright.dll/Microsoft.Playwright/BrowserNewPageOptions)
