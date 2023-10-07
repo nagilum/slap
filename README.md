@@ -35,6 +35,8 @@ The default value is `chromium`.
 slap https://example.com -re firefox
 ```
 
+This will set the rendering engine to `Firefox`.
+
 
 ### Add Internal Domain
 
@@ -50,7 +52,7 @@ Add a domain to be treated as an internal domain.
 slap https://example.com -ad docs.example.com
 ```
 
-This will follow links on both example.com and docs.example.com.
+This will follow links on both `example.com` and `docs.example.com`.
 
 
 ### Set Report Path
@@ -69,6 +71,8 @@ If the path does not exist, it will be created.
 slap https://example.com -rp ~/slap-reports/
 ```
 
+This will set the report path to `~/slap-reports/`.
+
 
 ### Load Playwright Config
 
@@ -83,6 +87,8 @@ Load custom config for the various Playwright objects.
 ```
 slap https://example.com -lc ~/slap-config/default.json
 ```
+
+This will load the Playwright config file from `~/slap-config/default.json`.
 
 
 #### Config File Structure
@@ -117,3 +123,5 @@ The size of the screenshot can be defined by setting [ScreenSize](https://www.fu
 ```
 slap https://example.com -ss
 ```
+
+This will tell the program to save a screenshot for each internal page that's scanned.
