@@ -4,6 +4,8 @@
 
 A simple command-line site check tool. Slap will start with the given URL and scan outwards till it has covered all links from the same domain/subdomain.
 
+![CLI Example](assets/cli-example.png?raw=true)
+
 ## Download and Build
 
 ```bash
