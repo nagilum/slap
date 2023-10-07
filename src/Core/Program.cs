@@ -248,28 +248,10 @@ internal static class Program
     /// </summary>
     private static void ShowProgramUsage()
     {
-        /*
-         
-        Slap v0.2-beta
-
-        Slap a site and see what falls out. A simple command-line site check tool. Slap will start with the given URL and scan outwards till it has covered all links from the same domain/subdomain.
-
-        Usage:
-          slap <url> [<options>]
-
-        Options:
-          -re <engine>   Set rendering engine. Defaults to Chromium.
-          -ad <domain>   Add a domain to be treated as an internal domain.
-          -rp <path>     Set report path. Defaults to current directory.
-          -lc <path>     Load Playwright config file. See documentation for structure.
-          -ss            Save screenshot of each webpage URL.
-
-        Source and documentation over at https://github.com/nagilum/slap
-            
-        */
-
         ConsoleEx.Write(
-            "Slap v0.2-beta",
+            ConsoleColor.White,
+            "Slap v1.2",
+            ConsoleColorEx.ResetColor,
             Environment.NewLine,
             Environment.NewLine,
             "Slap a site and see what falls out. A simple command-line site check tool. Slap will start with the given URL and scan outwards till it has covered all links from the same domain/subdomain.",
