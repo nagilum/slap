@@ -1,6 +1,8 @@
 # Slap
 
-Slap a site and see what falls out. A simple command-line site check tool. Slap will start with the given URL and scan outwards till it has covered all links from the same domain/subdomain.
+> Slap a site and see what falls out.
+
+A simple command-line site check tool. Slap will start with the given URL and scan outwards till it has covered all links from the same domain/subdomain.
 
 ## Download and Build
 
