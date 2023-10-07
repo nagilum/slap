@@ -82,14 +82,11 @@ internal class Scanner
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task ProcessQueue(CancellationToken cancellationToken)
     {
-        /*
-         * Favicon
-         * Console logs
-         */
-
         ConsoleEx.Write(
             "Started ",
+            ConsoleColor.Yellow,
             this.Started.ToString("yyyy-MM-dd HH:mm:ss"),
+            Environment.NewLine,
             Environment.NewLine);
 
         var queueIndex = -1;
@@ -153,6 +150,19 @@ internal class Scanner
         }
 
         this.Finished = DateTimeOffset.Now;
+        
+        ConsoleEx.Write(
+            Environment.NewLine,
+            "Finished ",
+            ConsoleColor.Yellow,
+            this.Finished.Value.ToString("yyyy-MM-dd HH:mm:ss"),
+            ConsoleColorEx.ResetColor,
+            Environment.NewLine,
+            "Took ",
+            ConsoleColor.Yellow,
+            this.Finished - this.Started,
+            Environment.NewLine,
+            Environment.NewLine);
     }
 
     /// <summary>
@@ -211,6 +221,12 @@ internal class Scanner
         var path = this.GetReportPath();
 
         this._options.ReportPath = path;
+        
+        ConsoleEx.Write(
+            "Writing reports to ",
+            ConsoleColor.Yellow,
+            path,
+            Environment.NewLine);
 
         await this.WriteReport(path, "options.json", this._options);
         await this.WriteReport(path, "queue.json", this._queue);
@@ -660,9 +676,10 @@ internal class Scanner
                 });
 
             ConsoleEx.Write(
-                "Wrote to file ",
+                "Wrote data to file ",
                 ConsoleColor.Yellow,
-                fullPath,
+                "./",
+                filename,
                 Environment.NewLine);
         }
         catch (Exception ex)
@@ -670,7 +687,8 @@ internal class Scanner
             ConsoleEx.Write(
                 "Error while writing to file ",
                 ConsoleColor.Yellow,
-                fullPath,
+                "./",
+                filename,
                 Environment.NewLine,
                 ConsoleColor.Red,
                 ex.Message,
