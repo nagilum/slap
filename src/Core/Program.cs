@@ -11,7 +11,7 @@ internal static class Program
     /// <summary>
     /// Init all the things..
     /// </summary>
-    /// <param name="args">Command-line arguments.</param>
+    /// <param name="args">Command line arguments.</param>
     private static async Task Main(string[] args)
     {
         if (args.Length == 0 ||
@@ -63,7 +63,7 @@ internal static class Program
     /// <summary>
     /// Attempt to parse cmd-args to valid options and initial URL.
     /// </summary>
-    /// <param name="args">Command-line arguments.</param>
+    /// <param name="args">Command line arguments.</param>
     /// <param name="url">Initial URL.</param>
     /// <param name="options">Parsed options.</param>
     /// <returns>Success.</returns>
