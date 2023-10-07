@@ -221,11 +221,17 @@ internal class Scanner
         var path = this.GetReportPath();
 
         this._options.ReportPath = path;
+
+        var relPath = Path.GetRelativePath(
+            Directory.GetCurrentDirectory(),
+            path);
         
         ConsoleEx.Write(
             "Writing reports to ",
             ConsoleColor.Yellow,
-            path,
+            ".",
+            Path.DirectorySeparatorChar,
+            relPath,
             Environment.NewLine);
 
         await this.WriteReport(path, "options.json", this._options);
@@ -678,7 +684,8 @@ internal class Scanner
             ConsoleEx.Write(
                 "Wrote data to file ",
                 ConsoleColor.Yellow,
-                "./",
+                ".",
+                Path.DirectorySeparatorChar,
                 filename,
                 Environment.NewLine);
         }
@@ -687,7 +694,8 @@ internal class Scanner
             ConsoleEx.Write(
                 "Error while writing to file ",
                 ConsoleColor.Yellow,
-                "./",
+                ".",
+                Path.DirectorySeparatorChar,
                 filename,
                 Environment.NewLine,
                 ConsoleColor.Red,
