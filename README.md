@@ -29,6 +29,12 @@ Valid options are:
 
 The default value is `chromium`.
 
+#### Example
+
+```
+slap https://example.com -re firefox
+```
+
 
 ### Add Internal Domain
 
@@ -38,7 +44,7 @@ Add a domain to be treated as an internal domain.
 -ad <domain>
 ```
 
-Let's say you're scanning `https://example.com` but it links to `docs.example.com` and you want it treated as an internal domain and scanned and followed, then add it, like so:
+#### Example
 
 ```
 slap https://example.com -ad docs.example.com
@@ -57,6 +63,12 @@ Set the folder path to save the report after scanning. It defaults to the curren
 
 If the path does not exist, it will be created.
 
+#### Example
+
+```
+slap https://example.com -rp ~/slap-reports/
+```
+
 
 ### Load Playwright Config
 
@@ -66,7 +78,14 @@ Load custom config for the various Playwright objects.
 -lc <path>
 ```
 
-#### Structure
+#### Example
+
+```
+slap https://example.com -lc ~/slap-config/default.json
+```
+
+
+#### Config File Structure
 
 ```json
 {
@@ -92,3 +111,9 @@ Set to save screenshots of each internal page that is scanned.
 ```
 
 The size of the screenshot can be defined by setting [ScreenSize](https://www.fuget.org/packages/Microsoft.Playwright/1.14.0/lib/netstandard2.0/Microsoft.Playwright.dll/Microsoft.Playwright/ScreenSize) in [BrowserNewPageOptions](https://www.fuget.org/packages/Microsoft.Playwright/1.14.0/lib/netstandard2.0/Microsoft.Playwright.dll/Microsoft.Playwright/BrowserNewPageOptions)
+
+#### Example
+
+```
+slap https://example.com -ss
+```
