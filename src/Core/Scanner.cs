@@ -646,12 +646,7 @@ internal class Scanner
         try
         {
             var results = await this.Page!.RunAxe();
-
-            queueEntry.AccessibilityResults = new AccessibilityResult
-            {
-                Incomplete = results.Incomplete,
-                Violations = results.Violations
-            };
+            queueEntry.AccessibilityResults = new(results);
         }
         catch (Exception ex)
         {
