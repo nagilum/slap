@@ -5,6 +5,11 @@ namespace Slap.Models;
 internal class QueueEntry
 {
     /// <summary>
+    /// Results from Axe accessibility scan.
+    /// </summary>
+    public AccessibilityResult? AccessibilityResults { get; set; }
+    
+    /// <summary>
     /// When the queue entry was added.
     /// </summary>
     public DateTimeOffset Added { get; } = DateTimeOffset.Now;

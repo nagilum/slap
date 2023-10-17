@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
+using Deque.AxeCore.Playwright;
 using Microsoft.Playwright;
 using Slap.Models;
 using Slap.Tools;
@@ -150,7 +151,7 @@ internal class Scanner
         }
 
         this.Finished = DateTimeOffset.Now;
-        
+
         ConsoleEx.Write(
             Environment.NewLine,
             "Finished ",
@@ -225,7 +226,7 @@ internal class Scanner
         var relPath = Path.GetRelativePath(
             Directory.GetCurrentDirectory(),
             path);
-        
+
         ConsoleEx.Write(
             "Writing reports to ",
             ConsoleColor.Yellow,
@@ -236,33 +237,45 @@ internal class Scanner
 
         await this.WriteReport(path, "options.json", this._options);
         await this.WriteReport(path, "queue.json", this._queue);
+        await this.WriteReport(path, "stats.json", this.CompileStatsObject());
+    }
 
+    #endregion
+
+    #region Helper functions
+
+    /// <summary>
+    /// Compile the object for stats report.
+    /// </summary>
+    /// <returns>Stats object.</returns>
+    private ScanStats CompileStatsObject()
+    {
         var statusCodes = this._queue
             .Select(n => n.Response?.StatusCode ?? 0)
             .Distinct()
             .OrderBy(n => n)
             .ToList();
 
-        var obj = new
+        var obj = new ScanStats
         {
-            meta = new
+            Meta = new()
             {
-                this.Started,
-                this.Finished,
-                Took = this.Finished - this.Started
+                Finished = this.Finished!.Value,
+                Started = this.Started
             },
-            statusCodes = statusCodes
+            StatusCodes = statusCodes
                 .ToDictionary(
                     n => n,
-                    n => this._queue.Count(m => m.Response?.StatusCode == n))
+                    n => this._queue.Count(m => m.Response?.StatusCode == n)),
+            Accessibility = new()
+            {
+                Incomplete = this._queue.Sum(n => n.AccessibilityResults?.Incomplete?.Length ?? 0),
+                Violations = this._queue.Sum(n => n.AccessibilityResults?.Violations?.Length ?? 0)
+            }
         };
 
-        await this.WriteReport(path, "stats.json", obj);
+        return obj;
     }
-
-    #endregion
-
-    #region Helper functions
 
     /// <summary>
     /// Extract various HTML metadata.
@@ -493,7 +506,7 @@ internal class Scanner
     private void LogResponse(UrlResponse response)
     {
         var culture = new CultureInfo("en-US");
-        
+
         // Size.
         var sizeColor = response.Size switch
         {
@@ -508,7 +521,7 @@ internal class Scanner
             > 1000 => $"{(response.Size / 1000M).ToString(culture)} KB",
             _ => $"{response.Size} B"
         };
-        
+
         // Time.
         var timeColor = response.Time switch
         {
@@ -621,6 +634,30 @@ internal class Scanner
 
         await this.ExtractLinks(queueEntry);
         await this.SaveScreenshot(queueEntry);
+        await this.RunAxeAccessibilityScan(queueEntry);
+    }
+
+    /// <summary>
+    /// Run Axe accessibility scan.
+    /// </summary>
+    /// <param name="queueEntry">Queue entry.</param>
+    private async Task RunAxeAccessibilityScan(QueueEntry queueEntry)
+    {
+        try
+        {
+            var results = await this.Page!.RunAxe();
+
+            queueEntry.AccessibilityResults = new AccessibilityResult
+            {
+                Incomplete = results.Incomplete,
+                Violations = results.Violations
+            };
+        }
+        catch (Exception ex)
+        {
+            queueEntry.Error = ex.Message;
+            queueEntry.ErrorType = ex.GetType().ToString();
+        }
     }
 
     /// <summary>
