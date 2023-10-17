@@ -22,7 +22,7 @@ public class AccessibilityResultItem
     /// <summary>
     /// Help URL.
     /// </summary>
-    public string? HelpUrl { get; init; }
+    public Uri? HelpUrl { get; init; }
     
     /// <summary>
     /// Impact assessment.
@@ -48,9 +48,13 @@ public class AccessibilityResultItem
         this.Id = item.Id;
         this.Description = item.Description;
         this.Help = item.Help;
-        this.HelpUrl = item.HelpUrl;
         this.Impact = item.Impact;
         this.Tags = item.Tags;
+
+        if (Uri.TryCreate(item.HelpUrl, UriKind.Absolute, out var uri))
+        {
+            this.HelpUrl = uri;
+        }
 
         this.Nodes = item.Nodes
             .Select(n => new ResultItemNode(n))
