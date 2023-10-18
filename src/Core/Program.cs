@@ -11,8 +11,51 @@ internal static class Program
     /// <summary>
     /// Program version.
     /// </summary>
-    public static Version ProgramVersion { get; } = new Version(1, 3); 
-    
+    public static Version ProgramVersion { get; } = new(1, 3);
+
+    /// <summary>
+    /// Report path.
+    /// </summary>
+    public static string ReportPath { get; set; } = null!;
+
+    /// <summary>
+    /// Generate the report path for this run.
+    /// </summary>
+    /// <param name="optionsReportPath">Report path, from options, if specified.</param>
+    /// <param name="hostname">Hostname of the initial URL.</param>
+    /// <returns>Full report path.</returns>
+    private static string GenerateReportPath(string? optionsReportPath, string hostname)
+    {
+        var path = optionsReportPath;
+
+        if (path is null)
+        {
+            var location = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
+                           ?? Directory.GetCurrentDirectory();
+
+            path = Path.Combine(location, "reports");
+        }
+
+        path = Path.Combine(
+            path,
+            hostname,
+            DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss"));
+
+        try
+        {
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+        }
+        catch
+        {
+            // Do nothing.
+        }
+
+        return path;
+    }
+
     /// <summary>
     /// Init all the things..
     /// </summary>
@@ -30,6 +73,8 @@ internal static class Program
         {
             return;
         }
+
+        ReportPath = GenerateReportPath(options.ReportPath, url.Host);
 
         var scanner = new Scanner(url, options);
 

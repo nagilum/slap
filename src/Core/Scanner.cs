@@ -220,26 +220,13 @@ internal class Scanner
     /// </summary>
     public async Task WriteReports()
     {
-        var path = this.GetReportPath();
+        var generator = new ReportGenerator(
+            this._options,
+            this._queue,
+            this.CompileStatsObject());
 
-        this._options.ReportPath = path;
-
-        var relPath = Path.GetRelativePath(
-            Directory.GetCurrentDirectory(),
-            path);
-
-        ConsoleEx.Write(
-            "Writing reports to ",
-            ConsoleColor.Yellow,
-            ".",
-            Path.DirectorySeparatorChar,
-            relPath,
-            Environment.NewLine);
-
-        await this.WriteReport(path, "options.json", this._options);
-        await this.WriteReport(path, "queue.json", this._queue);
-        await this.WriteReport(path, "stats.json", this.CompileStatsObject());
-        await this.WriteReport(Path.Combine(path, "report.html"));
+        await generator.WriteJsonReports();
+        await generator.WriteHtmlReport();
     }
 
     #endregion
@@ -275,6 +262,11 @@ internal class Scanner
                 Violations = this._queue.Sum(n => n.AccessibilityResults?.Violations?.Length ?? 0)
             }
         };
+
+        if (obj.StatusCodes.ContainsKey(0))
+        {
+            obj.StatusCodes[0] = this._queue.Count(n => n.Response is null);
+        }
 
         return obj;
     }
@@ -390,35 +382,6 @@ internal class Scanner
                 }
             }
         }
-    }
-
-    /// <summary>
-    /// Get report path for the scanner.
-    /// </summary>
-    /// <returns>Path.</returns>
-    private string GetReportPath()
-    {
-        var path = this._options.ReportPath ??
-                   Path.Combine(Directory.GetCurrentDirectory(), "reports");
-
-        path = Path.Combine(
-            path,
-            this._queue[0].Url.Host,
-            this.Started.ToString("yyyy-MM-dd-HH-mm-ss"));
-
-        try
-        {
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-            }
-        }
-        catch
-        {
-            // Do nothing.
-        }
-
-        return path;
     }
 
     /// <summary>
@@ -669,7 +632,7 @@ internal class Scanner
         }
 
         var path = Path.Combine(
-            GetReportPath(),
+            Program.ReportPath,
             "screenshots");
 
         if (!Directory.Exists(path))
@@ -688,103 +651,6 @@ internal class Scanner
             {
                 Path = path
             });
-    }
-
-    /// <summary>
-    /// Write a single JSON report to disk.
-    /// </summary>
-    /// <param name="path">Path.</param>
-    /// <param name="filename">Filename.</param>
-    /// <param name="data">Data to write.</param>
-    /// <typeparam name="T">Data type.</typeparam>
-    private async Task WriteReport<T>(string path, string filename, T data)
-    {
-        var fullPath = Path.Combine(
-            path,
-            filename);
-
-        try
-        {
-            await using var stream = File.OpenWrite(fullPath);
-            await JsonSerializer.SerializeAsync(
-                stream,
-                data,
-                new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    WriteIndented = true
-                });
-
-            ConsoleEx.Write(
-                "Wrote data to file ",
-                ConsoleColor.Yellow,
-                ".",
-                Path.DirectorySeparatorChar,
-                filename,
-                Environment.NewLine);
-        }
-        catch (Exception ex)
-        {
-            ConsoleEx.Write(
-                "Error while writing to file ",
-                ConsoleColor.Yellow,
-                ".",
-                Path.DirectorySeparatorChar,
-                filename,
-                Environment.NewLine,
-                ConsoleColor.Red,
-                ex.Message,
-                Environment.NewLine);
-        }
-    }
-
-    /// <summary>
-    /// Compile and write the HTML report file.
-    /// </summary>
-    /// <param name="path">Full path to HTML file.</param>
-    private async Task WriteReport(string path)
-    {
-        try
-        {
-            var templatePath = Path.GetDirectoryName(
-                System.Reflection.Assembly.GetExecutingAssembly().Location);
-
-            if (templatePath is null)
-            {
-                throw new Exception("Unable to locate report template folder.");
-            }
-
-            const string templateFilename = "report-template.html";
-            var templateFile = Path.Combine(templatePath, templateFilename);
-
-            if (!File.Exists(templateFile))
-            {
-                throw new Exception("Unable to locate report template file.");
-            }
-
-            var html = await File.ReadAllTextAsync(templateFile);
-            
-            // 
-
-            await File.WriteAllTextAsync(path, html, Encoding.UTF8);
-            
-            ConsoleEx.Write(
-                "Wrote data to file ",
-                ConsoleColor.Yellow,
-                ".",
-                Path.DirectorySeparatorChar,
-                templateFilename,
-                Environment.NewLine);
-        }
-        catch (Exception ex)
-        {
-            ConsoleEx.Write(
-                "Error while compiling and writing HTML report to disk. ",
-                Environment.NewLine,
-                ConsoleColor.Red,
-                ex.Message,
-                Environment.NewLine);
-        }
     }
 
     #endregion

@@ -16,6 +16,7 @@
     <ItemGroup>
       <None Update="Template\report-template.html">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        <TargetPath>report-template.html</TargetPath>
       </None>
     </ItemGroup>
 
