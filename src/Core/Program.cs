@@ -9,6 +9,11 @@ namespace Slap.Core;
 internal static class Program
 {
     /// <summary>
+    /// Program version.
+    /// </summary>
+    public static Version ProgramVersion { get; } = new Version(1, 3); 
+    
+    /// <summary>
     /// Init all the things..
     /// </summary>
     /// <param name="args">Command line arguments.</param>
@@ -250,7 +255,8 @@ internal static class Program
     {
         ConsoleEx.Write(
             ConsoleColor.White,
-            "Slap v1.2",
+            "Slap v",
+            ProgramVersion,
             ConsoleColorEx.ResetColor,
             Environment.NewLine,
             Environment.NewLine,
