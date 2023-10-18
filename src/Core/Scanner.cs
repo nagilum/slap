@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
+using System.Text;
 using System.Text.Json;
 using Deque.AxeCore.Playwright;
 using Microsoft.Playwright;
@@ -238,6 +239,7 @@ internal class Scanner
         await this.WriteReport(path, "options.json", this._options);
         await this.WriteReport(path, "queue.json", this._queue);
         await this.WriteReport(path, "stats.json", this.CompileStatsObject());
+        await this.WriteReport(Path.Combine(path, "report.html"));
     }
 
     #endregion
@@ -689,7 +691,7 @@ internal class Scanner
     }
 
     /// <summary>
-    /// Write a single report to disk.
+    /// Write a single JSON report to disk.
     /// </summary>
     /// <param name="path">Path.</param>
     /// <param name="filename">Filename.</param>
@@ -729,6 +731,55 @@ internal class Scanner
                 ".",
                 Path.DirectorySeparatorChar,
                 filename,
+                Environment.NewLine,
+                ConsoleColor.Red,
+                ex.Message,
+                Environment.NewLine);
+        }
+    }
+
+    /// <summary>
+    /// Compile and write the HTML report file.
+    /// </summary>
+    /// <param name="path">Full path to HTML file.</param>
+    private async Task WriteReport(string path)
+    {
+        try
+        {
+            var templatePath = Path.GetDirectoryName(
+                System.Reflection.Assembly.GetExecutingAssembly().Location);
+
+            if (templatePath is null)
+            {
+                throw new Exception("Unable to locate report template folder.");
+            }
+
+            const string templateFilename = "report-template.html";
+            var templateFile = Path.Combine(templatePath, templateFilename);
+
+            if (!File.Exists(templateFile))
+            {
+                throw new Exception("Unable to locate report template file.");
+            }
+
+            var html = await File.ReadAllTextAsync(templateFile);
+            
+            // 
+
+            await File.WriteAllTextAsync(path, html, Encoding.UTF8);
+            
+            ConsoleEx.Write(
+                "Wrote data to file ",
+                ConsoleColor.Yellow,
+                ".",
+                Path.DirectorySeparatorChar,
+                templateFilename,
+                Environment.NewLine);
+        }
+        catch (Exception ex)
+        {
+            ConsoleEx.Write(
+                "Error while compiling and writing HTML report to disk. ",
                 Environment.NewLine,
                 ConsoleColor.Red,
                 ex.Message,

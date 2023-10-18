@@ -13,4 +13,10 @@
       <PackageReference Include="Microsoft.Playwright" Version="1.38.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="Template\report-template.html">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>
