@@ -140,7 +140,7 @@ internal class ReportGenerator
         var culture = new CultureInfo("en-US");
         var sb = new StringBuilder();
 
-        foreach (var entry in this._queue.Where(n => n.UrlType == urlType))
+        foreach (var entry in this._queue.Where(n => n.UrlType == urlType).OrderBy(n => n.Url))
         {
             string cssClass;
             
