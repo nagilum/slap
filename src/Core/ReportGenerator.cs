@@ -47,7 +47,7 @@ internal class ReportGenerator
     {
         var path = Path.GetRelativePath(
             Directory.GetCurrentDirectory(),
-            Program.ReportPath);
+            Program.ReportPath!);
         
         ConsoleEx.Write(
             "Writing reports to ",
@@ -57,9 +57,9 @@ internal class ReportGenerator
             path,
             Environment.NewLine);
         
-        await this.WriteJsonReport(Program.ReportPath, "options.json", this._options);
-        await this.WriteJsonReport(Program.ReportPath, "queue.json", this._queue);
-        await this.WriteJsonReport(Program.ReportPath, "stats.json", this._stats);
+        await this.WriteJsonReport(Program.ReportPath!, "options.json", this._options);
+        await this.WriteJsonReport(Program.ReportPath!, "queue.json", this._queue);
+        await this.WriteJsonReport(Program.ReportPath!, "stats.json", this._stats);
     }
     
     /// <summary>
@@ -104,7 +104,7 @@ internal class ReportGenerator
             this.AddLinksDetailsToHtmlReport(ref html);
 
             var path = Path.Combine(
-                Program.ReportPath,
+                Program.ReportPath!,
                 "report.html");
 
             await File.WriteAllTextAsync(path, html, Encoding.UTF8);

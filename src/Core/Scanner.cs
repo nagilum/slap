@@ -170,11 +170,16 @@ internal class Scanner
     /// <summary>
     /// Install and setup Playwright.
     /// </summary>
+    /// <param name="uri">Initial URL.</param>
     /// <returns>Success.</returns>
-    public async Task<bool> SetupPlaywright()
+    public async Task<bool> SetupPlaywright(Uri uri)
     {
         try
         {
+            ConsoleEx.Write(
+                "Preparing Playwright..",
+                Environment.NewLine);
+            
             Microsoft.Playwright.Program.Main(
                 new[]
                 {
@@ -200,6 +205,10 @@ internal class Scanner
 
             this.Page = await this.Browser.NewPageAsync(
                 this._options.PlaywrightConfig?.BrowserNewPageOptions);
+
+            // We do an initial (un-logged) request because Playwright has a tendency
+            // to take a lot more time on the first request, which skews the report.
+            _ = await this.Page.GotoAsync(uri.ToString()); 
 
             return true;
         }
@@ -632,7 +641,7 @@ internal class Scanner
         }
 
         var path = Path.Combine(
-            Program.ReportPath,
+            Program.ReportPath!,
             "screenshots");
 
         if (!Directory.Exists(path))

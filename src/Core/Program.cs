@@ -16,7 +16,7 @@ internal static class Program
     /// <summary>
     /// Report path.
     /// </summary>
-    public static string ReportPath { get; set; } = null!;
+    public static string? ReportPath { get; private set; }
 
     /// <summary>
     /// Generate the report path for this run.
@@ -78,7 +78,7 @@ internal static class Program
 
         var scanner = new Scanner(url, options);
 
-        if (!await scanner.SetupPlaywright())
+        if (!await scanner.SetupPlaywright(url))
         {
             return;
         }
