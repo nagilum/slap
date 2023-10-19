@@ -76,13 +76,6 @@ internal static class Program
 
         ReportPath = GenerateReportPath(options.ReportPath, url.Host);
 
-        var scanner = new Scanner(url, options);
-
-        if (!await scanner.SetupPlaywright(url))
-        {
-            return;
-        }
-
         var tokenSource = new CancellationTokenSource();
 
         Console.CancelKeyPress += (_, eventArgs) =>
@@ -105,6 +98,18 @@ internal static class Program
             
             eventArgs.Cancel = true;
         };
+
+        if (tokenSource.Token.IsCancellationRequested)
+        {
+            return;
+        }
+        
+        var scanner = new Scanner(url, options);
+
+        if (!await scanner.SetupPlaywright(url))
+        {
+            return;
+        }
         
         await scanner.ProcessQueue(tokenSource.Token);
         await scanner.WriteReports();
