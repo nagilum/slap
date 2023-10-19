@@ -25,6 +25,25 @@
                 cursor: pointer;
             }
             
+            aside {
+                background-color: #eee;
+                bottom: 0;
+                box-shadow: 0 0 0 #fff;
+                display: block;
+                overflow: hidden;
+                padding: 8px;
+                position: fixed;
+                right: 0;
+                top: 0;
+                transition: .5s;
+                width: 0;
+            }
+            
+            aside.expanded {
+                box-shadow: -10px 0 10px #666;
+                width: 50vw;
+            }
+            
             footer {
                 padding-top: 100px;
             }
@@ -157,9 +176,86 @@
             Copyright &copy; 2023 Stian Hanger<br>
             <a href="https://github.com/nagilum/slap">https://github.com/nagilum/slap</a>
         </footer>
+        
+        {IndividualLinkDetails}
 
         <script>
             "use strict";
+
+            /**
+             * Close any open details panel.
+             */
+            const closeOpenPanels = () => {
+                document
+                    .querySelectorAll('aside.expanded')
+                    .forEach(aside => {
+                        aside.classList.remove('expanded');
+                    });
+            };
+
+            /**
+             * Find and expand side panel.
+             * @param id Panel ID.
+             */
+            const expandPanel = (id) => {
+                const aside = document.querySelector(`aside#${id}`);
+                
+                if (aside) {
+                    aside.classList.add('expanded');
+                }
+            };
+
+            /**
+             * Get ID value from clicked, or some parent element.
+             * @param el Clicked element.
+             * @returns {string} ID value.
+             */
+            const getPanelId = (el) => {
+                let temp = el.target;
+                
+                while (true) {
+                    let id = temp.getAttribute('data-id');
+                    
+                    if (id) {
+                        return id;
+                    }
+                    
+                    temp = temp.parentElement;
+                    
+                    if (!temp) {
+                        break;
+                    }
+                }
+                
+                return '';
+            };
+
+            /**
+             * Handle clicked row.
+             * @param el Clicked element.
+             */
+            const linkRowOnClick = (el) => {
+                closeOpenPanels();
+
+                let id = getPanelId(el);
+
+                if (id === '') {
+                    return;
+                }
+
+                expandPanel(id);
+            };
+
+            /**
+             * Init all the things..
+             */
+            (() => {
+                document
+                    .querySelectorAll('tr.clickable')
+                    .forEach(el => {
+                        el.addEventListener('click', linkRowOnClick);
+                    });
+            })();
         </script>
     </body>
 </html>

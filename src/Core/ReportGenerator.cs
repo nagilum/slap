@@ -145,7 +145,7 @@ internal class ReportGenerator
             string cssClass;
             
             // Identifier.
-            sb.Append("<tr class=\"clickable\" id=\"");
+            sb.Append("<tr class=\"clickable\" data-id=\"panel-");
             sb.Append(entry.Id);
             sb.Append("\">");
             
@@ -278,6 +278,20 @@ internal class ReportGenerator
     /// <param name="html">HTML.</param>
     private void AddLinksDetailsToHtmlReport(ref string html)
     {
+        var sb = new StringBuilder();
+
+        foreach (var entry in this._queue)
+        {
+            sb.Append("<aside id=\"panel-");
+            sb.Append(entry.Id);
+            sb.Append("\">");
+
+            sb.Append(entry.Id);
+
+            sb.Append("</aside>");
+        }
+
+        html = html.Replace("{IndividualLinkDetails}", sb.ToString());
     }
 
     /// <summary>
