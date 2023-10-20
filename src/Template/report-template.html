@@ -27,12 +27,13 @@
             
             aside {
                 background-color: #eee;
-                bottom: 0;
                 box-shadow: 0 0 0 #fff;
                 display: block;
-                overflow: hidden;
-                padding: 8px;
-                position: fixed;
+                min-height: 100vh;
+                opacity: 0;
+                overflow-y: scroll;
+                padding: 8px 8px 200px;
+                position: absolute;
                 right: 0;
                 top: 0;
                 transition: .5s;
@@ -41,7 +42,24 @@
             
             aside.expanded {
                 box-shadow: -10px 0 10px #666;
+                opacity: 1;
                 width: 50vw;
+            }
+            
+            aside p a.close-panel {
+                cursor: pointer;
+            }
+
+            aside table tbody tr {
+                transition: .5s;
+            }
+            
+            aside table tbody tr:nth-child(even) {
+                background-color: #ddd;
+            }
+
+            aside table tbody tr:hover {
+                background-color: #ccc;
             }
             
             footer {
@@ -254,6 +272,12 @@
                     .querySelectorAll('tr.clickable')
                     .forEach(el => {
                         el.addEventListener('click', linkRowOnClick);
+                    });
+                
+                document
+                    .querySelectorAll('a.close-panel')
+                    .forEach(el => {
+                        el.addEventListener('click', closeOpenPanels);
                     });
             })();
         </script>

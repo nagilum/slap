@@ -10,6 +10,11 @@ namespace Slap.Core;
 internal class ReportGenerator
 {
     /// <summary>
+    /// Culture, for formatting.
+    /// </summary>
+    private readonly CultureInfo _culture;
+    
+    /// <summary>
     /// Options.
     /// </summary>
     private readonly Options _options;
@@ -35,6 +40,7 @@ internal class ReportGenerator
         List<QueueEntry> queue,
         ScanStats stats)
     {
+        this._culture = new CultureInfo("en-US");
         this._options = options;
         this._queue = queue;
         this._stats = stats;
@@ -114,7 +120,7 @@ internal class ReportGenerator
                 ConsoleColor.Yellow,
                 ".",
                 Path.DirectorySeparatorChar,
-                templateFilename,
+                "report.html",
                 Environment.NewLine);
         }
         catch (Exception ex)
@@ -137,7 +143,6 @@ internal class ReportGenerator
     /// <param name="urlType">Link type.</param>
     private void AddQueueEntriesToHtmlReport(ref string html, UrlType urlType)
     {
-        var culture = new CultureInfo("en-US");
         var sb = new StringBuilder();
 
         foreach (var entry in this._queue.Where(n => n.UrlType == urlType))
@@ -195,8 +200,8 @@ internal class ReportGenerator
                 
                 var timeFormatted = entry.Response.Time switch
                 {
-                    > 60 * 1000 => $"{(entry.Response.Time / (60M * 1000M)).ToString(culture)} m",
-                    > 1000 => $"{(entry.Response.Time / 1000M).ToString(culture)} s",
+                    > 60 * 1000 => $"{(entry.Response.Time / (60M * 1000M)).ToString(this._culture)} m",
+                    > 1000 => $"{(entry.Response.Time / 1000M).ToString(this._culture)} s",
                     _ => $"{entry.Response.Time} ms"
                 };
                 
@@ -225,8 +230,8 @@ internal class ReportGenerator
                 
                 var sizeFormatted = entry.Response.Size switch
                 {
-                    > 1000000 => $"{(entry.Response.Size / 1000000).ToString("#.##", culture)} MB",
-                    > 1000 => $"{(entry.Response.Size / 1000).ToString("#.##", culture)} KB",
+                    > 1000000 => $"{(entry.Response.Size / 1000000).ToString("#.##", this._culture)} MB",
+                    > 1000 => $"{(entry.Response.Size / 1000).ToString("#.##", this._culture)} KB",
                     _ => $"{entry.Response.Size} B"
                 };
                 
@@ -285,9 +290,228 @@ internal class ReportGenerator
             sb.Append("<aside id=\"panel-");
             sb.Append(entry.Id);
             sb.Append("\">");
+            
+            // Close.
+            sb.Append("<p><a class=\"close-panel\">Close</a></p>");
 
-            sb.Append(entry.Id);
+            // URL.
+            sb.Append("<h2>URL</h2><p>");
+            sb.Append("<a href=\"");
+            sb.Append(entry.Url);
+            sb.Append("\">");
+            sb.Append(entry.Url);
+            sb.Append("</a></p>");
+            
+            // Error, if any.
+            if (entry.Error is not null)
+            {
+                sb.Append("<h2>Error</h2><p>");
+                sb.Append(entry.ErrorType);
+                sb.Append("</p><p>");
+                sb.Append(entry.Error);
+                sb.Append("</p>");
+            }
+            
+            // Response, if any.
+            if (entry.Response is not null)
+            {
+                // Metadata (response time, size, code, title)
+                sb.Append("<h2>Response Metadata</h2><table><tbody>");
+                
+                var cssClass = entry.Response.Time switch
+                {
+                    > 1000 => "error",
+                    > 300 => "warning",
+                    _ => "success"
+                };
+                
+                var timeFormatted = entry.Response.Time switch
+                {
+                    > 60 * 1000 => $"{(entry.Response.Time / (60M * 1000M)).ToString(this._culture)} m",
+                    > 1000 => $"{(entry.Response.Time / 1000M).ToString(this._culture)} s",
+                    _ => $"{entry.Response.Time} ms"
+                };
 
+                sb.Append("<tr><td>Response Time</td><td class=\"");
+                sb.Append(cssClass);
+                sb.Append("\">");
+                sb.Append(timeFormatted);
+                sb.Append("</td></tr>");
+                
+                cssClass = entry.Response.Size switch
+                {
+                    > 1000000 => "error",
+                    > 500000 => "warning",
+                    _ => "success"
+                };
+                
+                var sizeFormatted = entry.Response.Size switch
+                {
+                    > 1000000 => $"{(entry.Response.Size / 1000000).ToString("#.##", this._culture)} MB",
+                    > 1000 => $"{(entry.Response.Size / 1000).ToString("#.##", this._culture)} KB",
+                    _ => $"{entry.Response.Size} B"
+                };
+                
+                sb.Append("<tr><td>Document Size</td><td class=\"");
+                sb.Append(cssClass);
+                sb.Append("\">");
+                sb.Append(sizeFormatted);
+                sb.Append("</td></tr>");
+                
+                cssClass = entry.Response.StatusCode switch
+                {
+                    >= 200 and <= 299 => "success",
+                    <= 399 => "warning",
+                    _ => "error"
+                };
+                
+                sb.Append("<tr><td>Status Code</td><td class=\"");
+                sb.Append(cssClass);
+                sb.Append("\">");
+                sb.Append(entry.Response.StatusCode);
+                sb.Append(' ');
+                sb.Append(entry.Response.StatusDescription);
+                sb.Append("</td></tr>");
+
+                sb.Append("<tr><td>Title</td><td>");
+                sb.Append(entry.Response.Title ?? "&nbsp;");
+                sb.Append("</td></tr>");
+
+                sb.Append("</tbody></table>");
+
+                // Meta tags.
+                if (entry.Response.MetaTags?.Count > 0)
+                {
+                    sb.Append("<h2>Response Meta Tags</h2>");
+                    sb.Append("<table><thead><tr><th>Name</th><th>HTTP Equiv</th>");
+                    sb.Append("<th>Content</th><th>Property</th><th>Charset</th></thead><tbody>");
+
+                    foreach (var metaTag in entry.Response.MetaTags)
+                    {
+                        sb.Append("<tr>");
+                        
+                        sb.Append("<td>");
+                        sb.Append(metaTag.Name ?? "&nbsp;");
+                        sb.Append("</td>");
+                        
+                        sb.Append("<td>");
+                        sb.Append(metaTag.HttpEquiv ?? "&nbsp;");
+                        sb.Append("</td>");
+                        
+                        sb.Append("<td>");
+                        sb.Append(metaTag.Content ?? "&nbsp;");
+                        sb.Append("</td>");
+                        
+                        sb.Append("<td>");
+                        sb.Append(metaTag.Property ?? "&nbsp;");
+                        sb.Append("</td>");
+                        
+                        sb.Append("<td>");
+                        sb.Append(metaTag.Charset ?? "&nbsp;");
+                        sb.Append("</td>");
+                        
+                        sb.Append("</tr>");
+                    }
+
+                    sb.Append("</tbody></table>");
+                }
+
+                // Headers
+                sb.Append("<h2>Response Headers</h2>");
+                
+                if (entry.Response.Headers.Count > 0)
+                {
+                    sb.Append("<table><thead>");
+                    sb.Append("<tr><th>Key</th><th>Value</th>");
+                    sb.Append("</thead><tbody>");
+
+                    foreach (var (key, value) in entry.Response.Headers)
+                    {
+                        sb.Append("<tr><td>");
+                        sb.Append(key);
+                        sb.Append("</td><td>");
+                        sb.Append(value);
+                        sb.Append("</td></tr>");
+                    }
+
+                    sb.Append("</tbody></table>");
+                }
+                else
+                {
+                    sb.Append("<p>None</p>");
+                }
+            }
+            
+            // Accessibility issues.
+            if (entry.AccessibilityResults?.Violations?.Length > 0)
+            {
+                sb.Append("<h2>Accessibility Issues</h2>");
+
+                foreach (var violation in entry.AccessibilityResults.Violations)
+                {
+                    sb.Append("<h3>");
+                    sb.Append(violation.Id);
+                    sb.Append("</h3><p>");
+                    sb.Append(violation.Description);
+                    sb.Append("<br><a href=\"");
+                    sb.Append(violation.HelpUrl);
+                    sb.Append("\">");
+                    sb.Append(violation.HelpUrl);
+                    sb.Append("</a></p><p>Tags: ");
+                    sb.Append(string.Join(", ", violation.Tags!));
+                    sb.Append("<br>Impact: ");
+                    sb.Append(violation.Impact);
+                    sb.Append("</p>");
+
+                    foreach (var node in violation.Nodes)
+                    {
+                        sb.Append("<table><tbody>");
+
+                        sb.Append("<tr><td>HTML</td><td><code>");
+                        sb.Append(node.Html?.Replace("<", "&lt;").Replace(">", "&gt;"));
+                        sb.Append("</code></td></tr>");
+                        
+                        sb.Append("<tr><td>Message</td><td>");
+                        sb.Append(node.Message);
+                        sb.Append("</td></tr>");
+                        
+                        sb.Append("<tr><td>Selector</td><td><code>");
+                        sb.Append(node.Target?.Selector);
+                        sb.Append("</code></td></tr>");
+
+                        sb.Append("</tbody></table><br>");
+                    }
+                }
+            }
+            
+            // Linked from.
+            sb.Append("<h2>Linked From</h2>");
+
+            if (entry.LinkedFrom.Count == 0)
+            {
+                sb.Append("<p>None</p>");
+            }
+            else
+            {
+                var urls = entry.LinkedFrom
+                    .Select(n => this._queue.Find(m => m.Id == n)?.Url)
+                    .Where(n => n is not null);
+
+                sb.Append("<table><tbody>");
+
+                foreach (var url in urls)
+                {
+                    sb.Append("<tr><td><a href=\"");
+                    sb.Append(url);
+                    sb.Append("\">");
+                    sb.Append(url);
+                    sb.Append("</a>");
+                }
+                
+                sb.Append("</tbody></table>");
+            }
+
+            // Done.
             sb.Append("</aside>");
         }
 
