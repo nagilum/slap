@@ -38,7 +38,7 @@ internal class UrlResponse
     /// <summary>
     /// Response body size, in bytes.
     /// </summary>
-    public required int Size { get; init; }
+    public int? Size { get; init; }
     
     /// <summary>
     /// Response status code.

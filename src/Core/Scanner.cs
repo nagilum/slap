@@ -1,7 +1,5 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
-using System.Text;
-using System.Text.Json;
 using Deque.AxeCore.Playwright;
 using Microsoft.Playwright;
 using Slap.Models;
@@ -103,6 +101,8 @@ internal class Scanner
             }
 
             var queueEntry = this._queue[queueIndex];
+            var url = queueEntry.Url.ToString();
+            var x = 1;
 
             try
             {
@@ -329,6 +329,13 @@ internal class Scanner
             { "script", "src" }
         };
 
+        // TODO
+        var assetExtensions = new[]
+        {
+            "mp3",
+            "mp4"
+        };
+
         foreach (var (tag, attr) in selectors)
         {
             var hrefs = this.Page!.Locator($"//{tag}[@{attr}]");
@@ -489,12 +496,14 @@ internal class Scanner
             _ => ConsoleColor.Green
         };
 
-        var sizeFormatted = response.Size switch
-        {
-            > 1000000 => $"{(response.Size / 1000000M).ToString(culture)} MB",
-            > 1000 => $"{(response.Size / 1000M).ToString(culture)} KB",
-            _ => $"{response.Size} B"
-        };
+        var sizeFormatted = response.Size.HasValue
+            ? response.Size switch
+            {
+                > 1000000 => $"{(response.Size.Value / 1000000M).ToString(culture)} MB",
+                > 1000 => $"{(response.Size.Value / 1000M).ToString(culture)} KB",
+                _ => $"{response.Size.Value} B"
+            }
+            : string.Empty;
 
         // Time.
         var timeColor = response.Time switch
@@ -585,12 +594,30 @@ internal class Scanner
 
         stopwatch.Stop();
 
-        var body = await res.BodyAsync();
+        int? size = null;
+        string? contentType = null;
+
+        foreach (var (key, value) in res.Headers)
+        {
+            if (!key.Equals("content-type", StringComparison.InvariantCultureIgnoreCase))
+            {
+                continue;
+            }
+
+            contentType = value;
+            break;
+        }
+
+        if (contentType?.IndexOf("text/html", StringComparison.InvariantCultureIgnoreCase) > -1)
+        {
+            var body = await res.BodyAsync();
+            size = body.Length;
+        }
 
         queueEntry.Response = new()
         {
             Headers = res.Headers,
-            Size = body.Length,
+            Size = size,
             StatusCode = res.Status,
             StatusCodeIsSuccess = res.Status is >= 200 and <= 299,
             StatusDescription = this.GetStatusDescription(res.Status),

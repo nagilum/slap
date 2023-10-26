@@ -228,12 +228,14 @@ internal class ReportGenerator
                     _ => "success"
                 };
                 
-                var sizeFormatted = entry.Response.Size switch
-                {
-                    > 1000000 => $"{(entry.Response.Size / 1000000).ToString("#.##", this._culture)} MB",
-                    > 1000 => $"{(entry.Response.Size / 1000).ToString("#.##", this._culture)} KB",
-                    _ => $"{entry.Response.Size} B"
-                };
+                var sizeFormatted = entry.Response.Size.HasValue
+                    ? entry.Response.Size switch
+                    {
+                        > 1000000 => $"{(entry.Response.Size.Value / 1000000).ToString("#.##", this._culture)} MB",
+                        > 1000 => $"{(entry.Response.Size.Value / 1000).ToString("#.##", this._culture)} KB",
+                        _ => $"{entry.Response.Size.Value} B"
+                    }
+                    : string.Empty;
                 
                 sb.Append("<td class=\"");
                 sb.Append(cssClass);
@@ -345,12 +347,14 @@ internal class ReportGenerator
                     _ => "success"
                 };
                 
-                var sizeFormatted = entry.Response.Size switch
-                {
-                    > 1000000 => $"{(entry.Response.Size / 1000000).ToString("#.##", this._culture)} MB",
-                    > 1000 => $"{(entry.Response.Size / 1000).ToString("#.##", this._culture)} KB",
-                    _ => $"{entry.Response.Size} B"
-                };
+                var sizeFormatted = entry.Response.Size.HasValue
+                    ? entry.Response.Size switch
+                    {
+                        > 1000000 => $"{(entry.Response.Size.Value / 1000000).ToString("#.##", this._culture)} MB",
+                        > 1000 => $"{(entry.Response.Size.Value / 1000).ToString("#.##", this._culture)} KB",
+                        _ => $"{entry.Response.Size.Value} B"
+                    }
+                    : string.Empty;
                 
                 sb.Append("<tr><td>Document Size</td><td class=\"");
                 sb.Append(cssClass);
