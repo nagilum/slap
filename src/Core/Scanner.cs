@@ -329,13 +329,6 @@ internal class Scanner
             { "script", "src" }
         };
 
-        // TODO
-        var assetExtensions = new[]
-        {
-            "mp3",
-            "mp4"
-        };
-
         foreach (var (tag, attr) in selectors)
         {
             var hrefs = this.Page!.Locator($"//{tag}[@{attr}]");
