@@ -24,6 +24,14 @@ cd slap/src
 dotnet build
 ```
 
+Slap is written in C#, [.NET 7](https://dotnet.microsoft.com/en-us/download/dotnet/7.0#runtime-7.0.13), and uses [Microsoft Playwright](https://www.nuget.org/packages/Microsoft.Playwright) to perform the internal webpage requests. This allows us to take screenshots run [Axe Core](https://www.nuget.org/packages/Deque.AxeCore.Playwright) accessibility scans.
+
+## How To Run
+
+```bash
+slap https://example.com --engine firefox
+```
+
 ## Command Line Arguments
 
 * [Set Rendering Engine](#set-rendering-engine)
