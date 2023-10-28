@@ -2,7 +2,9 @@
 
 > Slap a site and see what falls out.
 
-A simple command-line site check tool. Slap will start with the given URL and scan outwards till it has covered all links from the same domain/subdomain.
+Slap is a simple CLI to assist in QA checking of a site. 
+
+If you slap https://example.com it will crawl all URLs found, both internal and external, but not move beyond the initial domain. After it is done, it will generate a report.
 
 ![CLI Example](assets/cli-example.png?raw=true)
 
@@ -22,7 +24,7 @@ dotnet build
 Set which rendering engine to use.
 
 ```
--re <name-of-engine>
+--engine <name-of-engine>
 ```
 
 Valid options are:
@@ -36,7 +38,7 @@ The default value is `chromium`.
 #### Example
 
 ```
-slap https://example.com -re firefox
+slap https://example.com --engine firefox
 ```
 
 This will set the rendering engine to `Firefox`.
@@ -47,13 +49,13 @@ This will set the rendering engine to `Firefox`.
 Add a domain to be treated as an internal domain.
 
 ```
--ad <domain>
+--add <domain>
 ```
 
 #### Example
 
 ```
-slap https://example.com -ad docs.example.com
+slap https://example.com --add docs.example.com
 ```
 
 This will follow links on both `example.com` and `docs.example.com`.
@@ -64,7 +66,7 @@ This will follow links on both `example.com` and `docs.example.com`.
 Set the folder path to save the report after scanning. It defaults to the current directory.
 
 ```
--rp <path>
+--path <path>
 ```
 
 If the path does not exist, it will be created.
@@ -72,60 +74,80 @@ If the path does not exist, it will be created.
 #### Example
 
 ```
-slap https://example.com -rp ~/slap-reports/
+slap https://example.com --path ~/slap-reports/
 ```
 
 This will set the report path to `~/slap-reports/`.
 
+### Skip Scanning of Links
 
-### Load Playwright Config
+Set whick link types to skip. This command can be repeated to set more skips.
 
-Load custom config for the various Playwright objects.
+Valid options are:
 
-```
--lc <path>
-```
+* `assets` - Will skip both internal and external assets.
+* `external` - Will skip external assets and webpages.
+* `external-assets` - Will skip external assets.
+* `external-webpages` - Will skip external webpages.
+* `internal-assets` - Will skip internal assets.
 
 #### Example
 
 ```
-slap https://example.com -lc ~/slap-config/default.json
+slap https://example.com --skip external --skip internal-assets
 ```
 
-This will load the Playwright config file from `~/slap-config/default.json`.
+This will skip internal assets, external assets, and external webpages.
 
+### Set Timeout
 
-#### Config File Structure
+Set the request timeout, in seconds, for each request. This setting defaults to 10 seconds.
 
-```json
-{
-    "browserNewPageOptions": {},
-    "browserTypeLaunchOptions": {},
-    "pageGotoOptions": {}
-}
+#### Example
+
+```
+slap https://example.com --timeout 2
 ```
 
-The 3 objects are Playwright objects. Read more about them here:
-
-* [BrowserNewPageOptions](https://www.fuget.org/packages/Microsoft.Playwright/1.14.0/lib/netstandard2.0/Microsoft.Playwright.dll/Microsoft.Playwright/BrowserNewPageOptions)
-* [BrowserTypeLaunchOptions](https://www.fuget.org/packages/Microsoft.Playwright/1.14.0/lib/netstandard2.0/Microsoft.Playwright.dll/Microsoft.Playwright/BrowserTypeLaunchOptions)
-* [PageGotoOptions](https://www.fuget.org/packages/Microsoft.Playwright/1.14.0/lib/netstandard2.0/Microsoft.Playwright.dll/Microsoft.Playwright/PageGotoOptions)
-
+This will set the timeout for all request to 2 seconds.
 
 ### Save Screenshots
 
 Set to save screenshots of each internal page that is scanned.
 
 ```
--ss
+--screenshots
 ```
-
-The size of the screenshot can be defined by setting [ScreenSize](https://www.fuget.org/packages/Microsoft.Playwright/1.14.0/lib/netstandard2.0/Microsoft.Playwright.dll/Microsoft.Playwright/ScreenSize) in [BrowserNewPageOptions](https://www.fuget.org/packages/Microsoft.Playwright/1.14.0/lib/netstandard2.0/Microsoft.Playwright.dll/Microsoft.Playwright/BrowserNewPageOptions)
 
 #### Example
 
 ```
-slap https://example.com -ss
+slap https://example.com --screenshots
 ```
 
 This will tell the program to save a screenshot for each internal page that's scanned.
+
+### Set Window Size
+
+Set the window size. This will affect the size of the screenshot as well as some accessibility checks.
+
+#### Example
+
+```
+slap https://example.com --size 1024x768
+```
+
+This will set the window size to 1024x768 px.
+
+### Load Queue File
+
+This will load the specified queue file instead of crwling from first URL.
+Slap will then re-scan all the entries that failed in any way on the previous run.
+
+#### Example
+
+```
+slap --load ./reports/example.com/queue.json
+```
+
+This will load the specified queue file and re-scan based on it.

@@ -210,13 +210,14 @@ public static class Program
             "  slap <url> [<options>]",
             "",
             "Options:",
-            "  --engine <engine>      Set the rendering engine to use. Defaults to Chromium.",
-            "  --add <domain>         Add a domain to be treated as another internal domain.",
-            "  --path <folder>        Set report path. Defaults to current directory.",
-            "  --skip <type>          Skip scanning of certain types of links.", // TODO
-            "  --timeout <seconds>    Set the timeout for each request. Defaults to 10 seconds.", // TODO
-            "  --screenshots          Save a screenshot for every internal webpage scan.", // TODO
-            "  --load <file>          Load a queue file, but only process the entries that failed.", // TODO 
+            "  --engine <engine>         Set the rendering engine to use. Defaults to Chromium.",
+            "  --add <domain>            Add a domain to be treated as another internal domain.",
+            "  --path <folder>           Set report path. Defaults to current directory.",
+            "  --skip <type>             Skip scanning of certain types of links.", // TODO
+            "  --timeout <seconds>       Set the timeout for each request. Defaults to 10 seconds.", // TODO
+            "  --screenshots             Save a screenshot for every internal webpage scan.", // TODO
+            "  --size <width>x<height>   Set the windows size, for the screenshots and accessibility checks.", // TODO
+            "  --load <file>             Load a queue file, but only process the entries that failed.", // TODO 
             "",
             "Source and documentation available at https://github.com/nagilum/slap"
         };
