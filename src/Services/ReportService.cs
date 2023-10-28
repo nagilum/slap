@@ -17,9 +17,14 @@ public class ReportService : IReportService
     /// </summary>
     public async Task GenerateReports()
     {
+        var path = Path.GetRelativePath(
+            Directory.GetCurrentDirectory(), 
+            Program.Options.ReportPath!);
+        
         Log.Information(
-            "Writing reports to {path}",
-            Program.Options.ReportPath);
+            "Writing reports to .{separator}{path}",
+            Path.DirectorySeparatorChar.ToString(),
+            path);
 
         try
         {
