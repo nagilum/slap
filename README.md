@@ -18,6 +18,13 @@ dotnet build
 
 ## Command Line Arguments
 
+* [Set Rendering Engine](#set-rendering-engine)
+* [Add Internal Domain](#add-internal-domain)
+* [Set Report Path](#set-report-path)
+* [Skip Scanning of Links](#skip-scanning-of-links)
+* [Set Timeout](#set-timeout)
+* [Set Window Size](#set-window-size)
+* [Load Queue File](#load-queue-file)
 
 ### Set Rendering Engine
 
