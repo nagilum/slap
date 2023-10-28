@@ -12,12 +12,17 @@ public interface IOptions
     /// <summary>
     /// Rendering engine to use.
     /// </summary>
-    RenderingEngine RenderingEngine { get; set; }
+    RenderingEngine RenderingEngine { get; }
     
     /// <summary>
     /// Report path.
     /// </summary>
-    string? ReportPath { get; set; }
+    string? ReportPath { get; }
+    
+    /// <summary>
+    /// Request timeout.
+    /// </summary>
+    int Timeout { get; }
     
     /// <summary>
     /// URL types to skip scanning.

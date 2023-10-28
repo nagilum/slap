@@ -1,6 +1,5 @@
 ﻿using Serilog;
 using Slap.Models;
-using Slap.Models.Interfaces;
 using Slap.Services;
 
 namespace Slap.Core;
@@ -15,7 +14,7 @@ public static class Program
     /// <summary>
     /// Parsed options.
     /// </summary>
-    public static IOptions Options { get; } = new Options();
+    public static Options Options { get; } = new();
     
     /// <summary>
     /// Scanning queue.
@@ -215,6 +214,26 @@ public static class Program
                     skip = true;
                     break;
                 
+                // Set the timeout for each request.
+                case "--timeout":
+                case "-t":
+                    if (i == args.Count - 1)
+                    {
+                        Console.WriteLine($"ERROR: {args[i]} must be followed by a number of seconds.");
+                        return false;
+                    }
+
+                    if (!int.TryParse(args[i + 1], out var seconds))
+                    {
+                        Console.WriteLine($"ERROR: {args[i+1]} is an invalid value for number of seconds.");
+                        return false;
+                    }
+
+                    Options.Timeout = seconds;
+                    skip = true;
+                    
+                    break;
+                
                 // Parse as URL.
                 default:
                     if (!Uri.TryCreate(args[i], UriKind.Absolute, out var url))
@@ -262,7 +281,7 @@ public static class Program
             "  --add <domain>            Add a domain to be treated as another internal domain.",
             "  --path <folder>           Set report path. Defaults to current directory.",
             "  --skip <type>             Skip scanning of certain types of links.",
-            "  --timeout <seconds>       Set the timeout for each request. Defaults to 10 seconds.", // TODO
+            "  --timeout <seconds>       Set the timeout for each request. Defaults to 30 seconds.",
             "  --screenshots             Save a screenshot for every internal webpage scan.", // TODO
             "  --size <width>x<height>   Set the windows size, for the screenshots and accessibility checks.", // TODO
             "  --load <file>             Load a queue file, but only process the entries that failed.", // TODO 

@@ -21,6 +21,11 @@ public class Options : IOptions
     public string? ReportPath { get; set; }
 
     /// <summary>
+    /// <inheritdoc cref="IOptions.Timeout"/>
+    /// </summary>
+    public int Timeout { get; set; } = 30;
+
+    /// <summary>
     /// <inheritdoc cref="IOptions.UrlTypesToSkip"/>
     /// </summary>
     public List<UrlType> UrlTypesToSkip { get; } = new();

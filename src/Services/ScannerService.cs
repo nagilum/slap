@@ -36,6 +36,7 @@ public class ScannerService : IScannerService
     public ScannerService()
     {
         this._httpClient = new HttpClient();
+        this._httpClient.Timeout = TimeSpan.FromSeconds(Program.Options.Timeout);
     }
     
     #endregion
@@ -126,6 +127,17 @@ public class ScannerService : IScannerService
                 entry.ErrorType = ex.GetType().ToString();
             }
             
+            entry.Processed = true;
+        }
+        catch (TimeoutException)
+        {
+            Log.Error(
+                "Timeout after {seconds} seconds from {url}",
+                Program.Options.Timeout,
+                entry.Url);
+
+            entry.Error = $"Timeout after {Program.Options.Timeout} seconds from {entry.Url}";
+            entry.ErrorType = "ERR_TIMEOUT";
             entry.Processed = true;
         }
         catch (Exception ex)
@@ -462,7 +474,12 @@ public class ScannerService : IScannerService
     private async Task PerformPlaywrightRequest(QueueEntry entry)
     {
         var stopwatch = Stopwatch.StartNew();
-        var res = await this.Page!.GotoAsync(entry.Url.ToString())
+        var options = new Microsoft.Playwright.PageGotoOptions
+        {
+            Timeout = Program.Options.Timeout
+        };
+        
+        var res = await this.Page!.GotoAsync(entry.Url.ToString(), options)
                   ?? throw new Exception($"Unable to get a valid HTTP response from {entry.Url}");
         
         stopwatch.Stop();
