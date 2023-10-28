@@ -31,6 +31,10 @@
                 width: 100%;
             }
             
+            table.free {
+                width: auto;
+            }
+            
             table.links thead.hidden {
                 display: none;
             }
@@ -58,7 +62,7 @@
 
             th.info-cell,
             td.info-cell {
-                width: 150px;
+                width: 175px;
             }
         </style>
     </head>
@@ -72,34 +76,34 @@
 
         <h2>Stats</h2>
         
-        <table>
+        <table class="free">
             <tbody>
                 <tr>
                     <td class="info-cell">Started</td>
-                    <td>{ScanStarted}</td>
+                    <td class="info-cell">{ScanStarted}</td>
                 </tr>
                 <tr>
                     <td class="info-cell">Finished</td>
-                    <td>{ScanFinished}</td>
+                    <td class="info-cell">{ScanFinished}</td>
                 </tr>
                 <tr>
                     <td class="info-cell">Took</td>
-                    <td>{ScanTook}</td>
+                    <td class="info-cell">{ScanTook}</td>
                 </tr>
                 <tr>
                     <td class="info-cell">Accessibility Issues</td>
-                    <td>{TotalAccessibilityIssues}</td>
+                    <td class="info-cell">{TotalAccessibilityIssues}</td>
                 </tr>
             </tbody>
         </table>
 
         <h2>Status Codes</h2>
 
-        <table>
+        <table class="free">
             <thead>
                 <tr>
                     <th class="info-cell">Code</th>
-                    <th>Total Count</th>
+                    <th class="info-cell">Total Count</th>
                 </tr>
             </thead>
             <tbody>

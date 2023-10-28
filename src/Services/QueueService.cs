@@ -37,6 +37,7 @@ public class QueueService : IQueueService
         while (!cancellationToken.IsCancellationRequested)
         {
             reset++;
+            index++;
 
             if (reset == 50)
             {
@@ -60,7 +61,19 @@ public class QueueService : IQueueService
                 break;
             }
 
-            index++;
+            if (Program.Options.UrlTypesToSkip.Contains(entry.UrlType))
+            {
+                Log.Warning(
+                    "Skipping {index} of {total} : {url}",
+                    index + 1,
+                    Program.Queue.Count,
+                    entry.Url.ToString().Replace(" ", "%20"));
+
+                entry.Processed = true;
+                entry.Skipped = true;
+                
+                continue;
+            }
             
             Log.Information(
                 "Processing {index} of {total} : {url}",

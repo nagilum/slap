@@ -31,6 +31,10 @@
                 width: 100%;
             }
 
+            table.free {
+                width: auto;
+            }
+
             table thead tr th {
                 padding: 3px 5px;
                 text-align: left;
@@ -57,9 +61,14 @@
                 display: none;
             }
             
-            th.cell-info,
-            td.cell-info {
+            th.info-cell,
+            td.info-cell {
                 width: 200px;
+            }
+
+            th.info-cell-min-200,
+            td.info-cell-min-200 {
+                min-width: 200px;
             }
 
             div.violation-node {
@@ -92,27 +101,31 @@
         <!-- SCREENSHOT -->
         
         <!-- RESPONSE -->
-        <table class="{ResponseHidden}">
+        <table class="free">
             <tbody>
                 <tr>
-                    <td class="cell-info">Document Title</td>
-                    <td>{DocumentTitle}</td>
+                    <td class="info-cell">Document Title</td>
+                    <td class="info-cell-min-200">{DocumentTitle}</td>
                 </tr>
                 <tr>
-                    <td class="cell-info">URL</td>
-                    <td><a href="{Url}">{Url}</a></td>
+                    <td class="info-cell">URL</td>
+                    <td class="info-cell-min-200-cell"><a href="{Url}">{Url}</a></td>
                 </tr>
                 <tr>
-                    <td class="cell-info">Status Code</td>
-                    <td>{StatusCode}</td>
+                    <td class="info-cell">Skipped</td>
+                    <td class="info-cell-min-200">{Skipped}</td>
                 </tr>
                 <tr>
-                    <td class="cell-info">Response Time</td>
-                    <td>{ResponseTime}</td>
+                    <td class="info-cell">Status Code</td>
+                    <td class="info-cell-min-200">{StatusCode}</td>
                 </tr>
                 <tr>
-                    <td class="cell-info">Document Size</td>
-                    <td>{DocumentSize}</td>
+                    <td class="info-cell">Response Time</td>
+                    <td class="info-cell-min-200">{ResponseTime}</td>
+                </tr>
+                <tr>
+                    <td class="info-cell">Document Size</td>
+                    <td class="info-cell-min-200">{DocumentSize}</td>
                 </tr>
             </tbody>
         </table>
@@ -123,7 +136,7 @@
         <table>
             <thead class="{HiddenHeaders}">
                 <tr>
-                    <th class="cell-info">Key</th>
+                    <th class="info-cell">Key</th>
                     <th>Value</th>
                 </tr>
             </thead>
@@ -138,10 +151,10 @@
         <table>
             <thead class="{HiddenMetaTags}">
                 <tr>
-                    <th class="cell-info">Character Set</th>
-                    <th class="cell-info">HTTP Equiv</th>
-                    <th class="cell-info">Name</th>
-                    <th class="cell-info">Property</th>
+                    <th class="info-cell">Character Set</th>
+                    <th class="info-cell">HTTP Equiv</th>
+                    <th class="info-cell">Name</th>
+                    <th class="info-cell">Property</th>
                     <th>Content</th>
                 </tr>
             </thead>

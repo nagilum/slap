@@ -167,6 +167,54 @@ public static class Program
                     
                     break;
                 
+                // Skip scanning of certain types of links.
+                case "--skip":
+                case "-s":
+                    if (i == args.Count - 1)
+                    {
+                        Console.WriteLine($"ERROR: {args[i]} must be followed by a valid link type.");
+                        return false;
+                    }
+
+                    var skips = new List<UrlType>();
+
+                    switch (args[i + 1])
+                    {
+                        case "assets":
+                            skips.Add(UrlType.ExternalAsset);
+                            skips.Add(UrlType.InternalAsset);
+                            break;
+                        
+                        case "external":
+                            skips.Add(UrlType.ExternalAsset);
+                            skips.Add(UrlType.ExternalWebpage);
+                            break;
+                        
+                        case "external-assets":
+                            skips.Add(UrlType.ExternalAsset);
+                            break;
+                        
+                        case "external-webpages":
+                            skips.Add(UrlType.ExternalWebpage);
+                            break;
+                        
+                        case "internal-assets":
+                            skips.Add(UrlType.InternalAsset);
+                            break;
+                        
+                        default:
+                            Console.WriteLine($"ERROR: {args[i + 1]} is not a valid link type. Valid options are: assets, external, external-assets, external-webpages, internal-assets");
+                            return false;
+                    }
+
+                    foreach (var urlType in skips.Where(urlType => !Options.UrlTypesToSkip.Contains(urlType)))
+                    {
+                        Options.UrlTypesToSkip.Add(urlType);
+                    }
+
+                    skip = true;
+                    break;
+                
                 // Parse as URL.
                 default:
                     if (!Uri.TryCreate(args[i], UriKind.Absolute, out var url))
@@ -213,7 +261,7 @@ public static class Program
             "  --engine <engine>         Set the rendering engine to use. Defaults to Chromium.",
             "  --add <domain>            Add a domain to be treated as another internal domain.",
             "  --path <folder>           Set report path. Defaults to current directory.",
-            "  --skip <type>             Skip scanning of certain types of links.", // TODO
+            "  --skip <type>             Skip scanning of certain types of links.",
             "  --timeout <seconds>       Set the timeout for each request. Defaults to 10 seconds.", // TODO
             "  --screenshots             Save a screenshot for every internal webpage scan.", // TODO
             "  --size <width>x<height>   Set the windows size, for the screenshots and accessibility checks.", // TODO

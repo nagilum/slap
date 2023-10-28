@@ -19,4 +19,9 @@ public class Options : IOptions
     /// <inheritdoc cref="IOptions.ReportPath"/>
     /// </summary>
     public string? ReportPath { get; set; }
+
+    /// <summary>
+    /// <inheritdoc cref="IOptions.UrlTypesToSkip"/>
+    /// </summary>
+    public List<UrlType> UrlTypesToSkip { get; } = new();
 }

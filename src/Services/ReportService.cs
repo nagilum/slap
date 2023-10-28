@@ -65,11 +65,11 @@ public class ReportService : IReportService
         {
             sb.AppendLine($"<h3>{violation.Id}</h3>");
             sb.AppendLine("<table><tbody>");
-            sb.AppendLine($"<tr><td class=\"cell-info\">Description</td><td>{violation.Description}</td></tr>");
-            sb.AppendLine($"<tr><td class=\"cell-info\">Help</td><td><a href=\"{violation.HelpUrl}\">{violation.Help}</a></td></tr>");
-            sb.AppendLine($"<tr><td class=\"cell-info\">Tags</td><td>{string.Join(", ", violation.Tags ?? Array.Empty<string>())}</td></tr>");
-            sb.AppendLine($"<tr><td class=\"cell-info\">Impact</td><td>{violation.Impact}</td></tr>");
-            sb.AppendLine($"<tr><td class=\"cell-info\">Count</td><td>{violation.Nodes.Length}</td></tr>");
+            sb.AppendLine($"<tr><td class=\"info-cell\">Description</td><td>{violation.Description}</td></tr>");
+            sb.AppendLine($"<tr><td class=\"info-cell\">Help</td><td><a href=\"{violation.HelpUrl}\">{violation.Help}</a></td></tr>");
+            sb.AppendLine($"<tr><td class=\"info-cell\">Tags</td><td>{string.Join(", ", violation.Tags ?? Array.Empty<string>())}</td></tr>");
+            sb.AppendLine($"<tr><td class=\"info-cell\">Impact</td><td>{violation.Impact}</td></tr>");
+            sb.AppendLine($"<tr><td class=\"info-cell\">Count</td><td>{violation.Nodes.Length}</td></tr>");
             sb.AppendLine("</tbody></table>");
 
             foreach (var node in violation.Nodes)
@@ -322,12 +322,7 @@ public class ReportService : IReportService
     /// <param name="entry">Queue entry.</param>
     private void AddResponseDataToHtmlEntryReport(ref string html, IQueueEntry entry)
     {
-        if (entry.Response is null)
-        {
-            html = html.Replace("{ResponseHidden}", "hidden");
-            return;
-        }
-        
+        html = html.Replace("{Skipped}", entry.Skipped ? "Yes" : "No");
         html = html.Replace("{StatusCode}", entry.Response?.GetStatusFormatted() ?? "-");
         html = html.Replace("{ResponseTime}", entry.Response?.GetTimeFormatted() ?? "-");
         html = html.Replace("{DocumentSize}", entry.Response?.GetSizeFormatted() ?? "-");
@@ -366,11 +361,17 @@ public class ReportService : IReportService
                 n => n.ToString(),
                 n => Program.Queue.Count(m => m.Response?.StatusCode == n).ToString());
 
-        var failed = Program.Queue.Count(n => n.Response is null);
+        var failed = Program.Queue.Count(n => n.Response is null && !n.Skipped);
+        var skipped = Program.Queue.Count(n => n.Skipped);
 
         if (failed > 0)
         {
-            dict.Add("ERR", $"<span class=\"error\">{failed}</span>");
+            dict.Add("FAILED", $"<span class=\"error\">{failed}</span>");
+        }
+
+        if (skipped > 0)
+        {
+            dict.Add("SKIPPED", $"<span class=\"warning\">{skipped}</span>");
         }
         
         var sb = new StringBuilder();

@@ -39,6 +39,11 @@ public class QueueEntry : IQueueEntry
     /// <inheritdoc cref="IQueueEntry.Response"/>
     /// </summary>
     public QueueResponse? Response { get; set; }
+    
+    /// <summary>
+    /// <inheritdoc cref="IQueueEntry.Skipped"/>
+    /// </summary>
+    public bool Skipped { get; set; }
 
     /// <summary>
     /// <inheritdoc cref="IQueueEntry.Url"/>

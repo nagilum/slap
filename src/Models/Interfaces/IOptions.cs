@@ -18,4 +18,9 @@ public interface IOptions
     /// Report path.
     /// </summary>
     string? ReportPath { get; set; }
+    
+    /// <summary>
+    /// URL types to skip scanning.
+    /// </summary>
+    List<UrlType> UrlTypesToSkip { get; }
 }

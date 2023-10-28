@@ -38,7 +38,12 @@ public interface IQueueEntry
     /// Response data.
     /// </summary>
     QueueResponse? Response { get; }
-    
+
+    /// <summary>
+    /// Whether the entry was skipped.
+    /// </summary>
+    bool Skipped { get; }
+
     /// <summary>
     /// URL.
     /// </summary>
