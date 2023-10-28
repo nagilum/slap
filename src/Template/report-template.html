@@ -21,79 +21,46 @@
                 color: #060;
             }
             
-            .clickable {
-                cursor: pointer;
-            }
-            
-            aside {
-                background-color: #eee;
-                box-shadow: 0 0 0 #fff;
-                display: block;
-                min-height: 100vh;
-                opacity: 0;
-                overflow-y: scroll;
-                padding: 8px 8px 200px;
-                position: absolute;
-                right: 0;
-                top: 0;
-                transition: .5s;
-                width: 0;
-            }
-            
-            aside.expanded {
-                box-shadow: -10px 0 10px #666;
-                opacity: 1;
-                width: 50vw;
-            }
-            
-            aside p a.close-panel {
-                cursor: pointer;
-            }
-
-            aside table tbody tr {
-                transition: .5s;
-            }
-            
-            aside table tbody tr:nth-child(even) {
-                background-color: #ddd;
-            }
-
-            aside table tbody tr:hover {
-                background-color: #ccc;
-            }
-            
             footer {
                 padding-top: 100px;
             }
+            
+            table {
+                border-collapse: collapse;
+                border-spacing: 0;
+                width: 100%;
+            }
+            
+            table.links thead.hidden {
+                display: none;
+            }
 
             table thead tr th {
-                padding-right: 20px;
+                padding: 3px 5px;
                 text-align: left;
             }
             
             table tbody tr td {
-                padding-right: 30px;
+                padding: 3px 5px;
             }
             
-            table.links tbody tr td:first-child {
-                width: 600px;
-            }
-            
-            table.links tbody tr:nth-child(even) {
+            table tbody tr:nth-child(even) {
                 background-color: #eee;
             }
 
-            table.links tbody tr {
+            table tbody tr {
                 transition: .5s;
             }
             
-            table.links tbody tr:hover {
+            table tbody tr:hover {
                 background-color: #ddd;
             }
+
+            th.info-cell,
+            td.info-cell {
+                width: 150px;
+            }
         </style>
-        
-        <script>
-        </script>
     </head>
     <body>
         <header>
@@ -107,7 +74,22 @@
         
         <table>
             <tbody>
-                {StatsRows}
+                <tr>
+                    <td class="info-cell">Started</td>
+                    <td>{ScanStarted}</td>
+                </tr>
+                <tr>
+                    <td class="info-cell">Finished</td>
+                    <td>{ScanFinished}</td>
+                </tr>
+                <tr>
+                    <td class="info-cell">Took</td>
+                    <td>{ScanTook}</td>
+                </tr>
+                <tr>
+                    <td class="info-cell">Accessibility Issues</td>
+                    <td>{TotalAccessibilityIssues}</td>
+                </tr>
             </tbody>
         </table>
 
@@ -116,7 +98,7 @@
         <table>
             <thead>
                 <tr>
-                    <th>Code</th>
+                    <th class="info-cell">Code</th>
                     <th>Total Count</th>
                 </tr>
             </thead>
@@ -128,13 +110,14 @@
         <h2>Internal Pages</h2>
 
         <table class="links">
-            <thead>
+            <thead class="{HiddenInternalWebpage}">
                 <tr>
                     <th>URL</th>
-                    <th>Status Code</th>
-                    <th>Response Time</th>
-                    <th>Document Size</th>
-                    <th>Accessibility Issues</th>
+                    <th class="info-cell">Status Code</th>
+                    <th class="info-cell">Response Time</th>
+                    <th class="info-cell">Document Size</th>
+                    <th class="info-cell">Accessibility Issues</th>
+                    <th class="info-cell">Details</th>
                 </tr>
             </thead>
             <tbody>
@@ -145,12 +128,14 @@
         <h2>Internal Assets</h2>
 
         <table class="links">
-            <thead>
+            <thead class="{HiddenInternalAsset}">
                 <tr>
                     <th>URL</th>
-                    <th>Status Code</th>
-                    <th>Response Time</th>
-                    <th>Document Size</th>
+                    <th class="info-cell">Status Code</th>
+                    <th class="info-cell">Response Time</th>
+                    <th class="info-cell">Document Size</th>
+                    <th class="info-cell">&nbsp;</th>
+                    <th class="info-cell">Details</th>
                 </tr>
             </thead>
             <tbody>
@@ -161,12 +146,14 @@
         <h2>External Pages</h2>
 
         <table class="links">
-            <thead>
+            <thead class="{HiddenExternalWebpage}">
                 <tr>
                     <th>URL</th>
-                    <th>Status Code</th>
-                    <th>Response Time</th>
-                    <th>Document Size</th>
+                    <th class="info-cell">Status Code</th>
+                    <th class="info-cell">Response Time</th>
+                    <th class="info-cell">Document Size</th>
+                    <th class="info-cell">&nbsp;</th>
+                    <th class="info-cell">Details</th>
                 </tr>
             </thead>
             <tbody>
@@ -177,12 +164,14 @@
         <h2>External Assets</h2>
 
         <table class="links">
-            <thead>
+            <thead class="{HiddenExternalAsset}">
                 <tr>
                     <th>URL</th>
-                    <th>Status Code</th>
-                    <th>Response Time</th>
-                    <th>Document Size</th>
+                    <th class="info-cell">Status Code</th>
+                    <th class="info-cell">Response Time</th>
+                    <th class="info-cell">Document Size</th>
+                    <th class="info-cell">&nbsp;</th>
+                    <th class="info-cell">Details</th>
                 </tr>
             </thead>
             <tbody>
@@ -194,92 +183,5 @@
             Copyright &copy; 2023 Stian Hanger<br>
             <a href="https://github.com/nagilum/slap">https://github.com/nagilum/slap</a>
         </footer>
-        
-        {IndividualLinkDetails}
-
-        <script>
-            "use strict";
-
-            /**
-             * Close any open details panel.
-             */
-            const closeOpenPanels = () => {
-                document
-                    .querySelectorAll('aside.expanded')
-                    .forEach(aside => {
-                        aside.classList.remove('expanded');
-                    });
-            };
-
-            /**
-             * Find and expand side panel.
-             * @param id Panel ID.
-             */
-            const expandPanel = (id) => {
-                const aside = document.querySelector(`aside#${id}`);
-                
-                if (aside) {
-                    aside.classList.add('expanded');
-                }
-            };
-
-            /**
-             * Get ID value from clicked, or some parent element.
-             * @param el Clicked element.
-             * @returns {string} ID value.
-             */
-            const getPanelId = (el) => {
-                let temp = el.target;
-                
-                while (true) {
-                    let id = temp.getAttribute('data-id');
-                    
-                    if (id) {
-                        return id;
-                    }
-                    
-                    temp = temp.parentElement;
-                    
-                    if (!temp) {
-                        break;
-                    }
-                }
-                
-                return '';
-            };
-
-            /**
-             * Handle clicked row.
-             * @param el Clicked element.
-             */
-            const linkRowOnClick = (el) => {
-                closeOpenPanels();
-
-                let id = getPanelId(el);
-
-                if (id === '') {
-                    return;
-                }
-
-                expandPanel(id);
-            };
-
-            /**
-             * Init all the things..
-             */
-            (() => {
-                document
-                    .querySelectorAll('tr.clickable')
-                    .forEach(el => {
-                        el.addEventListener('click', linkRowOnClick);
-                    });
-                
-                document
-                    .querySelectorAll('a.close-panel')
-                    .forEach(el => {
-                        el.addEventListener('click', closeOpenPanels);
-                    });
-            })();
-        </script>
     </body>
 </html>

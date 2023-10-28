@@ -5,18 +5,23 @@
         <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <AssemblyVersion>1.2</AssemblyVersion>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="Deque.AxeCore.Playwright" Version="4.8.0" />
-      <PackageReference Include="Microsoft.Playwright" Version="1.38.0" />
+      <PackageReference Include="Microsoft.Playwright" Version="1.39.0" />
+      <PackageReference Include="Serilog" Version="3.0.1" />
+      <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
     </ItemGroup>
 
     <ItemGroup>
       <None Update="Template\report-template.html">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         <TargetPath>report-template.html</TargetPath>
+      </None>
+      <None Update="Template\entry-template.html">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        <TargetPath>entry-template.html</TargetPath>
       </None>
     </ItemGroup>
 

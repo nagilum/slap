@@ -1,61 +1,63 @@
 ﻿using Slap.Core;
+using Slap.Models.Interfaces;
 
 namespace Slap.Models;
 
-internal class QueueEntry
+public class QueueEntry : IQueueEntry
 {
     /// <summary>
-    /// Results from Axe accessibility scan.
+    /// <inheritdoc cref="IQueueEntry.AccessibilityResults"/>
     /// </summary>
     public AccessibilityResult? AccessibilityResults { get; set; }
     
     /// <summary>
-    /// When the queue entry was added.
-    /// </summary>
-    public DateTimeOffset Added { get; } = DateTimeOffset.Now;
-    
-    /// <summary>
-    /// Error message, if any occurred.
+    /// <inheritdoc cref="IQueueEntry.Error"/>
     /// </summary>
     public string? Error { get; set; }
     
     /// <summary>
-    /// Type of error.
+    /// <inheritdoc cref="IQueueEntry.ErrorType"/>
     /// </summary>
     public string? ErrorType { get; set; }
-    
+
     /// <summary>
-    /// When processing of the entry finished.
-    /// </summary>
-    public DateTimeOffset? Finished { get; set; }
-    
-    /// <summary>
-    /// Unique ID.
+    /// <inheritdoc cref="IQueueEntry.Id"/>
     /// </summary>
     public Guid Id { get; } = Guid.NewGuid();
 
     /// <summary>
-    /// ID of entries it's linked from.
+    /// <inheritdoc cref="IQueueEntry.LinkedFrom"/>
     /// </summary>
-    public List<Guid> LinkedFrom { get; } = new();
-    
+    public List<Uri> LinkedFrom { get; } = new();
+
     /// <summary>
-    /// Response data.
+    /// <inheritdoc cref="IQueueEntry.Processed"/>
     /// </summary>
-    public UrlResponse? Response { get; set; }
-    
+    public bool Processed { get; set; }
+
     /// <summary>
-    /// When processing of the entry started.
+    /// <inheritdoc cref="IQueueEntry.Response"/>
     /// </summary>
-    public DateTimeOffset? Started { get; set; }
-    
+    public QueueResponse? Response { get; set; }
+
     /// <summary>
-    /// URL.
+    /// <inheritdoc cref="IQueueEntry.Url"/>
     /// </summary>
-    public required Uri Url { get; init; }
-    
+    public Uri Url { get; }
+
     /// <summary>
-    /// Type of URL.
+    /// <inheritdoc cref="IQueueEntry.UrlType"/>
     /// </summary>
-    public required UrlType UrlType { get; init; }
+    public UrlType UrlType { get; }
+
+    /// <summary>
+    /// Initialize a new instance of a <see cref="QueueEntry"/> class.
+    /// </summary>
+    /// <param name="url">URL.</param>
+    /// <param name="urlType">Type of URL.</param>
+    public QueueEntry(Uri url, UrlType urlType = UrlType.InternalWebpage)
+    {
+        this.Url = url;
+        this.UrlType = urlType;
+    }
 }

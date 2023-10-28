@@ -1,34 +1,35 @@
 ﻿using Deque.AxeCore.Commons;
+using Slap.Models.Interfaces;
 
 namespace Slap.Models;
 
-public class ResultItemNode
+public class ResultItemNode : IResultItemNode
 {
     /// <summary>
-    /// Source HTML.
+    /// <inheritdoc cref="IResultItemNode.Html"/>
     /// </summary>
     public string? Html { get; init; }
     
     /// <summary>
-    /// Impact assessment.
+    /// <inheritdoc cref="IResultItemNode.Impact"/>
     /// </summary>
-    public string? Impact { get; set; }
+    public string? Impact { get; init; }
     
     /// <summary>
-    /// Message.
+    /// <inheritdoc cref="IResultItemNode.Message"/>
     /// </summary>
     public string? Message { get; init; }
     
     /// <summary>
-    /// Target selector.
+    /// <inheritdoc cref="IResultItemNode.Target"/>
     /// </summary>
     public ItemNodeSelector? Target { get; init; }
     
     /// <summary>
-    /// XPath selector.
+    /// <inheritdoc cref="IResultItemNode.XPath"/>
     /// </summary>
     public ItemNodeSelector? XPath { get; init; }
-    
+
     /// <summary>
     /// Initialize a new instance of a <see cref="ResultItemNode"/> class.
     /// </summary>

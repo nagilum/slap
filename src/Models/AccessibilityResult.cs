@@ -1,17 +1,17 @@
 ﻿using Deque.AxeCore.Commons;
+using Slap.Models.Interfaces;
 
 namespace Slap.Models;
 
-public class AccessibilityResult
+public class AccessibilityResult : IAccessibilityResult
 {
     /// <summary>
-    /// These results were aborted and require further testing. 
-    /// This can happen either because of technical restrictions to what the rule can test, or because a javascript error occurred.
+    /// <inheritdoc cref="IAccessibilityResult.Incomplete"/>
     /// </summary>
     public AccessibilityResultItem[]? Incomplete { get; init; }
     
     /// <summary>
-    /// These results indicate what elements failed the rules.
+    /// <inheritdoc cref="IAccessibilityResult.Violations"/>
     /// </summary>
     public AccessibilityResultItem[]? Violations { get; init; }
 

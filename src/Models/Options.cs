@@ -1,31 +1,22 @@
 ﻿using Slap.Core;
+using Slap.Models.Interfaces;
 
 namespace Slap.Models;
 
-internal class Options
+public class Options : IOptions
 {
     /// <summary>
-    /// All valid domains.
+    /// <inheritdoc cref="IOptions.InternalDomains"/>
     /// </summary>
     public List<string> InternalDomains { get; } = new();
-
-    /// <summary>
-    /// Report path.
-    /// </summary>
-    public string? ReportPath { get; set; }
     
     /// <summary>
-    /// Playwright config.
-    /// </summary>
-    public PlaywrightConfig? PlaywrightConfig { get; set; } 
-    
-    /// <summary>
-    /// Rendering engine.
+    /// <inheritdoc cref="IOptions.RenderingEngine"/>
     /// </summary>
     public RenderingEngine RenderingEngine { get; set; } = RenderingEngine.Chromium;
     
     /// <summary>
-    /// Whether to save screenshots for each URL scanned.
+    /// <inheritdoc cref="IOptions.ReportPath"/>
     /// </summary>
-    public bool SaveScreenshots { get; set; }
+    public string? ReportPath { get; set; }
 }

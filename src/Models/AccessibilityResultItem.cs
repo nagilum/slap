@@ -1,41 +1,42 @@
 ﻿using Deque.AxeCore.Commons;
+using Slap.Models.Interfaces;
 
 namespace Slap.Models;
 
-public class AccessibilityResultItem
+public class AccessibilityResultItem : IAccessibilityResultItem
 {
     /// <summary>
-    /// ID.
+    /// <inheritdoc cref="IAccessibilityResultItem.Id"/>
     /// </summary>
     public string? Id { get; init; }
     
     /// <summary>
-    /// Description.
+    /// <inheritdoc cref="IAccessibilityResultItem.Description"/>
     /// </summary>
     public string? Description { get; init; }
     
     /// <summary>
-    /// Help text.
+    /// <inheritdoc cref="IAccessibilityResultItem.Help"/>
     /// </summary>
     public string? Help { get; init; }
     
     /// <summary>
-    /// Help URL.
+    /// <inheritdoc cref="IAccessibilityResultItem.HelpUrl"/>
     /// </summary>
     public Uri? HelpUrl { get; init; }
     
     /// <summary>
-    /// Impact assessment.
+    /// <inheritdoc cref="IAccessibilityResultItem.Impact"/>
     /// </summary>
     public string? Impact { get; init; }
     
     /// <summary>
-    /// Tags.
+    /// <inheritdoc cref="IAccessibilityResultItem.Tags"/>
     /// </summary>
     public string[]? Tags { get; init; }
     
     /// <summary>
-    /// Affected nodes.
+    /// <inheritdoc cref="IAccessibilityResultItem.Nodes"/>
     /// </summary>
     public ResultItemNode[] Nodes { get; init; }
 

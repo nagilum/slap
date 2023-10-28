@@ -1,21 +1,22 @@
 ﻿using Deque.AxeCore.Commons;
+using Slap.Models.Interfaces;
 
 namespace Slap.Models;
 
-public class ItemNodeSelector
+public class ItemNodeSelector : IItemNodeSelector
 {
     /// <summary>
-    /// Frame selectors.
+    /// <inheritdoc cref="IItemNodeSelector.FrameSelectors"/>
     /// </summary>
     public string[]? FrameSelectors { get; init; }
-
+    
     /// <summary>
-    /// Frame shadow selectors.
+    /// <inheritdoc cref="IItemNodeSelector.FrameShadowSelectors"/>
     /// </summary>
     public List<string[]>? FrameShadowSelectors { get; init; }
-
+    
     /// <summary>
-    /// Selector.
+    /// <inheritdoc cref="IItemNodeSelector.Selector"/>
     /// </summary>
     public string? Selector { get; init; }
 

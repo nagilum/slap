@@ -1,61 +1,37 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
-using Slap.Exceptions;
+﻿using Serilog;
 using Slap.Models;
-using Slap.Tools;
+using Slap.Models.Interfaces;
+using Slap.Services;
 
 namespace Slap.Core;
 
-internal static class Program
+public static class Program
 {
+    /// <summary>
+    /// When the scan finished.
+    /// </summary>
+    public static DateTimeOffset Finished { get; private set; }
+    
+    /// <summary>
+    /// Parsed options.
+    /// </summary>
+    public static IOptions Options { get; } = new Options();
+    
+    /// <summary>
+    /// Scanning queue.
+    /// </summary>
+    public static List<QueueEntry> Queue { get; } = new();
+    
+    /// <summary>
+    /// When the scan started.
+    /// </summary>
+    public static DateTimeOffset Started { get; } = DateTimeOffset.Now;
+
     /// <summary>
     /// Program version.
     /// </summary>
-    public static Version ProgramVersion { get; } = new(1, 3);
-
-    /// <summary>
-    /// Report path.
-    /// </summary>
-    public static string? ReportPath { get; private set; }
-
-    /// <summary>
-    /// Generate the report path for this run.
-    /// </summary>
-    /// <param name="optionsReportPath">Report path, from options, if specified.</param>
-    /// <param name="hostname">Hostname of the initial URL.</param>
-    /// <returns>Full report path.</returns>
-    private static string GenerateReportPath(string? optionsReportPath, string hostname)
-    {
-        var path = optionsReportPath;
-
-        if (path is null)
-        {
-            var location = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
-                           ?? Directory.GetCurrentDirectory();
-
-            path = Path.Combine(location, "reports");
-        }
-
-        path = Path.Combine(
-            path,
-            hostname,
-            DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss"));
-
-        try
-        {
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-            }
-        }
-        catch
-        {
-            // Do nothing.
-        }
-
-        return path;
-    }
-
+    public static Version Version { get; } = new(1, 4);
+    
     /// <summary>
     /// Init all the things..
     /// </summary>
@@ -69,67 +45,48 @@ internal static class Program
             return;
         }
 
-        if (!ParseCmdArgs(args, out var url, out var options))
+        if (!ParseCmdArgs(args) ||
+            !SetDefaultOptionsValues())
         {
             return;
         }
-
-        ReportPath = GenerateReportPath(options.ReportPath, url.Host);
-
+        
         var tokenSource = new CancellationTokenSource();
 
-        Console.CancelKeyPress += (_, eventArgs) =>
+        try
         {
-            ConsoleEx.Write(
-                Environment.NewLine,
-                ConsoleColor.Red,
-                "Aborted bu user!",
-                Environment.NewLine,
-                Environment.NewLine);
-            
-            try
+            Console.CancelKeyPress += (_, e) =>
             {
                 tokenSource.Cancel();
-            }
-            catch
-            {
-                // Do nothing.
-            }
-            
-            eventArgs.Cancel = true;
-        };
-
-        if (tokenSource.Token.IsCancellationRequested)
-        {
-            return;
+                e.Cancel = true;
+            };
         }
-        
-        var scanner = new Scanner(url, options);
-
-        if (!await scanner.SetupPlaywright(url))
+        catch
         {
-            return;
+            //
         }
+
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .WriteTo.Console()
+            .CreateLogger();
+
+        var queueService = new QueueService();
+        var reportService = new ReportService();
         
-        await scanner.ProcessQueue(tokenSource.Token);
-        await scanner.WriteReports();
+        await queueService.ProcessQueue(tokenSource.Token);
+        Finished = DateTimeOffset.Now;
+        
+        await reportService.GenerateReports();
     }
-
+    
     /// <summary>
-    /// Attempt to parse cmd-args to valid options and initial URL.
+    /// Parse the command line arguments.
     /// </summary>
     /// <param name="args">Command line arguments.</param>
-    /// <param name="url">Initial URL.</param>
-    /// <param name="options">Parsed options.</param>
     /// <returns>Success.</returns>
-    private static bool ParseCmdArgs(
-        IReadOnlyList<string> args,
-        [NotNullWhen(true)] out Uri? url,
-        out Options options)
+    private static bool ParseCmdArgs(IReadOnlyList<string> args)
     {
-        url = null;
-        options = new();
-        
         var skip = false;
 
         for (var i = 0; i < args.Count; i++)
@@ -139,163 +96,102 @@ internal static class Program
                 skip = false;
                 continue;
             }
-
+            
             switch (args[i])
             {
-                // Set rendering engine.
-                case "-re":
+                // Set rendering engine to use.
+                case "--engine":
+                case "-e":
                     if (i == args.Count - 1)
                     {
-                        ConsoleEx.WriteException(
-                            ConsoleObjectsException.From(
-                                "Argument ",
-                                ConsoleColor.Blue,
-                                args[i],
-                                ConsoleColorEx.ResetColor,
-                                " must be followed by a string indicating which rendering engine to use."));
-
+                        Console.WriteLine($"ERROR: {args[i]} must be followed by a rendering engine name.");
                         return false;
                     }
 
                     switch (args[i + 1].ToLower())
                     {
                         case "chromium":
-                            options.RenderingEngine = RenderingEngine.Chromium;
+                            Options.RenderingEngine = RenderingEngine.Chromium;
                             break;
                         
                         case "firefox":
-                            options.RenderingEngine = RenderingEngine.Firefox;
+                            Options.RenderingEngine = RenderingEngine.Firefox;
                             break;
                         
                         case "webkit":
-                            options.RenderingEngine = RenderingEngine.Webkit;
+                            Options.RenderingEngine = RenderingEngine.Webkit;
                             break;
                         
                         default:
-                            ConsoleEx.WriteException(
-                                ConsoleObjectsException.From(
-                                    "Invalid value ",
-                                    ConsoleColor.Red,
-                                    args[i + 1],
-                                    ConsoleColorEx.ResetColor,
-                                    " for parameter ",
-                                    ConsoleColor.Blue,
-                                    args[i],
-                                    ConsoleColorEx.ResetColor));
-
+                            Console.WriteLine($"ERROR: Invalid value for {args[i]}");
                             return false;
                     }
 
                     skip = true;
                     break;
                 
-                // Add a domain to be treated as an internal domain.
-                case "-ad":
+                // Add a domain to be treated as another internal domain.
+                case "--add":
+                case "-a":
                     if (i == args.Count - 1)
                     {
-                        ConsoleEx.WriteException(
-                            ConsoleObjectsException.From(
-                                "Argument ",
-                                ConsoleColor.Blue,
-                                args[i],
-                                ConsoleColorEx.ResetColor,
-                                " must be followed by a string indicating a domain to add."));
-
+                        Console.WriteLine($"ERROR: {args[i]} must be followed by a domain name.");
                         return false;
                     }
 
-                    var host = args[i + 1].ToLower();
-
-                    if (!options.InternalDomains.Contains(host))
+                    if (!Options.InternalDomains.Contains(args[i + 1].ToLower()))
                     {
-                        options.InternalDomains.Add(host);
+                        Options.InternalDomains.Add(args[i + 1].ToLower());
                     }
-                    
+
                     skip = true;
                     break;
                 
                 // Set report path.
-                case "-rp":
+                case "--path":
+                case "-p":
                     if (i == args.Count - 1)
                     {
-                        ConsoleEx.WriteException(
-                            ConsoleObjectsException.From(
-                                "Argument ",
-                                ConsoleColor.Blue,
-                                args[i],
-                                ConsoleColorEx.ResetColor,
-                                " must be followed by a valid path."));
-
+                        Console.WriteLine($"ERROR: {args[i]} must be followed by a valid folder path.");
                         return false;
                     }
 
-                    options.ReportPath = args[i + 1];
+                    if (!Directory.Exists(args[i + 1]))
+                    {
+                        Console.WriteLine($"ERROR: {args[i + 1]} is not a valid folder path.");
+                        return false;
+                    }
+
+                    Options.ReportPath = args[i + 1];
                     skip = true;
                     
                     break;
                 
-                // Load Playwright config.
-                case "-lc":
-                    if (i == args.Count - 1)
-                    {
-                        ConsoleEx.WriteException(
-                            ConsoleObjectsException.From(
-                                "Argument ",
-                                ConsoleColor.Blue,
-                                args[i],
-                                ConsoleColorEx.ResetColor,
-                                " must be followed by a valid path to a Playwright config file."));
-
-                        return false;
-                    }
-
-                    try
-                    {
-                        var json = File.ReadAllText(args[i + 1])
-                                   ?? throw new Exception(
-                                       $"Unable to read from {args[i + 1]}");
-
-                        var obj = JsonSerializer.Deserialize<PlaywrightConfig>(json)
-                                  ?? throw new Exception(
-                                      $"Unable to read Playwright config from {args[i + 1]}");
-
-                        options.PlaywrightConfig = obj;
-                    }
-                    catch (Exception ex)
-                    {
-                        ConsoleEx.WriteException(ex);
-                        return false;
-                    }
-
-                    skip = true;
-                    break;
-                
-                // Save screenshots.
-                case "-ss":
-                    options.SaveScreenshots = true;
-                    break;
-                
-                // Attempt to parse as URL.
+                // Parse as URL.
                 default:
-                    if (!Uri.TryCreate(args[i], UriKind.Absolute, out var uri))
+                    if (!Uri.TryCreate(args[i], UriKind.Absolute, out var url))
                     {
-                        ConsoleEx.WriteException(
-                            ConsoleObjectsException.From(
-                                "Unable to parse ",
-                                ConsoleColor.Red,
-                                args[i],
-                                ConsoleColorEx.ResetColor,
-                                " to a valid URL."));
-
+                        Console.WriteLine($"ERROR: {args[i]} is an invalid URL.");
                         return false;
                     }
 
-                    url = uri;
+                    if (Queue.All(n => n.Url != url))
+                    {
+                        var host = url.Host;
+                        
+                        Queue.Add(new(new Uri($"{url.Scheme}://{host}/")));
+
+                        if (!Options.InternalDomains.Contains(host))
+                        {
+                            Options.InternalDomains.Add(host);
+                        }
+                    }
+                    
                     break;
             }
         }
 
-        return url is not null;
+        return true;
     }
 
     /// <summary>
@@ -303,79 +199,66 @@ internal static class Program
     /// </summary>
     private static void ShowProgramUsage()
     {
-        ConsoleEx.Write(
-            ConsoleColor.White,
-            "Slap v",
-            ProgramVersion,
-            ConsoleColorEx.ResetColor,
-            Environment.NewLine,
-            Environment.NewLine,
-            "Slap a site and see what falls out. A simple command-line site check tool. Slap will start with the given URL and scan outwards till it has covered all links from the same domain/subdomain.",
-            Environment.NewLine,
-            Environment.NewLine);
-        
-        ConsoleEx.Write(
+        var lines = new[]
+        {
+            $"Slap v{Version}",
+            "Slap a site and see what falls out. A simple CLI to assist in QA checking of a site.",
+            "",
+            "If you slap https://example.com it will crawl all URLs found, both internal and external, but not move beyond the initial domain. After it is done, it will generate a report.",
+            "",
             "Usage:",
-            Environment.NewLine,
-            "  slap ",
-            ConsoleColor.Green,
-            "<url> ",
-            ConsoleColor.Blue,
-            "[<options>]",
-            ConsoleColorEx.ResetColor,
-            Environment.NewLine,
-            Environment.NewLine,
+            "  slap <url> [<options>]",
+            "",
             "Options:",
-            Environment.NewLine);
-        
-        ConsoleEx.Write(
-            "  -re ",
-            ConsoleColor.Blue,
-            "<engine>   ",
-            ConsoleColorEx.ResetColor,
-            "Set rendering engine. Defaults to Chromium.",
-            Environment.NewLine);
-        
-        ConsoleEx.Write(
-            "  -ad ",
-            ConsoleColor.Blue,
-            "<domain>   ",
-            ConsoleColorEx.ResetColor,
-            "Add a domain to be treated as an internal domain.",
-            Environment.NewLine);
-        
-        ConsoleEx.Write(
-            "  -rp ",
-            ConsoleColor.Blue,
-            "<path>     ",
-            ConsoleColorEx.ResetColor,
-            "Set report path. Defaults to ",
-            ConsoleColor.Yellow,
-            "current directory/reports",
-            ConsoleColorEx.ResetColor,
-            ".",
-            Environment.NewLine);
-        
-        ConsoleEx.Write(
-            "  -lc ",
-            ConsoleColor.Blue,
-            "<path>     ",
-            ConsoleColorEx.ResetColor,
-            "Load Playwright config file. See documentation for structure.",
-            Environment.NewLine);
-        
-        ConsoleEx.Write(
-            "  -ss            ",
-            ConsoleColorEx.ResetColor,
-            "Save screenshot of each webpage URL.",
-            Environment.NewLine,
-            Environment.NewLine);
-        
-        ConsoleEx.Write(
-            "Source and documentation over at ",
-            ConsoleColor.Blue,
-            "https://github.com/nagilum/slap",
-            Environment.NewLine,
-            Environment.NewLine);
+            "  --engine <engine>      Set the rendering engine to use. Defaults to Chromium.",
+            "  --add <domain>         Add a domain to be treated as another internal domain.",
+            "  --path <folder>        Set report path. Defaults to current directory.",
+            "  --skip <type>          Skip scanning of certain types of links.", // TODO
+            "  --timeout <seconds>    Set the timeout for each request. Defaults to 10 seconds.", // TODO
+            "  --screenshots          Save a screenshot for every internal webpage scan.", // TODO
+            "  --load <file>          Load a queue file, but only process the entries that failed.", // TODO 
+            "",
+            "Source and documentation available at https://github.com/nagilum/slap"
+        };
+
+        foreach (var line in lines)
+        {
+            Console.WriteLine(line);
+        }
+    }
+
+    /// <summary>
+    /// Set default value for all options not specified by user.
+    /// </summary>
+    private static bool SetDefaultOptionsValues()
+    {
+        // Report path.
+        var path = Options.ReportPath
+            ??= Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
+                ?? Directory.GetCurrentDirectory();
+
+        path = Path.Combine(
+            path,
+            "reports",
+            Queue[0].Url.Host,
+            DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss"));
+
+        try
+        {
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+        }
+        catch
+        {
+            Console.WriteLine($"ERROR: Unable to create report path {path}");
+            return false;
+        }
+
+        Options.ReportPath = path;
+
+        // Done.
+        return true;
     }
 }

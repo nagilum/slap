@@ -1,29 +1,31 @@
-﻿namespace Slap.Models;
+﻿using Slap.Models.Interfaces;
 
-internal class MetaTag
+namespace Slap.Models;
+
+public class MetaTag : IMetaTag
 {
     /// <summary>
-    /// Character set.
+    /// <inheritdoc cref="IMetaTag.Charset"/>
     /// </summary>
-    public required string? Charset { get; init; }
+    public string? Charset { get; init; }
     
     /// <summary>
-    /// Content.
+    /// <inheritdoc cref="IMetaTag.Content"/>
     /// </summary>
-    public required string? Content { get; init; }
+    public string? Content { get; init; }
     
     /// <summary>
-    /// HTTP equivalent.
+    /// <inheritdoc cref="IMetaTag.HttpEquiv"/>
     /// </summary>
-    public required string? HttpEquiv { get; init; }
+    public string? HttpEquiv { get; init; }
     
     /// <summary>
-    /// Name.
+    /// <inheritdoc cref="IMetaTag.Name"/>
     /// </summary>
-    public required string? Name { get; init; }
+    public string? Name { get; init; }
     
     /// <summary>
-    /// Property.
+    /// <inheritdoc cref="IMetaTag.Property"/>
     /// </summary>
-    public required string? Property { get; init; }
+    public string? Property { get; init; }
 }

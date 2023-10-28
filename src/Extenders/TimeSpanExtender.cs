@@ -1,6 +1,6 @@
-﻿namespace Slap.Extensions;
+﻿namespace Slap.Extenders;
 
-internal static class TimeSpanExtender
+public static class TimeSpanExtender
 {
     /// <summary>
     /// Return a more human readable version of the TimeSpan value.
