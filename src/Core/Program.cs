@@ -247,6 +247,30 @@ public static class Program
                     Options.CaptureFullPage = true;
                     break;
                 
+                // Set the viewport size, for the screenshots and accessibility checks.
+                case "--size":
+                    if (i == args.Count - 1)
+                    {
+                        Console.WriteLine($"ERROR: {args[i]} must be followed by a width and height.");
+                        return false;
+                    }
+
+                    var size = args[i + 1].Split('x');
+
+                    if (size.Length != 2 ||
+                        !int.TryParse(size[0], out var width) ||
+                        !int.TryParse(size[1], out var height))
+                    {
+                        Console.WriteLine($"ERROR: {args[i + 1]} is not a valid width and height. Must be in the format of 1920x1080.");
+                        return false;
+                    }
+
+                    Options.ViewportHeight = height;
+                    Options.ViewportWidth = width;
+
+                    skip = true;
+                    break;
+                
                 // Parse as URL.
                 default:
                     if (!Uri.TryCreate(args[i], UriKind.Absolute, out var url))
@@ -297,7 +321,7 @@ public static class Program
             "  --timeout <seconds>       Set the timeout for each request. Defaults to 30 seconds.",
             "  --screenshots             Save a screenshot for every internal webpage scan.",
             "  --full-page               Capture full page instead of just the viewport size.",
-            "  --size <width>x<height>   Set the windows size, for the screenshots and accessibility checks.", // TODO
+            "  --size <width>x<height>   Set the viewport size, for the screenshots and accessibility checks. Defaults to 1920x1080.",
             "  --load <file>             Load a queue file, but only process the entries that failed.", // TODO 
             "",
             "Source and documentation available at https://github.com/nagilum/slap"

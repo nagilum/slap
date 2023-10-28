@@ -198,7 +198,21 @@ public class ScannerService : IScannerService
                 this.Page = null;
             }
 
-            this.Page = await browser.NewPageAsync();
+            var options = new Microsoft.Playwright.BrowserNewPageOptions
+            {
+                ScreenSize = new Microsoft.Playwright.ScreenSize
+                {
+                    Height = Program.Options.ViewportHeight,
+                    Width = Program.Options.ViewportWidth
+                },
+                ViewportSize = new Microsoft.Playwright.ViewportSize
+                {
+                    Height = Program.Options.ViewportHeight,
+                    Width = Program.Options.ViewportWidth
+                }
+            };
+
+            this.Page = await browser.NewPageAsync(options);
 
             return true;
         }

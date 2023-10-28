@@ -39,4 +39,14 @@ public class Options : IOptions
     /// <inheritdoc cref="IOptions.UrlTypesToSkip"/>
     /// </summary>
     public List<UrlType> UrlTypesToSkip { get; } = new();
+
+    /// <summary>
+    /// <inheritdoc cref="IOptions.ViewportHeight"/>
+    /// </summary>
+    public int ViewportHeight { get; set; } = 1080;
+
+    /// <summary>
+    /// <inheritdoc cref="IOptions.ViewportWidth"/>
+    /// </summary>
+    public int ViewportWidth { get; set; } = 1920;
 }

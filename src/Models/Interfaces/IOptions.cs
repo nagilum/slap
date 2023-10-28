@@ -38,4 +38,14 @@ public interface IOptions
     /// URL types to skip scanning.
     /// </summary>
     List<UrlType> UrlTypesToSkip { get; }
+    
+    /// <summary>
+    /// Set viewport height.
+    /// </summary>
+    int ViewportHeight { get; }
+    
+    /// <summary>
+    /// Set viewport width.
+    /// </summary>
+    int ViewportWidth { get; }
 }
