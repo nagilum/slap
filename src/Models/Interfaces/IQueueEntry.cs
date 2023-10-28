@@ -38,6 +38,11 @@ public interface IQueueEntry
     /// Response data.
     /// </summary>
     QueueResponse? Response { get; }
+    
+    /// <summary>
+    /// Whether a screenshot was saved.
+    /// </summary>
+    bool ScreenshotSaved { get; }
 
     /// <summary>
     /// Whether the entry was skipped.

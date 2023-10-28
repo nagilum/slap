@@ -327,6 +327,30 @@ public class ReportService : IReportService
         html = html.Replace("{ResponseTime}", entry.Response?.GetTimeFormatted() ?? "-");
         html = html.Replace("{DocumentSize}", entry.Response?.GetSizeFormatted() ?? "-");
     }
+
+    /// <summary>
+    /// Add clickable preview for screenshot.
+    /// </summary>
+    /// <param name="html">HTML.</param>
+    /// <param name="entry">Queue entry.</param>
+    private void AddScreenshotToHtmlEntryReport(ref string html, IQueueEntry entry)
+    {
+        if (!entry.ScreenshotSaved)
+        {
+            html = html.Replace("{Screenshot}", string.Empty);
+            return;
+        }
+
+        var url = $"../screenshots/screenshot-{entry.Id}.png";
+        var sb = new StringBuilder();
+
+        sb.Append("<div class=\"screenshot\">");
+        sb.Append($"<a href=\"{url}\">");
+        sb.Append($"<img src=\"{url}\" alt=\"Screenshot for {entry.Url}\">");
+        sb.Append("</a></div>");
+        
+        html = html.Replace("{Screenshot}", sb.ToString());
+    }
     
     /// <summary>
     /// Add stats to HTML report.
@@ -471,6 +495,7 @@ public class ReportService : IReportService
 
         this.AddMetadataToHtmlEntryReport(ref html, entry);
         this.AddErrorToHTmlEntryReport(ref html, entry);
+        this.AddScreenshotToHtmlEntryReport(ref html, entry);
         this.AddResponseDataToHtmlEntryReport(ref html, entry);
         this.AddResponseBodyDataToHtmlEntryReport(ref html, entry);
         this.AddLinkedFromToHtmlEntryReport(ref html, entry);

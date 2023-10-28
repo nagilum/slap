@@ -5,6 +5,11 @@ namespace Slap.Models.Interfaces;
 public interface IOptions
 {
     /// <summary>
+    /// Whether to capture full page or just viewport when saving screenshots.
+    /// </summary>
+    bool CaptureFullPage { get; }
+    
+    /// <summary>
     /// All domains to be treated as internal and will be scanned.
     /// </summary>
     List<string> InternalDomains { get; }
@@ -18,6 +23,11 @@ public interface IOptions
     /// Report path.
     /// </summary>
     string? ReportPath { get; }
+    
+    /// <summary>
+    /// Whether to save a screenshot for every internal webpage scan.
+    /// </summary>
+    bool SaveScreenshots { get; }
     
     /// <summary>
     /// Request timeout.

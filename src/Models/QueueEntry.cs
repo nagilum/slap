@@ -39,7 +39,12 @@ public class QueueEntry : IQueueEntry
     /// <inheritdoc cref="IQueueEntry.Response"/>
     /// </summary>
     public QueueResponse? Response { get; set; }
-    
+
+    /// <summary>
+    /// <inheritdoc cref="IQueueEntry.ScreenshotSaved"/>
+    /// </summary>
+    public bool ScreenshotSaved { get; set; }
+
     /// <summary>
     /// <inheritdoc cref="IQueueEntry.Skipped"/>
     /// </summary>

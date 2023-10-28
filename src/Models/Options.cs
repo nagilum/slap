@@ -6,6 +6,11 @@ namespace Slap.Models;
 public class Options : IOptions
 {
     /// <summary>
+    /// <inheritdoc cref="IOptions.CaptureFullPage"/>
+    /// </summary>
+    public bool CaptureFullPage { get; set; }
+
+    /// <summary>
     /// <inheritdoc cref="IOptions.InternalDomains"/>
     /// </summary>
     public List<string> InternalDomains { get; } = new();
@@ -19,6 +24,11 @@ public class Options : IOptions
     /// <inheritdoc cref="IOptions.ReportPath"/>
     /// </summary>
     public string? ReportPath { get; set; }
+
+    /// <summary>
+    /// <inheritdoc cref="IOptions.SaveScreenshots"/>
+    /// </summary>
+    public bool SaveScreenshots { get; set; }
 
     /// <summary>
     /// <inheritdoc cref="IOptions.Timeout"/>

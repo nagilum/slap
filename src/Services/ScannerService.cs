@@ -64,7 +64,7 @@ public class ScannerService : IScannerService
                 this.LogResponse(entry.Response);
             }
 
-            if (entry.UrlType == UrlType.InternalWebpage)
+            if (entry.UrlType is UrlType.InternalWebpage)
             {
                 await this.ExtractNewUrls(entry);
                 await this.RunAxeAccessibilityScan(entry);
@@ -74,6 +74,12 @@ public class ScannerService : IScannerService
                 entry.Response is not null)
             {
                 await this.ExtractHtmlData(entry.Response);
+            }
+
+            if (entry.UrlType is UrlType.InternalWebpage &&
+                Program.Options.SaveScreenshots)
+            {
+                await this.SaveScreenshot(entry);
             }
 
             entry.Processed = true;
@@ -476,7 +482,7 @@ public class ScannerService : IScannerService
         var stopwatch = Stopwatch.StartNew();
         var options = new Microsoft.Playwright.PageGotoOptions
         {
-            Timeout = Program.Options.Timeout
+            Timeout = Program.Options.Timeout * 1000
         };
         
         var res = await this.Page!.GotoAsync(entry.Url.ToString(), options)
@@ -558,6 +564,35 @@ public class ScannerService : IScannerService
             entry.Error = ex.Message;
             entry.ErrorType = ex.GetType().ToString();
         }
+    }
+
+    /// <summary>
+    /// Save a screenshot of the current page.
+    /// </summary>
+    /// <param name="entry">Queue entry.</param>
+    private async Task SaveScreenshot(QueueEntry entry)
+    {
+        var path = Path.Combine(
+            Program.Options.ReportPath!,
+            "screenshots");
+
+        if (!Directory.Exists(path))
+        {
+            Directory.CreateDirectory(path);
+        }
+
+        path = Path.Combine(
+            path,
+            $"screenshot-{entry.Id}.png");
+
+        await this.Page!.ScreenshotAsync(new()
+        {
+            FullPage = Program.Options.CaptureFullPage,
+            Path = path,
+            Timeout = Program.Options.Timeout * 1000
+        });
+
+        entry.ScreenshotSaved = true;
     }
 
     #endregion
