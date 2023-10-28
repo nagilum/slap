@@ -8,6 +8,14 @@ If you slap https://example.com it will crawl all URLs found, both internal and 
 
 ![CLI Example](assets/cli-example.png?raw=true)
 
+When Slap is finished running it will create a JSON of the queue as well as a HTML report, which will be stored in the report path, which can be set as a parameter or it defaults to the current directory.
+
+Screenshots:
+
+* [The report overview shows general stats, a list of all status codes returned, and a list of all requests made](assets/report-overview.png)
+* [The details view for each request shows stats about the request, headers, meta tags, where it was linked from, and accessibility issues](assets/report-details.png)
+* [The accessibility issues are listed by topic with each violation listed below with DOM selector and HTML snippet](assets/report-details-accessibility-issues.png)
+
 ## Download and Build
 
 ```bash
