@@ -460,27 +460,27 @@ public class ScannerService : IScannerService
             case >= 200 and <= 299:
                 Log.Information(
                     "{size}, {time}, {status}",
-                    response.GetSizeFormatted(),
-                    response.GetTimeFormatted(),
-                    response.GetStatusFormatted());
+                    response.GetSizeFormatted() ?? "(err)",
+                    response.GetTimeFormatted() ?? "(err)",
+                    response.GetStatusFormatted() ?? "(err)");
                 
                 break;
             
             case <= 399:
                 Log.Warning(
                     "{size}, {time}, {status}",
-                    response.GetSizeFormatted(),
-                    response.GetTimeFormatted(),
-                    response.GetStatusFormatted());
+                    response.GetSizeFormatted() ?? "(err)",
+                    response.GetTimeFormatted() ?? "(err)",
+                    response.GetStatusFormatted() ?? "(err)");
                 
                 break;
             
             default:
                 Log.Error(
                     "{size}, {time}, {status}",
-                    response.GetSizeFormatted(),
-                    response.GetTimeFormatted(),
-                    response.GetStatusFormatted());
+                    response.GetSizeFormatted() ?? "(err)",
+                    response.GetTimeFormatted() ?? "(err)",
+                    response.GetStatusFormatted() ?? "(err)");
                 
                 break;
         }
