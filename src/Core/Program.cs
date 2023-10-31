@@ -204,8 +204,18 @@ public static class Program
                             break;
                         
                         default:
-                            Console.WriteLine($"ERROR: {args[i + 1]} is not a valid link type. Valid options are: assets, external, external-assets, external-webpages, internal-assets");
-                            return false;
+                            if (!Uri.TryCreate($"https://{args[i + 1]}", UriKind.Absolute, out var uri))
+                            {
+                                Console.WriteLine($"ERROR: {args[i + 1]} is not a valid link type or domain name. Valid options are: assets, external, external-assets, external-webpages, internal-assets");
+                                return false;
+                            }
+
+                            if (!Options.DomainsToSkip.Contains(uri.Host.ToLower()))
+                            {
+                                Options.DomainsToSkip.Add(uri.Host.ToLower());
+                            }
+
+                            break;
                     }
 
                     foreach (var urlType in skips.Where(urlType => !Options.UrlTypesToSkip.Contains(urlType)))
@@ -365,7 +375,7 @@ public static class Program
             "  --add <domain>            Add a domain to be treated as another internal domain.",
             "  --path <folder>           Set report path. Defaults to current directory.",
             "  --skip <type>             Skip scanning of certain types of links.",
-            "  --skip <domain>           Add a domain to be skipped while scanning.", // TODO
+            "  --skip <domain>           Add a domain to be skipped while scanning.",
             "  --timeout <seconds>       Set the timeout for each request. Defaults to 30 seconds.",
             "  --screenshots             Save a screenshot for every internal webpage scan.",
             "  --full-page               Capture full page instead of just the viewport size.",

@@ -61,7 +61,8 @@ public class QueueService : IQueueService
                 break;
             }
 
-            if (Program.Options.UrlTypesToSkip.Contains(entry.UrlType))
+            if (Program.Options.UrlTypesToSkip.Contains(entry.UrlType) ||
+                Program.Options.DomainsToSkip.Contains(entry.Url.Host.ToLower()))
             {
                 Log.Warning(
                     "Skipping {index} of {total} : {url}",

@@ -10,6 +10,11 @@ public interface IOptions
     bool CaptureFullPage { get; }
     
     /// <summary>
+    /// Domain names to skip scanning.
+    /// </summary>
+    List<string> DomainsToSkip { get; }
+    
+    /// <summary>
     /// All domains to be treated as internal and will be scanned.
     /// </summary>
     List<string> InternalDomains { get; }

@@ -122,6 +122,18 @@ slap https://example.com --skip external --skip internal-assets
 
 This will skip internal assets, external assets, and external webpages.
 
+### Skip Scanning of Domains
+
+Set a domain to be skipped. This command can be repeated to set more domains.
+
+#### Example
+
+```
+slap https://example.com --skip www.iana.org
+```
+
+This will scan the example.com domain, but skip scanning all links and assets found on www.iana.org.
+
 ### Set Timeout
 
 Set the request timeout, in seconds, for each request. This setting defaults to 10 seconds.

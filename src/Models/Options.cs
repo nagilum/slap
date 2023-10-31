@@ -11,6 +11,11 @@ public class Options : IOptions
     public bool CaptureFullPage { get; set; }
 
     /// <summary>
+    /// <inheritdoc cref="IOptions.DomainsToSkip"/>
+    /// </summary>
+    public List<string> DomainsToSkip { get; } = new();
+
+    /// <summary>
     /// <inheritdoc cref="IOptions.InternalDomains"/>
     /// </summary>
     public List<string> InternalDomains { get; } = new();

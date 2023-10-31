@@ -182,6 +182,10 @@ public class ReportService : IReportService
             {
                 sb.Append($"<td class=\"error\" colspan=\"3\">{entry.Error}</td>");
             }
+            else if (entry.Skipped)
+            {
+                sb.Append($"<td class=\"warning\" colspan=\"3\">Skipped</td>");
+            }
             else
             {
                 // Status code.
