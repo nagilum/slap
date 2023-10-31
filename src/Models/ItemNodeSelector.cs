@@ -23,6 +23,14 @@ public class ItemNodeSelector : IItemNodeSelector
     /// <summary>
     /// Initialize a new instance of a <see cref="ItemNodeSelector"/> class.
     /// </summary>
+    public ItemNodeSelector()
+    {
+        // Empty constructor, for deserialization.
+    }
+
+    /// <summary>
+    /// Initialize a new instance of a <see cref="ItemNodeSelector"/> class.
+    /// </summary>
     /// <param name="selector">Selector.</param>
     public ItemNodeSelector(AxeSelector? selector)
     {

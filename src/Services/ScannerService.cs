@@ -97,11 +97,6 @@ public class ScannerService : IScannerService
             }
             else
             {
-                if (await this.SetupPlaywright())
-                {
-                    return;
-                }
-
                 Log.Error(
                     "Error while scanning {url}",
                     entry.Url);
@@ -573,10 +568,9 @@ public class ScannerService : IScannerService
             var results = await this.Page!.RunAxe();
             entry.AccessibilityResults = new(results);
         }
-        catch (Exception ex)
+        catch
         {
-            entry.Error = ex.Message;
-            entry.ErrorType = ex.GetType().ToString();
+            // Ignore error, for now.
         }
     }
 

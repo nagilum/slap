@@ -8,12 +8,20 @@ public class AccessibilityResult : IAccessibilityResult
     /// <summary>
     /// <inheritdoc cref="IAccessibilityResult.Incomplete"/>
     /// </summary>
-    public AccessibilityResultItem[]? Incomplete { get; init; }
+    public AccessibilityResultItem[]? Incomplete { get; set; }
     
     /// <summary>
     /// <inheritdoc cref="IAccessibilityResult.Violations"/>
     /// </summary>
-    public AccessibilityResultItem[]? Violations { get; init; }
+    public AccessibilityResultItem[]? Violations { get; set; }
+
+    /// <summary>
+    /// Initialize a new instance of a <see cref="AccessibilityResult"/> class.
+    /// </summary>
+    public AccessibilityResult()
+    {
+        // Empty constructor, for deserialization.
+    }
 
     /// <summary>
     /// Initialize a new instance of a <see cref="AccessibilityResult"/> class.

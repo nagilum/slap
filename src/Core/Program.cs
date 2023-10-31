@@ -1,4 +1,5 @@
-﻿using Serilog;
+﻿using System.Text.Json;
+using Serilog;
 using Slap.Models;
 using Slap.Services;
 
@@ -271,6 +272,52 @@ public static class Program
                     skip = true;
                     break;
                 
+                // Load a queue file, but only process the entries that failed.
+                case "--load":
+                    if (i == args.Count - 1)
+                    {
+                        Console.WriteLine($"ERROR: {args[i]} must be followed by a file path.");
+                        return false;
+                    }
+
+                    try
+                    {
+                        var json = File.ReadAllText(args[i + 1]);
+                        var list = JsonSerializer.Deserialize<List<QueueEntry>>(
+                            json,
+                            new JsonSerializerOptions
+                            {
+                                PropertyNameCaseInsensitive = true
+                            });
+
+                        if (list is null ||
+                            list.Count == 0 ||
+                            list.First().Url == null!)
+                        {
+                            throw new Exception("Invalid deserialization");
+                        }
+
+                        foreach (var entry in list.Where(n => n.Error is not null))
+                        {
+                            entry.AccessibilityResults = null;
+                            entry.Error = null;
+                            entry.ErrorType = null;
+                            entry.Processed = false;
+                            entry.Response = null;
+                            entry.ScreenshotSaved = false;
+                        }
+
+                        Queue.AddRange(list);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"ERROR: Unable to load queue from file: {ex.Message}");
+                        return false;
+                    }
+
+                    skip = true;
+                    break;
+                
                 // Parse as URL.
                 default:
                     if (!Uri.TryCreate(args[i], UriKind.Absolute, out var url))
@@ -322,7 +369,7 @@ public static class Program
             "  --screenshots             Save a screenshot for every internal webpage scan.",
             "  --full-page               Capture full page instead of just the viewport size.",
             "  --size <width>x<height>   Set the viewport size, for the screenshots and accessibility checks. Defaults to 1920x1080.",
-            "  --load <file>             Load a queue file, but only process the entries that failed.", // TODO 
+            "  --load <file>             Load a queue file, but only process the entries that failed.",
             "",
             "Source and documentation available at https://github.com/nagilum/slap"
         };

@@ -38,7 +38,15 @@ public class AccessibilityResultItem : IAccessibilityResultItem
     /// <summary>
     /// <inheritdoc cref="IAccessibilityResultItem.Nodes"/>
     /// </summary>
-    public ResultItemNode[] Nodes { get; init; }
+    public ResultItemNode[]? Nodes { get; init; }
+
+    /// <summary>
+    /// Initialize a new instance of a <see cref="AccessibilityResultItem"/> class.
+    /// </summary>
+    public AccessibilityResultItem()
+    {
+        // Empty constructor, for deserialization.
+    }
 
     /// <summary>
     /// Initialize a new instance of a <see cref="AccessibilityResultItem"/> class.

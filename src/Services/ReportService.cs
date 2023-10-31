@@ -69,8 +69,13 @@ public class ReportService : IReportService
             sb.AppendLine($"<tr><td class=\"info-cell\">Help</td><td><a href=\"{violation.HelpUrl}\">{violation.Help}</a></td></tr>");
             sb.AppendLine($"<tr><td class=\"info-cell\">Tags</td><td>{string.Join(", ", violation.Tags ?? Array.Empty<string>())}</td></tr>");
             sb.AppendLine($"<tr><td class=\"info-cell\">Impact</td><td>{violation.Impact}</td></tr>");
-            sb.AppendLine($"<tr><td class=\"info-cell\">Count</td><td>{violation.Nodes.Length}</td></tr>");
+            sb.AppendLine($"<tr><td class=\"info-cell\">Count</td><td>{violation.Nodes?.Length}</td></tr>");
             sb.AppendLine("</tbody></table>");
+
+            if (!(violation.Nodes?.Length > 0))
+            {
+                continue;
+            }
 
             foreach (var node in violation.Nodes)
             {

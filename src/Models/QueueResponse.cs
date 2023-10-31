@@ -29,7 +29,7 @@ public class QueueResponse : IQueueResponse
     /// <summary>
     /// <inheritdoc cref="IQueueResponse.MetaTags"/>
     /// </summary>
-    public List<IMetaTag>? MetaTags { get; set; }
+    public List<MetaTag>? MetaTags { get; set; }
 
     /// <summary>
     /// <inheritdoc cref="IQueueResponse.Size"/>

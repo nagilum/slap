@@ -35,5 +35,5 @@ public interface IAccessibilityResultItem
     /// <summary>
     /// Affected nodes.
     /// </summary>
-    ResultItemNode[] Nodes { get; }
+    ResultItemNode[]? Nodes { get; }
 }

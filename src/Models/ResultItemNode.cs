@@ -33,6 +33,14 @@ public class ResultItemNode : IResultItemNode
     /// <summary>
     /// Initialize a new instance of a <see cref="ResultItemNode"/> class.
     /// </summary>
+    public ResultItemNode()
+    {
+        // Empty constructor, for deserialization.
+    }
+
+    /// <summary>
+    /// Initialize a new instance of a <see cref="ResultItemNode"/> class.
+    /// </summary>
     /// <param name="node">Result node.</param>
     public ResultItemNode(AxeResultNode node)
     {

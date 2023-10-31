@@ -15,7 +15,7 @@ public interface IQueueResponse
     /// <summary>
     /// HTML meta tags.
     /// </summary>
-    List<IMetaTag>? MetaTags { get; }
+    List<MetaTag>? MetaTags { get; }
     
     /// <summary>
     /// Body size, in bytes.
