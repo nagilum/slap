@@ -43,7 +43,7 @@ slap https://example.com --engine firefox
 * [Set Window Size](#set-window-size)
 * [Load Queue File](#load-queue-file)
 
-### Set Rendering Engine
+## Set Rendering Engine
 
 Set which rendering engine to use.
 
@@ -59,7 +59,7 @@ Valid options are:
 
 The default value is `chromium`.
 
-#### Example
+### Example
 
 ```
 slap https://example.com --engine firefox
@@ -67,8 +67,7 @@ slap https://example.com --engine firefox
 
 This will set the rendering engine to `Firefox`.
 
-
-### Add Internal Domain
+## Add Internal Domain
 
 Add a domain to be treated as an internal domain.
 
@@ -76,7 +75,7 @@ Add a domain to be treated as an internal domain.
 --add <domain>
 ```
 
-#### Example
+### Example
 
 ```
 slap https://example.com --add docs.example.com
@@ -84,8 +83,7 @@ slap https://example.com --add docs.example.com
 
 This will follow links on both `example.com` and `docs.example.com`.
 
-
-### Set Report Path
+## Set Report Path
 
 Set the folder path to save the report after scanning. It defaults to the current directory.
 
@@ -95,7 +93,7 @@ Set the folder path to save the report after scanning. It defaults to the curren
 
 If the path does not exist, it will be created.
 
-#### Example
+### Example
 
 ```
 slap https://example.com --path ~/slap-reports/
@@ -103,7 +101,7 @@ slap https://example.com --path ~/slap-reports/
 
 This will set the report path to `~/slap-reports/`.
 
-### Skip Scanning of Links
+## Skip Scanning of Links
 
 Set whick link types to skip. This command can be repeated to set more skips.
 
@@ -115,7 +113,7 @@ Valid options are:
 * `external-webpages` - Will skip external webpages.
 * `internal-assets` - Will skip internal assets.
 
-#### Example
+### Example
 
 ```
 slap https://example.com --skip external --skip internal-assets
@@ -123,11 +121,11 @@ slap https://example.com --skip external --skip internal-assets
 
 This will skip internal assets, external assets, and external webpages.
 
-### Skip Scanning of Domains
+## Skip Scanning of Domains
 
 Set a domain to be skipped. This command can be repeated to set more domains.
 
-#### Example
+### Example
 
 ```
 slap https://example.com --skip www.iana.org
@@ -135,11 +133,11 @@ slap https://example.com --skip www.iana.org
 
 This will scan the example.com domain, but skip scanning all links and assets found on www.iana.org.
 
-### Set Timeout
+## Set Timeout
 
 Set the request timeout, in seconds, for each request. This setting defaults to 10 seconds.
 
-#### Example
+### Example
 
 ```
 slap https://example.com --timeout 2
@@ -147,7 +145,7 @@ slap https://example.com --timeout 2
 
 This will set the timeout for all request to 2 seconds.
 
-### Save Screenshots
+## Save Screenshots
 
 Set to save screenshots of each internal page that is scanned.
 
@@ -155,7 +153,7 @@ Set to save screenshots of each internal page that is scanned.
 --screenshots
 ```
 
-#### Example
+### Example
 
 ```
 slap https://example.com --screenshots
@@ -163,11 +161,11 @@ slap https://example.com --screenshots
 
 This will tell the program to save a screenshot for each internal page that's scanned.
 
-### Set Window Size
+## Set Window Size
 
 Set the window size. This will affect the size of the screenshot as well as some accessibility checks.
 
-#### Example
+### Example
 
 ```
 slap https://example.com --size 1024x768
@@ -175,12 +173,12 @@ slap https://example.com --size 1024x768
 
 This will set the window size to 1024x768 px.
 
-### Load Queue File
+## Load Queue File
 
 This will load the specified queue file instead of crwling from first URL.
 Slap will then re-scan all the entries that failed in any way on the previous run.
 
-#### Example
+### Example
 
 ```
 slap --load ./reports/example.com/queue.json
