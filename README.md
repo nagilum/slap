@@ -38,6 +38,7 @@ slap https://example.com --engine firefox
 * [Add Internal Domain](#add-internal-domain)
 * [Set Report Path](#set-report-path)
 * [Skip Scanning of Links](#skip-scanning-of-links)
+* [Skip Scanning of Domains](#skip-scanning-of-domains)
 * [Set Timeout](#set-timeout)
 * [Set Window Size](#set-window-size)
 * [Load Queue File](#load-queue-file)
