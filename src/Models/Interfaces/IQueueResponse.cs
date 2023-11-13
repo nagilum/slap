@@ -3,6 +3,11 @@
 public interface IQueueResponse
 {
     /// <summary>
+    /// Content type.
+    /// </summary>
+    string? ContentType { get; }
+    
+    /// <summary>
     /// HTML document title.
     /// </summary>
     string? DocumentTitle { get; }
@@ -10,7 +15,7 @@ public interface IQueueResponse
     /// <summary>
     /// Headers.
     /// </summary>
-    Dictionary<string, string>? Headers { get; }
+    Dictionary<string, string?>? Headers { get; }
     
     /// <summary>
     /// HTML meta tags.

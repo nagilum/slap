@@ -376,7 +376,7 @@ public static class Program
             "  --path <folder>           Set report path. Defaults to current directory.",
             "  --skip <type>             Skip scanning of certain types of links.",
             "  --skip <domain>           Add a domain to be skipped while scanning.",
-            "  --timeout <seconds>       Set the timeout for each request. Defaults to 30 seconds.",
+            "  --timeout <seconds>       Set the timeout for each request. Defaults to 10 seconds.",
             "  --screenshots             Save a screenshot for every internal webpage scan.",
             "  --full-page               Capture full page instead of just the viewport size.",
             "  --size <width>x<height>   Set the viewport size, for the screenshots and accessibility checks. Defaults to 1920x1080.",

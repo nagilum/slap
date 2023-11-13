@@ -18,16 +18,21 @@ public class ScannerService : IScannerService
     private readonly HttpClient _httpClient;
 
     #endregion
-    
+
     #region Properties
-    
+
     /// <summary>
     /// Playwright page.
     /// </summary>
     private Microsoft.Playwright.IPage? Page { get; set; }
     
+    /// <summary>
+    /// User-agent, from Playwright. Used in the HTTP client requests.
+    /// </summary>
+    private string? UserAgent { get; set; }
+
     #endregion
-    
+
     #region Constructor
 
     /// <summary>
@@ -38,11 +43,11 @@ public class ScannerService : IScannerService
         this._httpClient = new HttpClient();
         this._httpClient.Timeout = TimeSpan.FromSeconds(Program.Options.Timeout);
     }
-    
+
     #endregion
-    
+
     #region Implementation functions
-    
+
     /// <summary>
     /// <inheritdoc cref="IScannerService.PerformRequest"/>
     /// </summary>
@@ -50,13 +55,14 @@ public class ScannerService : IScannerService
     {
         try
         {
-            if (entry.UrlType is UrlType.InternalWebpage or UrlType.ExternalWebpage)
+            await this.PerformHttpClientRequest(entry, cancellationToken);
+
+            var playwrightRequest = false;
+
+            if (entry.Response?.ContentType?.IndexOf("text/html", StringComparison.InvariantCultureIgnoreCase) > -1)
             {
                 await this.PerformPlaywrightRequest(entry);
-            }
-            else
-            {
-                await this.PerformHttpClientRequest(entry, cancellationToken);
+                playwrightRequest = true;
             }
 
             if (entry.Response is not null)
@@ -64,19 +70,22 @@ public class ScannerService : IScannerService
                 this.LogResponse(entry.Response);
             }
 
-            if (entry.UrlType is UrlType.InternalWebpage)
+            if (playwrightRequest &&
+                entry.UrlType is UrlType.InternalWebpage)
             {
                 await this.ExtractNewUrls(entry);
                 await this.RunAxeAccessibilityScan(entry);
             }
 
-            if (entry.UrlType is UrlType.InternalWebpage or UrlType.ExternalWebpage &&
+            if (playwrightRequest &&
+                entry.UrlType is UrlType.InternalWebpage or UrlType.ExternalWebpage &&
                 entry.Response is not null)
             {
                 await this.ExtractHtmlData(entry.Response);
             }
 
-            if (entry.UrlType is UrlType.InternalWebpage &&
+            if (playwrightRequest &&
+                entry.UrlType is UrlType.InternalWebpage &&
                 Program.Options.SaveScreenshots)
             {
                 await this.SaveScreenshot(entry);
@@ -114,7 +123,7 @@ public class ScannerService : IScannerService
                 Log.Error(
                     "Unresolvable hostname {host}",
                     entry.Url.Host);
-                
+
                 entry.Error = $"Unresolvable hostname {entry.Url.Host}";
                 entry.ErrorType = "ERR_NAME_NOT_RESOLVED";
             }
@@ -123,11 +132,11 @@ public class ScannerService : IScannerService
                 Log.Error(
                     "Error while scanning {url}",
                     entry.Url);
-                
+
                 entry.Error = ex.Message;
                 entry.ErrorType = ex.GetType().ToString();
             }
-            
+
             entry.Processed = true;
         }
         catch (TimeoutException)
@@ -148,7 +157,7 @@ public class ScannerService : IScannerService
                 Log.Error(
                     "Unresolvable hostname {host}",
                     entry.Url.Host);
-                
+
                 entry.Error = $"Unresolvable hostname {entry.Url.Host}";
                 entry.ErrorType = "ERR_NAME_NOT_RESOLVED";
             }
@@ -157,11 +166,11 @@ public class ScannerService : IScannerService
                 Log.Error(
                     "Error while scanning {url}",
                     entry.Url);
-                
+
                 entry.Error = ex.Message;
                 entry.ErrorType = ex.GetType().ToString();
             }
-            
+
             entry.Processed = true;
         }
     }
@@ -178,7 +187,7 @@ public class ScannerService : IScannerService
                 {
                     "install"
                 });
-            
+
             var instance = await Microsoft.Playwright.Playwright.CreateAsync();
             var browser = Program.Options.RenderingEngine switch
             {
@@ -217,11 +226,11 @@ public class ScannerService : IScannerService
             return false;
         }
     }
-    
+
     #endregion
-    
+
     #region Helper functions
-    
+
     /// <summary>
     /// Extract document title and meta tags from HTML content.
     /// </summary>
@@ -236,7 +245,7 @@ public class ScannerService : IScannerService
         {
             response.DocumentTitle = await titles.Nth(0).TextContentAsync();
         }
-        
+
         // Meta tags.
         var metas = this.Page!.Locator("//meta");
         count = await metas.CountAsync();
@@ -258,7 +267,7 @@ public class ScannerService : IScannerService
             });
         }
     }
-    
+
     /// <summary>
     /// Extract new URLs to scan from Playwright page.
     /// </summary>
@@ -281,12 +290,12 @@ public class ScannerService : IScannerService
             for (var i = 0; i < count; i++)
             {
                 var url = await hrefs.Nth(i).GetAttributeAsync(attr);
-                
+
                 if (url?.Trim().StartsWith("mailto:", StringComparison.InvariantCultureIgnoreCase) == true)
                 {
                     continue;
                 }
-                
+
                 if (!Uri.TryCreate(entry.Url, url, out var uri) ||
                     !uri.IsAbsoluteUri ||
                     string.IsNullOrWhiteSpace(uri.DnsSafeHost))
@@ -314,7 +323,7 @@ public class ScannerService : IScannerService
             }
         }
     }
-    
+
     /// <summary>
     /// Get a description matching the given HTTP status code.
     /// </summary>
@@ -394,7 +403,7 @@ public class ScannerService : IScannerService
             _ => string.Empty
         };
     }
-    
+
     /// <summary>
     /// Get the URL type for the given URL.
     /// </summary>
@@ -413,7 +422,7 @@ public class ScannerService : IScannerService
         };
 
         UrlType urlType;
-        
+
         if (tag == "a")
         {
             var last = uri.Segments.Last();
@@ -422,13 +431,15 @@ public class ScannerService : IScannerService
             {
                 if (Program.Options.InternalDomains.Contains(uri.Host.ToLower()))
                 {
-                    urlType = webpageExtensions.Any(ext => last.EndsWith(ext, StringComparison.InvariantCultureIgnoreCase))
+                    urlType = webpageExtensions.Any(ext =>
+                        last.EndsWith(ext, StringComparison.InvariantCultureIgnoreCase))
                         ? UrlType.InternalWebpage
                         : UrlType.InternalAsset;
                 }
                 else
                 {
-                    urlType = webpageExtensions.Any(ext => last.EndsWith(ext, StringComparison.InvariantCultureIgnoreCase))
+                    urlType = webpageExtensions.Any(ext =>
+                        last.EndsWith(ext, StringComparison.InvariantCultureIgnoreCase))
                         ? UrlType.ExternalWebpage
                         : UrlType.ExternalAsset;
                 }
@@ -449,7 +460,7 @@ public class ScannerService : IScannerService
 
         return urlType;
     }
-    
+
     /// <summary>
     /// Log response to console.
     /// </summary>
@@ -464,29 +475,29 @@ public class ScannerService : IScannerService
                     response.GetSizeFormatted() ?? "(err)",
                     response.GetTimeFormatted() ?? "(err)",
                     response.GetStatusFormatted() ?? "(err)");
-                
+
                 break;
-            
+
             case <= 399:
                 Log.Warning(
                     "{size}, {time}, {status}",
                     response.GetSizeFormatted() ?? "(err)",
                     response.GetTimeFormatted() ?? "(err)",
                     response.GetStatusFormatted() ?? "(err)");
-                
+
                 break;
-            
+
             default:
                 Log.Error(
                     "{size}, {time}, {status}",
                     response.GetSizeFormatted() ?? "(err)",
                     response.GetTimeFormatted() ?? "(err)",
                     response.GetStatusFormatted() ?? "(err)");
-                
+
                 break;
         }
     }
-    
+
     /// <summary>
     /// Perform a Playwright request, analyze the response, and update queue entry.
     /// </summary>
@@ -499,12 +510,28 @@ public class ScannerService : IScannerService
         {
             Timeout = Program.Options.Timeout * 1000
         };
-        
+
+        if (this.UserAgent is null)
+        {
+            await this.Page!.RouteAsync("**/*", async route =>
+            {
+                var (_, userAgent) = route.Request.Headers
+                    .FirstOrDefault(n => n.Key.Equals("user-agent", StringComparison.InvariantCultureIgnoreCase));
+
+                if (!string.IsNullOrWhiteSpace(userAgent))
+                {
+                    this.UserAgent = userAgent;
+                }
+                
+                await route.ContinueAsync();
+            });            
+        }
+
         var res = await this.Page!.GotoAsync(entry.Url.ToString(), options)
                   ?? throw new Exception($"Unable to get a valid HTTP response from {entry.Url}");
-        
+
         stopwatch.Stop();
-        
+
         int? size = null;
         string? contentType = null;
 
@@ -527,14 +554,14 @@ public class ScannerService : IScannerService
 
         entry.Response = new QueueResponse
         {
-            Headers = res.Headers,
+            Headers = res.Headers.ToDictionary(n => n.Key, n => (string?)n.Value),
             Size = size,
             StatusCode = res.Status,
             StatusDescription = this.GetStatusDescription(res.Status),
             Time = stopwatch.ElapsedMilliseconds
         };
     }
-    
+
     /// <summary>
     /// Perform a HTTP client and update queue entry.
     /// </summary>
@@ -544,18 +571,64 @@ public class ScannerService : IScannerService
     private async Task PerformHttpClientRequest(QueueEntry entry, CancellationToken cancellationToken)
     {
         var stopwatch = Stopwatch.StartNew();
-        var res = await this._httpClient.GetAsync(entry.Url, cancellationToken)
-                  ?? throw new Exception($"Unable to get a valid HTTP response from {entry.Url}");
-        
-        stopwatch.Stop();
 
+        var req = new HttpRequestMessage(HttpMethod.Get, entry.Url);
+        
+        req.Headers.Add("Accept", "*/*");
+        req.Headers.Add("Accept-Encoding", "gzip, deflate, br");
+        req.Headers.Add("Connection", "keep-alive");
+        req.Headers.Add("Host", entry.Url.Host);
+        req.Headers.Add("User-Agent", this.UserAgent ?? $"Slap/{Program.Version}");
+        
+        var res = await this._httpClient.SendAsync(req, cancellationToken)
+            ?? throw new Exception($"Unable to get a valid HTTP response from {entry.Url}");
+
+        stopwatch.Stop();
+        
         var body = await res.Content.ReadAsByteArrayAsync(cancellationToken);
+        
+        string? contentType = null;
+        var headers = new Dictionary<string, string?>();
+
+        foreach (var (key, values) in res.Headers)
+        {
+            var value = values
+                .FirstOrDefault(n => !string.IsNullOrWhiteSpace(n));
+            
+            if (contentType is null &&
+                key.Equals("content-type", StringComparison.InvariantCultureIgnoreCase) &&
+                value is not null)
+            {
+                contentType = value;
+            }
+
+            headers.TryAdd(key, value);
+        }
+
+        foreach (var (key, values) in res.Content.Headers)
+        {
+            var value = values
+                .FirstOrDefault(n => !string.IsNullOrWhiteSpace(n));
+            
+            if (contentType is null &&
+                key.Equals("content-type", StringComparison.InvariantCultureIgnoreCase) &&
+                value is not null)
+            {
+                contentType = value;
+            }
+
+            headers.TryAdd(key, value);
+        }
+
+        headers = headers
+            .OrderBy(n => n.Key)
+            .ToDictionary(n => n.Key,
+                n => n.Value);
 
         entry.Response = new QueueResponse
         {
-            Headers = res.Headers.ToDictionary(
-                n => n.Key.ToString().ToLower(),
-                n => n.Value.First().ToString()),
+            ContentType = contentType,
+            Headers = headers,
             Size = body.Length,
             StatusCode = (int)res.StatusCode,
             StatusDescription = this.GetStatusDescription((int)res.StatusCode),

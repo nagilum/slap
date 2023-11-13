@@ -15,6 +15,11 @@ public class QueueResponse : IQueueResponse
     #endregion
     
     #region Properties
+    
+    /// <summary>
+    /// <inheritdoc cref="IQueueResponse.ContentType"/>
+    /// </summary>
+    public string? ContentType { get; set; }
 
     /// <summary>
     /// <inheritdoc cref="IQueueResponse.DocumentTitle"/>
@@ -24,7 +29,7 @@ public class QueueResponse : IQueueResponse
     /// <summary>
     /// <inheritdoc cref="IQueueResponse.Headers"/>
     /// </summary>
-    public Dictionary<string, string>? Headers { get; init; }
+    public Dictionary<string, string?>? Headers { get; init; }
 
     /// <summary>
     /// <inheritdoc cref="IQueueResponse.MetaTags"/>

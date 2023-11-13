@@ -38,7 +38,7 @@ public class Options : IOptions
     /// <summary>
     /// <inheritdoc cref="IOptions.Timeout"/>
     /// </summary>
-    public int Timeout { get; set; } = 30;
+    public int Timeout { get; set; } = 10;
 
     /// <summary>
     /// <inheritdoc cref="IOptions.UrlTypesToSkip"/>
