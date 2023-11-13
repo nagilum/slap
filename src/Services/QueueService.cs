@@ -1,4 +1,5 @@
-﻿using Serilog;
+﻿using System.Text.RegularExpressions;
+using Serilog;
 using Slap.Core;
 using Slap.Services.Interfaces;
 
@@ -61,8 +62,11 @@ public class QueueService : IQueueService
                 break;
             }
 
-            if (Program.Options.UrlTypesToSkip.Contains(entry.UrlType) ||
-                Program.Options.DomainsToSkip.Contains(entry.Url.Host.ToLower()))
+            var skip = Program.Options.UrlTypesToSkip.Contains(entry.UrlType) ||
+                       Program.Options.DomainsToSkip.Contains(entry.Url.Host.ToLower()) ||
+                       Program.Options.RegExMatchesToSkip.Any(n => Regex.IsMatch(entry.Url.ToString(), n));
+
+            if (skip)
             {
                 Log.Warning(
                     "Skipping {index} of {total} : {url}",

@@ -20,6 +20,11 @@ public interface IOptions
     List<string> InternalDomains { get; }
     
     /// <summary>
+    /// Reg-ex matches for URLs to skip.
+    /// </summary>
+    List<string> RegExMatchesToSkip { get; }
+    
+    /// <summary>
     /// Rendering engine to use.
     /// </summary>
     RenderingEngine RenderingEngine { get; }

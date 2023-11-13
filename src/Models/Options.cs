@@ -19,7 +19,12 @@ public class Options : IOptions
     /// <inheritdoc cref="IOptions.InternalDomains"/>
     /// </summary>
     public List<string> InternalDomains { get; } = new();
-    
+
+    /// <summary>
+    /// <inheritdoc cref="IOptions.RegExMatchesToSkip"/>
+    /// </summary>
+    public List<string> RegExMatchesToSkip { get; } = new();
+
     /// <summary>
     /// <inheritdoc cref="IOptions.RenderingEngine"/>
     /// </summary>
