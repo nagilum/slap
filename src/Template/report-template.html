@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <title>Slap Report - {InitialUrl}</title>
+        <title>Slap Report - {Host}</title>
         
         <style>
             * {
@@ -19,6 +19,10 @@
             
             .success {
                 color: #060;
+            }
+            
+            .capitalize {
+                text-transform: capitalize;
             }
             
             footer {
@@ -70,11 +74,10 @@
         <header>
             <h1>Slap Report</h1>
             <p>
-                Generated at {GeneratedAt} by Slap v{ProgramVersion}
+                Generated at {GeneratedAt} by Slap v{ProgramVersion}<br>
+                {InitialUrl}
             </p>
         </header>
-
-        <h2>Stats for {InitialUrl}</h2>
         
         <table class="free">
             <tbody>
@@ -90,10 +93,20 @@
                     <td class="info-cell">Took</td>
                     <td class="info-cell">{ScanTook}</td>
                 </tr>
+            </tbody>
+        </table>
+        
+        <h2>Accessibility Issues</h2>
+
+        <table class="free">
+            <thead>
                 <tr>
-                    <td class="info-cell">Accessibility Issues</td>
-                    <td class="info-cell">{TotalAccessibilityIssues}</td>
+                    <th class="info-cell">Severity</th>
+                    <th class="info-cell">Total Count</th>
                 </tr>
+            </thead>
+            <tbody>
+                {AccessibilityIssuesRows}
             </tbody>
         </table>
 

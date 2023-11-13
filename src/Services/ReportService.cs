@@ -3,6 +3,7 @@ using System.Text.Json;
 using Serilog;
 using Slap.Core;
 using Slap.Extenders;
+using Slap.Models;
 using Slap.Models.Interfaces;
 using Slap.Services.Interfaces;
 
@@ -42,6 +43,45 @@ public class ReportService : IReportService
     #endregion
     
     #region Helper functions
+
+    /// <summary>
+    /// Add a list of accessibility issues on the main report.
+    /// </summary>
+    /// <param name="html">HTML.</param>
+    private void AddAccessibilityIssuesToHtmlReport(ref string html)
+    {
+        var severities = new List<string>();
+
+        foreach (var entry in Program.Queue)
+        {
+            severities.AddRange(
+                from violation in entry.AccessibilityResults?.Violations ?? Array.Empty<AccessibilityResultItem>()
+                select violation.Impact ?? string.Empty);
+        }
+
+        severities = severities
+            .Where(n => !string.IsNullOrWhiteSpace(n.Trim()))
+            .Distinct()
+            .OrderBy(n => n)
+            .ToList();
+        
+        var sb = new StringBuilder();
+
+        foreach (var severity in severities)
+        {
+            var count = Program.Queue
+                .Sum(n => n.AccessibilityResults?.Violations?
+                    .Count(m => m.Impact == severity));
+            
+            sb.Append("<tr><td class=\"capitalize\">");
+            sb.Append(severity);
+            sb.Append("</td><td>");
+            sb.Append(count);
+            sb.Append("</td></tr>");
+        }
+        
+        html = html.Replace("{AccessibilityIssuesRows}", sb.ToString());
+    }
 
     /// <summary>
     /// Add found accessibility issues to entry report.
@@ -110,7 +150,8 @@ public class ReportService : IReportService
     /// <param name="html">HTML.</param>
     private void AddMetadataToHtmlReport(ref string html)
     {
-        html = html.Replace("{InitialUrl}", Program.Queue.First().Url.Host);
+        html = html.Replace("{Host}", Program.Queue.First().Url.Host);
+        html = html.Replace("{InitialUrl}", Program.Queue.First().Url.ToString());
         html = html.Replace("{GeneratedAt}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
         html = html.Replace("{ProgramVersion}", Program.Version.ToString());
     }
@@ -368,12 +409,10 @@ public class ReportService : IReportService
     private void AddStatsToHtmlReport(ref string html)
     {
         var took = Program.Finished - Program.Started;
-        var issues = Program.Queue.Sum(n => n.AccessibilityResults?.Violations?.Length ?? 0);
 
         html = html.Replace("{ScanStarted}", Program.Started.ToString("yyyy-MM-dd HH:mm:ss"));
         html = html.Replace("{ScanFinished}", Program.Finished.ToString("yyyy-MM-dd HH:mm:ss"));
         html = html.Replace("{ScanTook}", $"<span title='{took}'>{took.ToHumanReadable()}</span>");
-        html = html.Replace("{TotalAccessibilityIssues}", issues > 0 ? $"<span class=\"error\">{issues}</span>" : issues.ToString());
     }
     
     /// <summary>
@@ -464,6 +503,7 @@ public class ReportService : IReportService
 
         this.AddMetadataToHtmlReport(ref html);
         this.AddStatsToHtmlReport(ref html);
+        this.AddAccessibilityIssuesToHtmlReport(ref html);
         this.AddStatusCodesToHtmlReport(ref html);
         
         this.AddQueueEntriesToHtmlReport(ref html, UrlType.InternalWebpage);
