@@ -13,6 +13,11 @@ public interface IAccessibilityResultItem
     string? Description { get; }
     
     /// <summary>
+    /// Unique ID.
+    /// </summary>
+    Guid Guid { get; }
+    
+    /// <summary>
     /// Help text.
     /// </summary>
     string? Help { get; }

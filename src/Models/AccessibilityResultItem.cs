@@ -14,7 +14,12 @@ public class AccessibilityResultItem : IAccessibilityResultItem
     /// <inheritdoc cref="IAccessibilityResultItem.Description"/>
     /// </summary>
     public string? Description { get; init; }
-    
+
+    /// <summary>
+    /// <inheritdoc cref="IAccessibilityResultItem.Guid"/>
+    /// </summary>
+    public Guid Guid { get; init; } = Guid.NewGuid();
+
     /// <summary>
     /// <inheritdoc cref="IAccessibilityResultItem.Help"/>
     /// </summary>

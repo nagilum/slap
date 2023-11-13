@@ -22,7 +22,9 @@
             }
 
             footer {
+                font-size: smaller;
                 padding-top: 100px;
+                text-align: right;
             }
 
             table {
@@ -79,6 +81,7 @@
             }
 
             div.violation-node:hover {
+                background-color: #eee;
                 border-left-color: #f00;
             }
             
@@ -99,9 +102,6 @@
     <body>
         <header>
             <h1>Slap Report Details</h1>
-            <p>
-                Generated at {GeneratedAt} by Slap v{ProgramVersion}
-            </p>
         </header>
         
         <!-- ERROR -->
@@ -186,7 +186,7 @@
         {AccessibilityIssues}
 
         <footer>
-            Copyright &copy; 2023 Stian Hanger<br>
+            Generated at {GeneratedAt} by Slap v{ProgramVersion}<br>
             <a href="https://github.com/nagilum/slap">https://github.com/nagilum/slap</a>
         </footer>
     </body>

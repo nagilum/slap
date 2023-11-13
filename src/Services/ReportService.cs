@@ -77,6 +77,8 @@ public class ReportService : IReportService
             sb.Append(severity);
             sb.Append("</td><td>");
             sb.Append(count);
+            sb.Append("</td><td>");
+            sb.Append($"<a target=\"_blank\" href=\"issues-{severity}.html\">Details</a>");
             sb.Append("</td></tr>");
         }
         
@@ -103,10 +105,13 @@ public class ReportService : IReportService
 
         foreach (var violation in entry.AccessibilityResults.Violations)
         {
-            sb.AppendLine($"<h3>{violation.Id}</h3>");
+            var message = violation.Nodes?.FirstOrDefault()?.Message;
+            
+            sb.AppendLine($"<h3>{violation.Id![..1].ToUpper()}{violation.Id[1..].ToLower()}</h3>");
             sb.AppendLine("<table><tbody>");
             sb.AppendLine($"<tr><td class=\"info-cell\">Description</td><td>{violation.Description}</td></tr>");
-            sb.AppendLine($"<tr><td class=\"info-cell\">Help</td><td><a href=\"{violation.HelpUrl}\">{violation.Help}</a></td></tr>");
+            sb.AppendLine($"<tr><td class=\"info-cell\">Message</td><td>{message}</td></tr>");
+            sb.AppendLine($"<tr><td class=\"info-cell\">Help</td><td><a target=\"_blank\" href=\"{violation.HelpUrl}\">{violation.Help}</a></td></tr>");
             sb.AppendLine($"<tr><td class=\"info-cell\">Tags</td><td>{string.Join(", ", violation.Tags ?? Array.Empty<string>())}</td></tr>");
             sb.AppendLine($"<tr><td class=\"info-cell\">Impact</td><td>{violation.Impact}</td></tr>");
             sb.AppendLine($"<tr><td class=\"info-cell\">Count</td><td>{violation.Nodes?.Length}</td></tr>");
@@ -120,9 +125,8 @@ public class ReportService : IReportService
             foreach (var node in violation.Nodes)
             {
                 sb.AppendLine("<div class=\"violation-node\">");
-                sb.AppendLine($"<span>{node.Message}</span>");
                 sb.AppendLine($"<span>Selector: <code class=\"success\">{node.Target?.Selector}</code></span>");
-                sb.AppendLine($"<code>{node.Html?.Replace("<", "&lt;").Replace(">", "&gt;")}</code>");
+                sb.AppendLine($"<span>HTML: <code>{node.Html?.Replace("<", "&lt;").Replace(">", "&gt;")}</code></span>");
                 sb.AppendLine("</div>");
             }
         }
@@ -151,7 +155,6 @@ public class ReportService : IReportService
     private void AddMetadataToHtmlReport(ref string html)
     {
         html = html.Replace("{Host}", Program.Queue.First().Url.Host);
-        html = html.Replace("{InitialUrl}", Program.Queue.First().Url.ToString());
         html = html.Replace("{GeneratedAt}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
         html = html.Replace("{ProgramVersion}", Program.Version.ToString());
     }
@@ -459,6 +462,176 @@ public class ReportService : IReportService
 
         html = html.Replace("{StatusCodesRows}", sb.ToString());
     }
+
+    private async Task GenerateAndWriteAccessibilityIssuesHtmlReport(string severity)
+    {
+        var violations = new List<AccessibilityResultItem>();
+
+        foreach (var entry in Program.Queue.Where(n => n.AccessibilityResults?.Violations?.Length > 0))
+        {
+            var query =
+                from n in entry.AccessibilityResults!.Violations
+                where n.Impact == severity
+                select n;
+
+            violations.AddRange(query);
+        }
+
+        if (violations.Count == 0)
+        {
+            return;
+        }
+        
+        var templatePath = Path.GetDirectoryName(
+            System.Reflection.Assembly.GetExecutingAssembly().Location);
+
+        if (templatePath is null)
+        {
+            throw new Exception("Unable to locate report template folder.");
+        }
+
+        const string templateFilename = "severity-template.html";
+        var templateFile = Path.Combine(templatePath, templateFilename);
+
+        if (!File.Exists(templateFile))
+        {
+            throw new Exception("Unable to locate report template file.");
+        }
+        
+        var html = await File.ReadAllTextAsync(templateFile);
+        
+        //
+        html = html.Replace("{Severity}", $"{severity[..1].ToUpper()}{severity[1..].ToLower()}");
+        html = html.Replace("{GeneratedAt}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+        html = html.Replace("{ProgramVersion}", Program.Version.ToString());
+        
+        //
+        var sb = new StringBuilder();
+
+        var ids = violations
+            .Select(n => n.Id)
+            .Distinct()
+            .OrderBy(n => n)
+            .ToArray();
+
+        foreach (var id in ids)
+        {
+            var details = violations
+                .First(n => n.Id == id);
+
+            var temp = violations.FirstOrDefault(n => n.Id == id);
+            var message = temp?.Nodes?.FirstOrDefault()?.Message;
+            
+            sb.AppendLine($"<h2>{id![..1].ToUpper()}{id[1..].ToLower()}</h2>");
+            sb.AppendLine("<table><tbody>");
+            sb.AppendLine($"<tr><td class=\"info-cell\">Description</td><td>{details.Description}</td></tr>");
+            sb.AppendLine($"<tr><td class=\"info-cell\">Message</td><td>{message}</td></tr>");
+            sb.AppendLine($"<tr><td class=\"info-cell\">Help</td><td><a target=\"_blank\" href=\"{details.HelpUrl}\">{details.Help}</a></td></tr>");
+            sb.AppendLine($"<tr><td class=\"info-cell\">Tags</td><td>{string.Join(", ", details.Tags ?? Array.Empty<string>())}</td></tr>");
+            sb.AppendLine("</tbody></table>");
+
+            var urls = new List<string>();
+            var guids = violations
+                .Where(n => n.Id == id)
+                .Select(n => n.Guid)
+                .ToArray();
+
+            foreach (var entry in Program.Queue)
+            {
+                if (entry.AccessibilityResults?.Violations is null ||
+                    entry.AccessibilityResults.Violations.All(n => !guids.Contains(n.Guid)))
+                {
+                    continue;
+                }
+
+                var url = entry.Url.ToString();
+
+                if (!urls.Contains(url))
+                {
+                    urls.Add(url);
+                }
+            }
+
+            urls = urls
+                .OrderBy(n => n)
+                .ToList();
+
+            sb.AppendLine("<h3>Affected URLs</h3>");
+            sb.AppendLine("<table><tbody>");
+
+            foreach (var url in urls)
+            {
+                sb.AppendLine($"<tr><td><a href=\"{url}\">{url}</a></td></tr>");    
+            }
+            
+            sb.AppendLine("</tbody></table>");
+            sb.AppendLine("<h3>Some of the Violations</h3>");
+
+            var count = 0;
+
+            foreach (var violation in violations.Where(n => n.Id == id))
+            {
+                if (!(violation.Nodes?.Length > 0))
+                {
+                    continue;
+                }
+
+                foreach (var node in violation.Nodes)
+                {
+                    count++;
+
+                    if (count == 11)
+                    {
+                        break;
+                    }
+                    
+                    sb.AppendLine("<div class=\"violation-node\">");
+                    sb.AppendLine($"<span>Selector: <code class=\"success\">{node.Target?.Selector}</code></span>");
+                    sb.AppendLine($"<span>HTML: <code>{node.Html?.Replace("<", "&lt;").Replace(">", "&gt;")}</code></span>");
+                    sb.AppendLine("</div>");
+                }
+
+                if (count == 11)
+                {
+                    break;
+                }
+            }
+        }
+
+        html = html.Replace("{AccessibilityIssues}", sb.ToString());
+        
+        var path = Path.Combine(
+            Program.Options.ReportPath!,
+            $"issues-{severity}.html");
+        
+        await File.WriteAllTextAsync(path, html, Encoding.UTF8);
+    }
+
+    /// <summary>
+    /// Generate HTML report for each severity level of accessibility issues.
+    /// </summary>
+    private async Task GenerateAndWriteAccessibilityIssuesHtmlReports()
+    {
+        var severities = new List<string>();
+
+        foreach (var entry in Program.Queue)
+        {
+            severities.AddRange(
+                from violation in entry.AccessibilityResults?.Violations ?? Array.Empty<AccessibilityResultItem>()
+                select violation.Impact ?? string.Empty);
+        }
+
+        severities = severities
+            .Where(n => !string.IsNullOrWhiteSpace(n.Trim()))
+            .Distinct()
+            .OrderBy(n => n)
+            .ToList();
+
+        foreach (var severity in severities)
+        {
+            await this.GenerateAndWriteAccessibilityIssuesHtmlReport(severity);
+        }
+    }
     
     /// <summary>
     /// Generate HTML reports from queue and write to disk.
@@ -471,6 +644,7 @@ public class ReportService : IReportService
         }
 
         await this.GenerateAndWriteMainHtmlReport();
+        await this.GenerateAndWriteAccessibilityIssuesHtmlReports();
 
         foreach (var entry in Program.Queue)
         {
