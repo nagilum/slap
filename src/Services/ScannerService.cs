@@ -303,7 +303,7 @@ public class ScannerService : IScannerService
                         "Added {url} to queue.",
                         uri.ToString().Replace(" ", "%20"));
 
-                    newEntry = new(uri, this.GetUrlType(uri));
+                    newEntry = new(uri, this.GetUrlType(uri, tag));
                     Program.Queue.Add(newEntry);
                 }
 
@@ -399,8 +399,9 @@ public class ScannerService : IScannerService
     /// Get the URL type for the given URL.
     /// </summary>
     /// <param name="uri">URL.</param>
+    /// <param name="tag">Originating tag.</param>
     /// <returns>URL type.</returns>
-    private UrlType GetUrlType(Uri uri)
+    private UrlType GetUrlType(Uri uri, string tag)
     {
         var webpageExtensions = new[]
         {
@@ -410,35 +411,40 @@ public class ScannerService : IScannerService
             ".html",
             ".php"
         };
-        
-        UrlType urlType;
-        var last = uri.Segments.Last();
 
-        if (Program.Options.InternalDomains.Contains(uri.Host.ToLower()))
+        UrlType urlType;
+        
+        if (tag == "a")
         {
+            var last = uri.Segments.Last();
+
             if (last.IndexOf('.') > -1)
             {
-                urlType = webpageExtensions.Any(ext => last.EndsWith(ext, StringComparison.InvariantCultureIgnoreCase))
-                    ? UrlType.InternalWebpage
-                    : UrlType.InternalAsset;
+                if (Program.Options.InternalDomains.Contains(uri.Host.ToLower()))
+                {
+                    urlType = webpageExtensions.Any(ext => last.EndsWith(ext, StringComparison.InvariantCultureIgnoreCase))
+                        ? UrlType.InternalWebpage
+                        : UrlType.InternalAsset;
+                }
+                else
+                {
+                    urlType = webpageExtensions.Any(ext => last.EndsWith(ext, StringComparison.InvariantCultureIgnoreCase))
+                        ? UrlType.ExternalWebpage
+                        : UrlType.ExternalAsset;
+                }
             }
             else
             {
-                urlType = UrlType.InternalWebpage;
+                urlType = Program.Options.InternalDomains.Contains(uri.Host.ToLower())
+                    ? UrlType.InternalWebpage
+                    : UrlType.ExternalWebpage;
             }
         }
         else
         {
-            if (last.IndexOf('.') > -1)
-            {
-                urlType = webpageExtensions.Any(ext => last.EndsWith(ext, StringComparison.InvariantCultureIgnoreCase))
-                    ? UrlType.ExternalWebpage
-                    : UrlType.ExternalAsset;
-            }
-            else
-            {
-                urlType = UrlType.ExternalWebpage;
-            }
+            urlType = Program.Options.InternalDomains.Contains(uri.Host.ToLower())
+                ? UrlType.InternalAsset
+                : UrlType.ExternalAsset;
         }
 
         return urlType;
