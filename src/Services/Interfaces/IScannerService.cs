@@ -5,6 +5,11 @@ namespace Slap.Services.Interfaces;
 public interface IScannerService
 {
     /// <summary>
+    /// Dispose all Playwright objects.
+    /// </summary>
+    Task DisposePlaywright();
+    
+    /// <summary>
     /// Perform the appropriate request for the entry.
     /// </summary>
     /// <param name="entry">Queue entry.</param>

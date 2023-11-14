@@ -1,4 +1,6 @@
-﻿using Slap.Core;
+﻿using System.Text.Json.Serialization;
+using Microsoft.Playwright;
+using Slap.Core;
 using Slap.Models.Interfaces;
 
 namespace Slap.Models;
@@ -29,6 +31,12 @@ public class QueueEntry : IQueueEntry
     /// <inheritdoc cref="IQueueEntry.LinkedFrom"/>
     /// </summary>
     public List<Uri> LinkedFrom { get; } = new();
+
+    /// <summary>
+    /// <inheritdoc cref="IQueueEntry.Page"/>
+    /// </summary>
+    [JsonIgnore]
+    public IPage? Page { get; set; }
 
     /// <summary>
     /// <inheritdoc cref="IQueueEntry.Processed"/>

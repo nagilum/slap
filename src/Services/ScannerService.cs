@@ -20,11 +20,11 @@ public class ScannerService : IScannerService
     #endregion
 
     #region Properties
-
+    
     /// <summary>
-    /// Playwright page.
+    /// Playwright browser.
     /// </summary>
-    private Microsoft.Playwright.IPage? Page { get; set; }
+    private Microsoft.Playwright.IBrowser? Browser { get; set; }
     
     /// <summary>
     /// User-agent, from Playwright. Used in the HTTP client requests.
@@ -47,6 +47,13 @@ public class ScannerService : IScannerService
     #endregion
 
     #region Implementation functions
+    /// <summary>
+    /// <inheritdoc cref="IScannerService.DisposePlaywright"/>
+    /// </summary>
+    public async Task DisposePlaywright()
+    {
+        await this.Browser!.CloseAsync();
+    }
 
     /// <summary>
     /// <inheritdoc cref="IScannerService.PerformRequest"/>
@@ -61,13 +68,10 @@ public class ScannerService : IScannerService
 
             if (entry.Response?.ContentType?.IndexOf("text/html", StringComparison.InvariantCultureIgnoreCase) > -1)
             {
+                await this.SetupPlaywrightPage(entry);
                 await this.PerformPlaywrightRequest(entry);
+                
                 playwrightRequest = true;
-            }
-
-            if (entry.Response is not null)
-            {
-                this.LogResponse(entry.Response);
             }
 
             if (playwrightRequest &&
@@ -81,7 +85,7 @@ public class ScannerService : IScannerService
                 entry.UrlType is UrlType.InternalWebpage or UrlType.ExternalWebpage &&
                 entry.Response is not null)
             {
-                await this.ExtractHtmlData(entry.Response);
+                await this.ExtractHtmlData(entry);
             }
 
             if (playwrightRequest &&
@@ -90,8 +94,6 @@ public class ScannerService : IScannerService
             {
                 await this.SaveScreenshot(entry);
             }
-
-            entry.Processed = true;
         }
         catch (Microsoft.Playwright.PlaywrightException ex)
         {
@@ -113,8 +115,6 @@ public class ScannerService : IScannerService
                 entry.Error = ex.Message;
                 entry.ErrorType = ex.GetType().ToString();
             }
-
-            entry.Processed = true;
         }
         catch (HttpRequestException ex)
         {
@@ -136,8 +136,6 @@ public class ScannerService : IScannerService
                 entry.Error = ex.Message;
                 entry.ErrorType = ex.GetType().ToString();
             }
-
-            entry.Processed = true;
         }
         catch (TimeoutException)
         {
@@ -148,7 +146,6 @@ public class ScannerService : IScannerService
 
             entry.Error = $"Timeout after {Program.Options.Timeout} seconds from {entry.Url}";
             entry.ErrorType = "ERR_TIMEOUT";
-            entry.Processed = true;
         }
         catch (Exception ex)
         {
@@ -170,9 +167,15 @@ public class ScannerService : IScannerService
                 entry.Error = ex.Message;
                 entry.ErrorType = ex.GetType().ToString();
             }
-
-            entry.Processed = true;
         }
+
+        if (entry.Page is not null)
+        {
+            await entry.Page.CloseAsync();
+            entry.Page = null;
+        }
+        
+        entry.Processed = true;
     }
 
     /// <summary>
@@ -182,6 +185,8 @@ public class ScannerService : IScannerService
     {
         try
         {
+            Log.Information("Setting up Playwright..");
+            
             Microsoft.Playwright.Program.Main(
                 new[]
                 {
@@ -189,34 +194,14 @@ public class ScannerService : IScannerService
                 });
 
             var instance = await Microsoft.Playwright.Playwright.CreateAsync();
-            var browser = Program.Options.RenderingEngine switch
+            
+            this.Browser = Program.Options.RenderingEngine switch
             {
                 RenderingEngine.Chromium => await instance.Chromium.LaunchAsync(),
                 RenderingEngine.Firefox => await instance.Firefox.LaunchAsync(),
                 RenderingEngine.Webkit => await instance.Webkit.LaunchAsync(),
                 _ => throw new Exception("Invalid rendering engine value.")
             };
-
-            if (this.Page is not null)
-            {
-                this.Page = null;
-            }
-
-            var options = new Microsoft.Playwright.BrowserNewPageOptions
-            {
-                ScreenSize = new Microsoft.Playwright.ScreenSize
-                {
-                    Height = Program.Options.ViewportHeight,
-                    Width = Program.Options.ViewportWidth
-                },
-                ViewportSize = new Microsoft.Playwright.ViewportSize
-                {
-                    Height = Program.Options.ViewportHeight,
-                    Width = Program.Options.ViewportWidth
-                }
-            };
-
-            this.Page = await browser.NewPageAsync(options);
 
             return true;
         }
@@ -234,30 +219,30 @@ public class ScannerService : IScannerService
     /// <summary>
     /// Extract document title and meta tags from HTML content.
     /// </summary>
-    /// <param name="response">Queue response.</param>
-    private async Task ExtractHtmlData(QueueResponse response)
+    /// <param name="entry">Queue entry.</param>
+    private async Task ExtractHtmlData(IQueueEntry entry)
     {
         // Document title.
-        var titles = this.Page!.Locator("//title");
+        var titles = entry.Page!.Locator("//title");
         var count = await titles.CountAsync();
 
         if (count > 0)
         {
-            response.DocumentTitle = await titles.Nth(0).TextContentAsync();
+            entry.Response!.DocumentTitle = await titles.Nth(0).TextContentAsync();
         }
 
         // Meta tags.
-        var metas = this.Page!.Locator("//meta");
+        var metas = entry.Page!.Locator("//meta");
         count = await metas.CountAsync();
 
         if (count > 0)
         {
-            response.MetaTags ??= new();
+            entry.Response!.MetaTags ??= new();
         }
 
         for (var i = 0; i < count; i++)
         {
-            response.MetaTags!.Add(new MetaTag
+            entry.Response!.MetaTags!.Add(new MetaTag
             {
                 Charset = await metas.Nth(i).GetAttributeAsync("charset"),
                 Content = await metas.Nth(i).GetAttributeAsync("content"),
@@ -284,7 +269,7 @@ public class ScannerService : IScannerService
 
         foreach (var (tag, attr) in selectors)
         {
-            var hrefs = this.Page!.Locator($"//{tag}[@{attr}]");
+            var hrefs = entry.Page!.Locator($"//{tag}[@{attr}]");
             var count = await hrefs.CountAsync();
 
             for (var i = 0; i < count; i++)
@@ -462,43 +447,6 @@ public class ScannerService : IScannerService
     }
 
     /// <summary>
-    /// Log response to console.
-    /// </summary>
-    /// <param name="response">Queue response.</param>
-    private void LogResponse(IQueueResponse response)
-    {
-        switch (response.StatusCode)
-        {
-            case >= 200 and <= 299:
-                Log.Information(
-                    "{size}, {time}, {status}",
-                    response.GetSizeFormatted() ?? "(err)",
-                    response.GetTimeFormatted() ?? "(err)",
-                    response.GetStatusFormatted() ?? "(err)");
-
-                break;
-
-            case <= 399:
-                Log.Warning(
-                    "{size}, {time}, {status}",
-                    response.GetSizeFormatted() ?? "(err)",
-                    response.GetTimeFormatted() ?? "(err)",
-                    response.GetStatusFormatted() ?? "(err)");
-
-                break;
-
-            default:
-                Log.Error(
-                    "{size}, {time}, {status}",
-                    response.GetSizeFormatted() ?? "(err)",
-                    response.GetTimeFormatted() ?? "(err)",
-                    response.GetStatusFormatted() ?? "(err)");
-
-                break;
-        }
-    }
-
-    /// <summary>
     /// Perform a Playwright request, analyze the response, and update queue entry.
     /// </summary>
     /// <param name="entry">Queue entry.</param>
@@ -513,7 +461,7 @@ public class ScannerService : IScannerService
 
         if (this.UserAgent is null)
         {
-            await this.Page!.RouteAsync("**/*", async route =>
+            await entry.Page!.RouteAsync("**/*", async route =>
             {
                 var (_, userAgent) = route.Request.Headers
                     .FirstOrDefault(n => n.Key.Equals("user-agent", StringComparison.InvariantCultureIgnoreCase));
@@ -527,7 +475,7 @@ public class ScannerService : IScannerService
             });            
         }
 
-        var res = await this.Page!.GotoAsync(entry.Url.ToString(), options)
+        var res = await entry.Page!.GotoAsync(entry.Url.ToString(), options)
                   ?? throw new Exception($"Unable to get a valid HTTP response from {entry.Url}");
 
         stopwatch.Stop();
@@ -644,7 +592,7 @@ public class ScannerService : IScannerService
     {
         try
         {
-            var results = await this.Page!.RunAxe();
+            var results = await entry.Page!.RunAxe();
             entry.AccessibilityResults = new(results);
         }
         catch
@@ -672,7 +620,7 @@ public class ScannerService : IScannerService
             path,
             $"screenshot-{entry.Id}.png");
 
-        await this.Page!.ScreenshotAsync(new()
+        await entry.Page!.ScreenshotAsync(new()
         {
             FullPage = Program.Options.CaptureFullPage,
             Path = path,
@@ -680,6 +628,29 @@ public class ScannerService : IScannerService
         });
 
         entry.ScreenshotSaved = true;
+    }
+
+    /// <summary>
+    /// Setup the Playwright page for the request.
+    /// </summary>
+    /// <param name="entry">Queue entry.</param>
+    private async Task SetupPlaywrightPage(QueueEntry entry)
+    {
+        var options = new Microsoft.Playwright.BrowserNewPageOptions
+        {
+            ScreenSize = new Microsoft.Playwright.ScreenSize
+            {
+                Height = Program.Options.ViewportHeight,
+                Width = Program.Options.ViewportWidth
+            },
+            ViewportSize = new Microsoft.Playwright.ViewportSize
+            {
+                Height = Program.Options.ViewportHeight,
+                Width = Program.Options.ViewportWidth
+            }
+        };
+
+        entry.Page = await this.Browser!.NewPageAsync(options);
     }
 
     #endregion

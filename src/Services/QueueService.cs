@@ -25,68 +25,63 @@ public class QueueService : IQueueService
     /// </summary>
     public async Task ProcessQueue(CancellationToken cancellationToken)
     {
-        Log.Information("Setting up Playwright..");
-        
         if (await this._scanner.SetupPlaywright() == false)
         {
             return;
         }
 
-        var index = -1;
-        var reset = 0;
+        var index = 0;
 
         while (!cancellationToken.IsCancellationRequested)
         {
-            reset++;
-            index++;
+            var entries = Program.Queue
+                .Where(n => !n.Processed)
+                .Take(20)
+                .ToList();
 
-            if (reset == 50)
+            if (entries.Count == 0)
             {
-                Log.Information("Refreshing Playwright..");
-                
-                if (await this._scanner.SetupPlaywright() == false)
-                {
-                    Log.Error("Playwright refresh failed. Aborting!");
-                    break;
-                }
-
-                reset = 0;
-            }
-            
-            var entry = Program.Queue
-                .FirstOrDefault(n => !n.Processed);
-
-            if (entry is null)
-            {
-                Log.Information("No more entries in queue. Stopping.");
                 break;
             }
 
-            var skip = Program.Options.UrlTypesToSkip.Contains(entry.UrlType) ||
-                       Program.Options.DomainsToSkip.Contains(entry.Url.Host.ToLower()) ||
-                       Program.Options.RegExMatchesToSkip.Any(n => Regex.IsMatch(entry.Url.ToString(), n));
-
-            if (skip)
+            foreach (var entry in entries)
             {
-                Log.Warning(
-                    "Skipping {index} of {total} : {url}",
-                    index + 1,
-                    Program.Queue.Count,
-                    entry.Url.ToString().Replace(" ", "%20"));
-
-                entry.Processed = true;
-                entry.Skipped = true;
+                index++;
                 
-                continue;
-            }
-            
-            Log.Information(
-                "Processing {index} of {total} : {url}",
-                index + 1,
-                Program.Queue.Count,
-                entry.Url.ToString().Replace(" ", "%20"));
+                var skip = Program.Options.UrlTypesToSkip.Contains(entry.UrlType) ||
+                           Program.Options.DomainsToSkip.Contains(entry.Url.Host.ToLower()) ||
+                           Program.Options.RegExMatchesToSkip.Any(n => Regex.IsMatch(entry.Url.ToString(), n));
 
-            await this._scanner.PerformRequest(entry, cancellationToken);
+                if (skip)
+                {
+                    Log.Warning(
+                        "Skipping {index} of {total} : {url}",
+                        index,
+                        Program.Queue.Count,
+                        entry.Url.ToString().Replace(" ", "%20"));
+
+                    entry.Processed = true;
+                    entry.Skipped = true;
+                }
+                else
+                {
+                    Log.Information(
+                        "Processing {index} of {total} : {url}",
+                        index,
+                        Program.Queue.Count,
+                        entry.Url.ToString().Replace(" ", "%20"));
+                }
+            }
+
+            await Parallel.ForEachAsync(
+                entries,
+                cancellationToken,
+                async (entry, token) =>
+                {
+                    await this._scanner.PerformRequest(entry, token);
+                });
         }
+
+        await this._scanner.DisposePlaywright();
     }
 }

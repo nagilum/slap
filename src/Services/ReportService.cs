@@ -219,7 +219,7 @@ public class ReportService : IReportService
             string cssClass;
             
             // URL.
-            sb.Append($"<tr><td><a href=\"{entry.Url}\">{entry.Url}</a></td>");
+            sb.Append($"<tr><td class=\"url\"><a href=\"{entry.Url}\">{entry.Url}</a></td>");
             
             // Error?
             if (entry.Error is not null)
@@ -463,6 +463,10 @@ public class ReportService : IReportService
         html = html.Replace("{StatusCodesRows}", sb.ToString());
     }
 
+    /// <summary>
+    /// Generate HTML report for a specific accessibility issue severity.
+    /// </summary>
+    /// <param name="severity">Severity.</param>
     private async Task GenerateAndWriteAccessibilityIssuesHtmlReport(string severity)
     {
         var violations = new List<AccessibilityResultItem>();
@@ -638,7 +642,7 @@ public class ReportService : IReportService
     /// </summary>
     private async Task GenerateAndWriteHtmlReport()
     {
-        if (Program.Queue.Count == 0)
+        if (Program.Queue.IsEmpty)
         {
             return;
         }

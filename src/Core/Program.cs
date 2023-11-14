@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Collections.Concurrent;
+using System.Text.Json;
 using Serilog;
 using Slap.Models;
 using Slap.Services;
@@ -20,7 +21,7 @@ public static class Program
     /// <summary>
     /// Scanning queue.
     /// </summary>
-    public static List<QueueEntry> Queue { get; } = new();
+    public static ConcurrentBag<QueueEntry> Queue { get; } = new();
     
     /// <summary>
     /// When the scan started.
@@ -330,7 +331,10 @@ public static class Program
                             entry.ScreenshotSaved = false;
                         }
 
-                        Queue.AddRange(list);
+                        foreach (var item in list)
+                        {
+                            Queue.Add(item);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -418,7 +422,7 @@ public static class Program
         path = Path.Combine(
             path,
             "reports",
-            Queue[0].Url.Host,
+            Queue.First().Url.Host,
             DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss"));
 
         try

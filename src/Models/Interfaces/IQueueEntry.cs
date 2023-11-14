@@ -1,4 +1,5 @@
-﻿using Slap.Core;
+﻿using Microsoft.Playwright;
+using Slap.Core;
 
 namespace Slap.Models.Interfaces;
 
@@ -28,6 +29,11 @@ public interface IQueueEntry
     /// All URLs this entry is linked from.
     /// </summary>
     List<Uri> LinkedFrom { get; }
+    
+    /// <summary>
+    /// Playwright page.
+    /// </summary>
+    IPage? Page { get; }
     
     /// <summary>
     /// If the entry has been processed.
