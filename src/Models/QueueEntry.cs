@@ -28,6 +28,11 @@ public class QueueEntry : IQueueEntry
     public Guid Id { get; } = Guid.NewGuid();
 
     /// <summary>
+    /// <inheritdoc cref="IQueueEntry.IsHttps"/>
+    /// </summary>
+    public bool IsHttps { get; init; }
+
+    /// <summary>
     /// <inheritdoc cref="IQueueEntry.LinkedFrom"/>
     /// </summary>
     public List<Uri> LinkedFrom { get; } = new();
@@ -75,6 +80,7 @@ public class QueueEntry : IQueueEntry
     /// <param name="urlType">Type of URL.</param>
     public QueueEntry(Uri url, UrlType urlType = UrlType.InternalWebpage)
     {
+        this.IsHttps = url.Scheme.Equals("https", StringComparison.InvariantCultureIgnoreCase);
         this.Url = url;
         this.UrlType = urlType;
     }

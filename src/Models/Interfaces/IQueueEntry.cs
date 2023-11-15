@@ -26,6 +26,11 @@ public interface IQueueEntry
     Guid Id { get; }
     
     /// <summary>
+    /// Whether the URL is https or http.
+    /// </summary>
+    bool IsHttps { get; }
+    
+    /// <summary>
     /// All URLs this entry is linked from.
     /// </summary>
     List<Uri> LinkedFrom { get; }
