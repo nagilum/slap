@@ -36,7 +36,6 @@ public class QueueService : IQueueService
         {
             var entries = Program.Queue
                 .Where(n => !n.Processed)
-                .Take(20)
                 .ToList();
 
             if (entries.Count == 0)
@@ -46,38 +45,42 @@ public class QueueService : IQueueService
 
             foreach (var entry in entries)
             {
-                index++;
-                
                 var skip = Program.Options.UrlTypesToSkip.Contains(entry.UrlType) ||
                            Program.Options.DomainsToSkip.Contains(entry.Url.Host.ToLower()) ||
                            Program.Options.RegExMatchesToSkip.Any(n => Regex.IsMatch(entry.Url.ToString(), n));
 
-                if (skip)
+                if (!skip)
                 {
-                    Log.Warning(
-                        "Skipping {index} of {total} : {url}",
-                        index,
-                        Program.Queue.Count,
-                        entry.Url.ToString().Replace(" ", "%20"));
+                    continue;
+                }
 
-                    entry.Processed = true;
-                    entry.Skipped = true;
-                }
-                else
-                {
-                    Log.Information(
-                        "Processing {index} of {total} : {url}",
-                        index,
-                        Program.Queue.Count,
-                        entry.Url.ToString().Replace(" ", "%20"));
-                }
+                index++;
+
+                Log.Warning(
+                    "Skipping {index} of {total} : {url}",
+                    index,
+                    Program.Queue.Count,
+                    entry.Url.ToString().Replace(" ", "%20"));
+
+                entry.Processed = true;
+                entry.Skipped = true;
             }
+
+            entries = entries
+                .Where(n => !n.Skipped)
+                .ToList();
 
             await Parallel.ForEachAsync(
                 entries,
                 cancellationToken,
                 async (entry, token) =>
                 {
+                    Log.Information(
+                        "Processing {index} of {total} : {url}",
+                        ++index,
+                        Program.Queue.Count,
+                        entry.Url.ToString().Replace(" ", "%20"));
+                    
                     await this._scanner.PerformRequest(entry, token);
                 });
         }
