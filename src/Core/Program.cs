@@ -345,6 +345,27 @@ public static class Program
                     skip = true;
                     break;
                 
+                // Sets the maximum number of concurrent tasks URL scans.
+                case "--parallelism":
+                    if (i == args.Count - 1)
+                    {
+                        Console.WriteLine($"ERROR: {args[i]} must be followed by a file path.");
+                        return false;
+                    }
+
+                    if (!int.TryParse(args[i + 1], out var parallelism) ||
+                        parallelism == 0 ||
+                        parallelism < -1)
+                    {
+                        Console.WriteLine($"ERROR: {args[i + 1]} is not a valid parallelism number. Must be -1 or a positive number.");
+                        return false;
+                    }
+
+                    Options.Parallelism = parallelism;
+                    skip = true;
+                    
+                    break;
+                
                 // Parse as URL.
                 default:
                     if (!Uri.TryCreate(args[i], UriKind.Absolute, out var url))
@@ -397,6 +418,7 @@ public static class Program
             "  --full-page               Capture full page instead of just the viewport size.",
             "  --size <width>x<height>   Set the viewport size, for the screenshots and accessibility checks. Defaults to 1920x1080.",
             "  --load <file>             Load a queue file, but only process the entries that failed.",
+            "  --parallelism <count>     Sets the maximum number of concurrent URL scans.",
             "",
             "Source and documentation available at https://github.com/nagilum/slap"
         };

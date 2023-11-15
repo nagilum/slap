@@ -38,6 +38,16 @@ public class QueueService : IQueueService
 
         var index = 0;
 
+        var parallelOptions = new ParallelOptions
+        {
+            CancellationToken = cancellationToken
+        };
+
+        if (Program.Options.Parallelism.HasValue)
+        {
+            parallelOptions.MaxDegreeOfParallelism = Program.Options.Parallelism.Value;
+        }
+
         while (!cancellationToken.IsCancellationRequested)
         {
             var entries = Program.Queue
@@ -78,7 +88,7 @@ public class QueueService : IQueueService
 
             await Parallel.ForEachAsync(
                 entries,
-                cancellationToken,
+                parallelOptions,
                 async (entry, token) =>
                 {
                     Log.Information(

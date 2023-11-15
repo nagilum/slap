@@ -20,6 +20,11 @@ public interface IOptions
     List<string> InternalDomains { get; }
     
     /// <summary>
+    /// Maximum number of concurrent URL scans.
+    /// </summary>
+    int? Parallelism { get; }
+    
+    /// <summary>
     /// Reg-ex matches for URLs to skip.
     /// </summary>
     List<string> RegExMatchesToSkip { get; }

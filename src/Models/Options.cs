@@ -21,6 +21,11 @@ public class Options : IOptions
     public List<string> InternalDomains { get; } = new();
 
     /// <summary>
+    /// <inheritdoc cref="IOptions.Parallelism"/>
+    /// </summary>
+    public int? Parallelism { get; set; }
+
+    /// <summary>
     /// <inheritdoc cref="IOptions.RegExMatchesToSkip"/>
     /// </summary>
     public List<string> RegExMatchesToSkip { get; } = new();
