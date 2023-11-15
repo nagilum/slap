@@ -29,6 +29,10 @@
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         <TargetPath>severity-template.html</TargetPath>
       </None>
+      <None Update="Template\custom-template.html">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        <TargetPath>custom-template.html</TargetPath>
+      </None>
     </ItemGroup>
 
 </Project>

@@ -30,7 +30,7 @@ public class ReportService : IReportService
         try
         {
             await this.WriteQueueToDisk();
-            await this.GenerateAndWriteHtmlReport();
+            await this.GenerateHtmlReports();
         }
         catch (Exception ex)
         {
@@ -219,7 +219,19 @@ public class ReportService : IReportService
             string cssClass;
             
             // URL.
-            sb.Append($"<tr><td class=\"url\"><a href=\"{entry.Url}\">{entry.Url}</a></td>");
+            sb.Append($"<tr><td class=\"url{(entry.UrlType == UrlType.InternalWebpage ? "-875" : "-700")}\"><a href=\"{entry.Url}\">{entry.Url}</a></td>");
+            
+            // Accessibility issues.
+            if (entry.UrlType == UrlType.InternalWebpage)
+            {
+                var count = entry.AccessibilityResults?.Violations?.Length ?? 0;
+
+                cssClass = count > 0
+                    ? "error"
+                    : "success";
+                
+                sb.Append($"<td class=\"{cssClass} info-cell\">{count}</td>");
+            }
             
             // Error?
             if (entry.Error is not null)
@@ -242,11 +254,11 @@ public class ReportService : IReportService
                         _ => "error"
                     };
 
-                    sb.Append($"<td class=\"{cssClass}\">{entry.Response.GetStatusFormatted()}</td>");
+                    sb.Append($"<td class=\"{cssClass} info-cell\">{entry.Response.GetStatusFormatted()}</td>");
                 }
                 else
                 {
-                    sb.Append("<td>-</td>");
+                    sb.Append("<td class=\"info-cell\">-</td>");
                 }
                 
                 // Response time.
@@ -259,11 +271,11 @@ public class ReportService : IReportService
                         _ => "success"
                     };
                     
-                    sb.Append($"<td class=\"{cssClass}\">{entry.Response.GetTimeFormatted()}</td>");
+                    sb.Append($"<td class=\"{cssClass} info-cell\">{entry.Response.GetTimeFormatted()}</td>");
                 }
                 else
                 {
-                    sb.Append("<td>-</td>");
+                    sb.Append("<td class=\"info-cell\">-</td>");
                 }
                 
                 // Document size.
@@ -276,32 +288,16 @@ public class ReportService : IReportService
                         _ => "success"
                     };
                     
-                    sb.Append($"<td class=\"{cssClass}\">{entry.Response.GetSizeFormatted()}</td>");
+                    sb.Append($"<td class=\"{cssClass} info-cell\">{entry.Response.GetSizeFormatted()}</td>");
                 }
                 else
                 {
-                    sb.Append("<td>-</td>");
+                    sb.Append("<td class=\"info-cell\">-</td>");
                 }
             }
             
-            // Accessibility issues.
-            if (entry.UrlType == UrlType.InternalWebpage)
-            {
-                var count = entry.AccessibilityResults?.Violations?.Length ?? 0;
-
-                cssClass = count > 0
-                    ? "error"
-                    : "success";
-                
-                sb.Append($"<td class=\"{cssClass}\">{count}</td>");
-            }
-            else
-            {
-                sb.Append("<td>&nbsp;</td>");
-            }
-            
             // Details.
-            sb.AppendLine($"<td><a target=\"_blank\" href=\"entries/entry-{entry.Id}.html\">Details</a></td></tr>");
+            sb.AppendLine($"<td class=\"info-cell\"><a target=\"_blank\" href=\"entries/entry-{entry.Id}.html\">Details</a></td></tr>");
         }
 
         html = html.Replace("{Links" + urlType + "}", sb.ToString());
@@ -417,10 +413,36 @@ public class ReportService : IReportService
         html = html.Replace("{ScanFinished}", Program.Finished.ToString("yyyy-MM-dd HH:mm:ss"));
         html = html.Replace("{ScanTook}", $"<span title='{took}'>{took.ToHumanReadable()}</span>");
 
-        html = html.Replace("{InternalPagesCount}", Program.Queue.Count(n => n.UrlType == UrlType.InternalWebpage).ToString());
-        html = html.Replace("{InternalAssetsCount}", Program.Queue.Count(n => n.UrlType == UrlType.InternalAsset).ToString());
-        html = html.Replace("{ExternalPagesCount}", Program.Queue.Count(n => n.UrlType == UrlType.ExternalWebpage).ToString());
-        html = html.Replace("{ExternalAssetsCount}", Program.Queue.Count(n => n.UrlType == UrlType.ExternalAsset).ToString());
+        var sb = new StringBuilder();
+
+        foreach (var urlType in Enum.GetValues<UrlType>())
+        {
+            var title = urlType switch
+            {
+                UrlType.InternalWebpage => "Internal Pages",
+                UrlType.InternalAsset => "Internal Assets",
+                UrlType.ExternalWebpage => "External Pages",
+                UrlType.ExternalAsset => "External Assets",
+                _ => throw new Exception($"Unknown UrlType {urlType}")
+            };
+            
+            var filename = urlType switch
+            {
+                UrlType.InternalWebpage => "type-internal-pages.html",
+                UrlType.InternalAsset => "type-internal-assets.html",
+                UrlType.ExternalWebpage => "type-external-pages.html",
+                UrlType.ExternalAsset => "type-external-assets.html",
+                _ => throw new Exception($"Unknown UrlType {urlType}")
+            };
+            
+            sb.AppendLine("<tr>");
+            sb.AppendLine($"<td class=\"info-cell\">{title}</td>");
+            sb.AppendLine($"<td class=\"info-cell\">{Program.Queue.Count(n => n.UrlType == urlType)}</td>");
+            sb.AppendLine($"<td class=\"info-cell\"><a href=\"{filename}\" target=\"_blank\">Details</a></td>");
+            sb.AppendLine("</tr>");
+        }
+
+        html = html.Replace("{TypeRows}", sb.ToString());
     }
     
     /// <summary>
@@ -462,6 +484,8 @@ public class ReportService : IReportService
             sb.Append(code);
             sb.Append("</td><td>");
             sb.Append(count);
+            sb.Append("</td><td>");
+            sb.Append($"<a href=\"statuscode-{code.ToLower()}.html\" target=\"_blank\">Details</a>");
             sb.Append("</td></tr>");
         }
 
@@ -472,7 +496,7 @@ public class ReportService : IReportService
     /// Generate HTML report for a specific accessibility issue severity.
     /// </summary>
     /// <param name="severity">Severity.</param>
-    private async Task GenerateAndWriteAccessibilityIssuesHtmlReport(string severity)
+    private async Task GenerateAccessibilityIssuesReport(string severity)
     {
         var violations = new List<AccessibilityResultItem>();
 
@@ -491,23 +515,7 @@ public class ReportService : IReportService
             return;
         }
         
-        var templatePath = Path.GetDirectoryName(
-            System.Reflection.Assembly.GetExecutingAssembly().Location);
-
-        if (templatePath is null)
-        {
-            throw new Exception("Unable to locate report template folder.");
-        }
-
-        const string templateFilename = "severity-template.html";
-        var templateFile = Path.Combine(templatePath, templateFilename);
-
-        if (!File.Exists(templateFile))
-        {
-            throw new Exception("Unable to locate report template file.");
-        }
-        
-        var html = await File.ReadAllTextAsync(templateFile);
+        var html = await this.GetReportTemplateContent("severity-template.html");
         
         //
         html = html.Replace("{Severity}", $"{severity[..1].ToUpper()}{severity[1..].ToLower()}");
@@ -619,7 +627,7 @@ public class ReportService : IReportService
     /// <summary>
     /// Generate HTML report for each severity level of accessibility issues.
     /// </summary>
-    private async Task GenerateAndWriteAccessibilityIssuesHtmlReports()
+    private async Task GenerateAccessibilityIssuesReports()
     {
         var severities = new List<string>();
 
@@ -638,51 +646,37 @@ public class ReportService : IReportService
 
         foreach (var severity in severities)
         {
-            await this.GenerateAndWriteAccessibilityIssuesHtmlReport(severity);
+            await this.GenerateAccessibilityIssuesReport(severity);
         }
     }
     
     /// <summary>
     /// Generate HTML reports from queue and write to disk.
     /// </summary>
-    private async Task GenerateAndWriteHtmlReport()
+    private async Task GenerateHtmlReports()
     {
         if (Program.Queue.IsEmpty)
         {
             return;
         }
 
-        await this.GenerateAndWriteMainHtmlReport();
-        await this.GenerateAndWriteAccessibilityIssuesHtmlReports();
+        await this.GenerateOverviewReport();
+        await this.GenerateAccessibilityIssuesReports();
+        await this.GenerateStatusCodeReports();
+        await this.GenerateTypeReports();
 
         foreach (var entry in Program.Queue)
         {
-            await this.GenerateAndWriteQueueEntryHtmlReport(entry);
+            await this.GenerateQueueEntryReport(entry);
         }
     }
     
     /// <summary>
     /// Generate the main HTML report.
     /// </summary>
-    private async Task GenerateAndWriteMainHtmlReport()
+    private async Task GenerateOverviewReport()
     {
-        var templatePath = Path.GetDirectoryName(
-            System.Reflection.Assembly.GetExecutingAssembly().Location);
-
-        if (templatePath is null)
-        {
-            throw new Exception("Unable to locate report template folder.");
-        }
-
-        const string templateFilename = "report-template.html";
-        var templateFile = Path.Combine(templatePath, templateFilename);
-
-        if (!File.Exists(templateFile))
-        {
-            throw new Exception("Unable to locate report template file.");
-        }
-        
-        var html = await File.ReadAllTextAsync(templateFile);
+        var html = await this.GetReportTemplateContent("report-template.html");
 
         this.AddMetadataToHtmlReport(ref html);
         this.AddStatsToHtmlReport(ref html);
@@ -705,25 +699,9 @@ public class ReportService : IReportService
     /// Generate a HTML report for the given queue entry.
     /// </summary>
     /// <param name="entry">Queue entry.</param>
-    private async Task GenerateAndWriteQueueEntryHtmlReport(IQueueEntry entry)
+    private async Task GenerateQueueEntryReport(IQueueEntry entry)
     {
-        var templatePath = Path.GetDirectoryName(
-            System.Reflection.Assembly.GetExecutingAssembly().Location);
-
-        if (templatePath is null)
-        {
-            throw new Exception("Unable to locate report template folder.");
-        }
-        
-        const string templateFilename = "entry-template.html";
-        var templateFile = Path.Combine(templatePath, templateFilename);
-        
-        if (!File.Exists(templateFile))
-        {
-            throw new Exception("Unable to locate report template file.");
-        }
-        
-        var html = await File.ReadAllTextAsync(templateFile);
+        var html = await this.GetReportTemplateContent("entry-template.html");
 
         this.AddMetadataToHtmlEntryReport(ref html, entry);
         this.AddErrorToHTmlEntryReport(ref html, entry);
@@ -747,6 +725,206 @@ public class ReportService : IReportService
             $"entry-{entry.Id}.html");
         
         await File.WriteAllTextAsync(path, html, Encoding.UTF8);
+    }
+
+    /// <summary>
+    /// Generate HTML reports for each status code.
+    /// </summary>
+    private async Task GenerateStatusCodeReports()
+    {
+        var codes = Program.Queue
+            .Select(n => n.Response?.StatusCode ?? 0)
+            .Where(n => n > 0)
+            .Distinct()
+            .OrderBy(n => n)
+            .ToList();
+
+        foreach (var code in codes)
+        {
+            await this.GenerateStatusCodeReport(
+                $"{code} {ScannerService.GetStatusDescription(code)}",
+                $"statuscode-{code}.html",
+                Program.Queue
+                    .Where(n => n.Response?.StatusCode == code)
+                    .Select(n => (IQueueEntry)n)
+                    .ToList());
+        }
+
+        await this.GenerateStatusCodeReport(
+            "Failed",
+            "statuscode-failed.html",
+            Program.Queue
+                .Where(n => n.Response is null && !n.Skipped)
+                .Select(n => (IQueueEntry)n)
+                .ToList());
+        
+        await this.GenerateStatusCodeReport(
+            "Skipped",
+            "statuscode-skipped.html",
+            Program.Queue
+                .Where(n => n.Skipped)
+                .Select(n => (IQueueEntry)n)
+                .ToList());
+    }
+
+    /// <summary>
+    /// Generate a status-code HTML report with given entries.
+    /// </summary>
+    /// <param name="title">Report title.</param>
+    /// <param name="filename">Filename.</param>
+    /// <param name="entries">Queue entries to write.</param>
+    private async Task GenerateStatusCodeReport(string title, string filename, IReadOnlyList<IQueueEntry> entries)
+    {
+        var html = await this.GetReportTemplateContent("custom-template.html");
+
+        html = html.Replace("{Title}", title);
+        html = html.Replace("{GeneratedAt}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+        html = html.Replace("{ProgramVersion}", Program.Version.ToString());
+
+        var sb = new StringBuilder();
+        var count = 0;
+
+        foreach (var urlType in Enum.GetValues<UrlType>())
+        {
+            var urlTypeTitle = urlType switch
+            {
+                UrlType.InternalWebpage => "Internal Pages",
+                UrlType.InternalAsset => "Internal Assets",
+                UrlType.ExternalWebpage => "External Pages",
+                UrlType.ExternalAsset => "External Assets",
+                _ => throw new Exception($"Unknown UrlType {urlType}")
+            };
+            
+            sb.AppendLine($"<h2>{urlTypeTitle}</h2>");
+            sb.AppendLine("<table>");
+            sb.AppendLine("<tbody>");
+
+            var urlTypeCount = 0;
+            
+            foreach (var entry in entries.Where(n => n.UrlType == urlType))
+            {
+                sb.AppendLine($"<tr><td><a href=\"{entry.Url}\">{entry.Url}</a></td></tr>");
+                count++;
+                urlTypeCount++;
+            }
+
+            if (urlTypeCount == 0)
+            {
+                sb.AppendLine("<tr><td>None</td></tr>");
+            }
+            
+            sb.AppendLine("</tbody>");
+            sb.AppendLine("</table>");
+        }
+
+        if (count == 0)
+        {
+            return;
+        }
+
+        html = html.Replace("{CustomContent}", sb.ToString());
+        
+        var path = Path.Combine(
+            Program.Options.ReportPath!,
+            filename);
+        
+        await File.WriteAllTextAsync(path, html, Encoding.UTF8);
+    }
+
+    /// <summary>
+    /// Generate HTML reports for each URL type.
+    /// </summary>
+    private async Task GenerateTypeReports()
+    {
+        foreach (var urlType in Enum.GetValues<UrlType>())
+        {
+            var title = urlType switch
+            {
+                UrlType.InternalWebpage => "Internal Pages",
+                UrlType.InternalAsset => "Internal Assets",
+                UrlType.ExternalWebpage => "External Pages",
+                UrlType.ExternalAsset => "External Assets",
+                _ => throw new Exception($"Unknown UrlType {urlType}")
+            };
+
+            var slug = urlType switch
+            {
+                UrlType.InternalWebpage => "internal-pages",
+                UrlType.InternalAsset => "internal-assets",
+                UrlType.ExternalWebpage => "external-pages",
+                UrlType.ExternalAsset => "external-assets",
+                _ => throw new Exception($"Unknown UrlType {urlType}")
+            };
+            
+            await this.GenerateTypeReport(
+                title,
+                $"type-{slug}.html",
+                Program.Queue.Where(n => n.UrlType == urlType));
+        }
+    }
+
+    /// <summary>
+    /// Generate a type report.
+    /// </summary>
+    /// <param name="title">Title.</param>
+    /// <param name="filename">Filename.</param>
+    /// <param name="entries">Entries.</param>
+    private async Task GenerateTypeReport(string title, string filename, IEnumerable<IQueueEntry> entries)
+    {
+        var html = await this.GetReportTemplateContent("custom-template.html");
+
+        html = html.Replace("{Title}", title);
+        html = html.Replace("{GeneratedAt}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+        html = html.Replace("{ProgramVersion}", Program.Version.ToString());
+
+        var sb = new StringBuilder();
+        var count = 0;
+
+        sb.AppendLine("<table>");
+        sb.AppendLine("<tbody>");
+
+        foreach (var entry in entries)
+        {
+            sb.AppendLine($"<tr><td><a href=\"{entry.Url}\">{entry.Url}</a></td></tr>");
+        }
+        
+        sb.AppendLine("</tbody>");
+        sb.AppendLine("</table>");
+        
+        html = html.Replace("{CustomContent}", sb.ToString());
+        
+        var path = Path.Combine(
+            Program.Options.ReportPath!,
+            filename);
+        
+        await File.WriteAllTextAsync(path, html, Encoding.UTF8);
+    }
+
+    /// <summary>
+    /// Get the file content of the given report template.
+    /// </summary>
+    /// <param name="filename">Filename.</param>
+    /// <returns>HTML.</returns>
+    private async Task<string> GetReportTemplateContent(string filename)
+    {
+        var path = Path.GetDirectoryName(
+            System.Reflection.Assembly.GetExecutingAssembly().Location);
+
+        if (path is null)
+        {
+            throw new Exception("Unable to locate report template folder.");
+        }
+        
+        var file = Path.Combine(path, filename);
+        
+        if (!File.Exists(file))
+        {
+            throw new Exception("Unable to locate report template file.");
+        }
+        
+        var html = await File.ReadAllTextAsync(file);
+
+        return html;
     }
     
     /// <summary>

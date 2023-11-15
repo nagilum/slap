@@ -1,0 +1,105 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Slap Report - {Title}</title>
+        
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+
+            .error {
+                color: #900;
+            }
+
+            .warning {
+                color: #660;
+            }
+
+            .success {
+                color: #060;
+            }
+
+            footer {
+                font-size: smaller;
+                padding-top: 100px;
+                text-align: right;
+            }
+
+            table {
+                border-collapse: collapse;
+                border-spacing: 0;
+                width: 100%;
+            }
+
+            table.free {
+                width: auto;
+            }
+
+            table thead tr th {
+                padding: 3px 5px;
+                text-align: left;
+            }
+
+            table tbody tr td {
+                padding: 3px 5px;
+            }
+
+            table tbody tr:nth-child(even) {
+                background-color: #eee;
+            }
+
+            table tbody tr {
+                transition: .5s;
+            }
+
+            table tbody tr:hover {
+                background-color: #ddd;
+            }
+
+            table.hidden,
+            table thead.hidden {
+                display: none;
+            }
+
+            th.info-cell,
+            td.info-cell {
+                width: 200px;
+            }
+
+            th.info-cell-min-200,
+            td.info-cell-min-200 {
+                min-width: 200px;
+            }
+
+            div.violation-node {
+                border-left: solid 3px #900;
+                margin: 10px 0;
+                padding: 3px 5px;
+                transition: .5s;
+            }
+
+            div.violation-node:hover {
+                background-color: #eee;
+                border-left-color: #f00;
+            }
+
+            div.violation-node span {
+                display: block;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>{Title}</h1>
+        </header>
+    
+        {CustomContent}
+
+        <footer>
+            Generated at {GeneratedAt} by Slap v{ProgramVersion}<br>
+            <a href="https://github.com/nagilum/slap">https://github.com/nagilum/slap</a>
+        </footer>
+    </body>
+</html>
