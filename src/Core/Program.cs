@@ -355,13 +355,11 @@ public static class Program
 
                     if (Queue.All(n => n.Url != url))
                     {
-                        var host = url.Host;
-                        
-                        Queue.Add(new(new Uri($"{url.Scheme}://{host}/")));
+                        Queue.Add(new(new Uri($"{url.Scheme}://{url.Host}/")));
 
-                        if (!Options.InternalDomains.Contains(host))
+                        if (!Options.InternalDomains.Contains(url.Host))
                         {
-                            Options.InternalDomains.Add(host);
+                            Options.InternalDomains.Add(url.Host);
                         }
                     }
                     
