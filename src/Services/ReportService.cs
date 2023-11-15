@@ -416,6 +416,11 @@ public class ReportService : IReportService
         html = html.Replace("{ScanStarted}", Program.Started.ToString("yyyy-MM-dd HH:mm:ss"));
         html = html.Replace("{ScanFinished}", Program.Finished.ToString("yyyy-MM-dd HH:mm:ss"));
         html = html.Replace("{ScanTook}", $"<span title='{took}'>{took.ToHumanReadable()}</span>");
+
+        html = html.Replace("{InternalPagesCount}", Program.Queue.Count(n => n.UrlType == UrlType.InternalWebpage).ToString());
+        html = html.Replace("{InternalAssetsCount}", Program.Queue.Count(n => n.UrlType == UrlType.InternalAsset).ToString());
+        html = html.Replace("{ExternalPagesCount}", Program.Queue.Count(n => n.UrlType == UrlType.ExternalWebpage).ToString());
+        html = html.Replace("{ExternalAssetsCount}", Program.Queue.Count(n => n.UrlType == UrlType.ExternalAsset).ToString());
     }
     
     /// <summary>
@@ -441,12 +446,12 @@ public class ReportService : IReportService
 
         if (failed > 0)
         {
-            dict.Add("FAILED", $"<span class=\"error\">{failed}</span>");
+            dict.Add("Failed", $"<span class=\"error\">{failed}</span>");
         }
 
         if (skipped > 0)
         {
-            dict.Add("SKIPPED", $"<span class=\"warning\">{skipped}</span>");
+            dict.Add("Skipped", $"<span class=\"warning\">{skipped}</span>");
         }
         
         var sb = new StringBuilder();
