@@ -40,7 +40,12 @@ public class ScannerService : IScannerService
     /// </summary>
     public ScannerService()
     {
-        this._httpClient = new HttpClient();
+        var handler = new HttpClientHandler
+        {
+            AllowAutoRedirect = false
+        };
+        
+        this._httpClient = new HttpClient(handler);
         this._httpClient.Timeout = TimeSpan.FromSeconds(Program.Options.Timeout);
     }
 
@@ -66,7 +71,8 @@ public class ScannerService : IScannerService
 
             var playwrightRequest = false;
 
-            if (entry.Response?.ContentType?.IndexOf("text/html", StringComparison.InvariantCultureIgnoreCase) > -1)
+            if (entry.Response?.StatusCode == 200 &&
+                entry.Response?.ContentType?.IndexOf("text/html", StringComparison.InvariantCultureIgnoreCase) > -1)
             {
                 await this.SetupPlaywrightPage(entry);
                 await this.PerformPlaywrightRequest(entry);
