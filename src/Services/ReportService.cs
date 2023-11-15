@@ -878,7 +878,6 @@ public class ReportService : IReportService
         html = html.Replace("{ProgramVersion}", Program.Version.ToString());
 
         var sb = new StringBuilder();
-        var count = 0;
 
         sb.AppendLine("<table>");
         sb.AppendLine("<tbody>");
