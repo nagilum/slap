@@ -7,6 +7,8 @@ namespace Slap.Services;
 
 public class QueueService : IQueueService
 {
+    #region Constructor, fields, and properties
+    
     /// <summary>
     /// Scanner service.
     /// </summary>
@@ -19,6 +21,10 @@ public class QueueService : IQueueService
     {
         this._scanner = new ScannerService();
     }
+    
+    #endregion
+    
+    #region Implementation functions
 
     /// <summary>
     /// <inheritdoc cref="IQueueService.ProcessQueue"/>
@@ -87,4 +93,6 @@ public class QueueService : IQueueService
 
         await this._scanner.DisposePlaywright();
     }
+    
+    #endregion
 }

@@ -10,16 +10,12 @@ namespace Slap.Services;
 
 public class ScannerService : IScannerService
 {
-    #region Fields
+    #region Constructor, fields, and properties
 
     /// <summary>
     /// HTTP client.
     /// </summary>
     private readonly HttpClient _httpClient;
-
-    #endregion
-
-    #region Properties
     
     /// <summary>
     /// Playwright browser.
@@ -30,10 +26,6 @@ public class ScannerService : IScannerService
     /// User-agent, from Playwright. Used in the HTTP client requests.
     /// </summary>
     private string? UserAgent { get; set; }
-
-    #endregion
-
-    #region Constructor
 
     /// <summary>
     /// Initialize a new instance of a <see cref="ScannerService"/> class.
