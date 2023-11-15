@@ -5,6 +5,11 @@ namespace Slap.Models.Interfaces;
 public interface IOptions
 {
     /// <summary>
+    /// Whether to allow Slap to follow redirect responses.
+    /// </summary>
+    bool AllowAutoRedirect { get; }
+    
+    /// <summary>
     /// Whether to capture full page or just viewport when saving screenshots.
     /// </summary>
     bool CaptureFullPage { get; }

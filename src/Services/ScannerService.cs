@@ -34,7 +34,7 @@ public class ScannerService : IScannerService
     {
         var handler = new HttpClientHandler
         {
-            AllowAutoRedirect = false
+            AllowAutoRedirect = Program.Options.AllowAutoRedirect
         };
         
         this._httpClient = new HttpClient(handler);

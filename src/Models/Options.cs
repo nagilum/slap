@@ -6,6 +6,11 @@ namespace Slap.Models;
 public class Options : IOptions
 {
     /// <summary>
+    /// <inheritdoc cref="IOptions.AllowAutoRedirect"/>
+    /// </summary>
+    public bool AllowAutoRedirect { get; set; }
+
+    /// <summary>
     /// <inheritdoc cref="IOptions.CaptureFullPage"/>
     /// </summary>
     public bool CaptureFullPage { get; set; }
