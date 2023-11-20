@@ -11,6 +11,11 @@ public interface IQueueEntry
     AccessibilityResult? AccessibilityResults { get; }
     
     /// <summary>
+    /// When the entry was created.
+    /// </summary>
+    DateTimeOffset Created { get; }
+    
+    /// <summary>
     /// Error message, if any occurred.
     /// </summary>
     string? Error { get; }

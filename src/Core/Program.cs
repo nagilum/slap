@@ -26,7 +26,7 @@ public static class Program
     /// <summary>
     /// When the scan started.
     /// </summary>
-    public static DateTimeOffset Started { get; } = DateTimeOffset.Now;
+    public static DateTimeOffset Started { get; private set; }
 
     /// <summary>
     /// Program version.
@@ -72,13 +72,15 @@ public static class Program
             .MinimumLevel.Debug()
             .WriteTo.Console()
             .CreateLogger();
+        
+        Started = DateTimeOffset.Now;
 
         var queueService = new QueueService();
-        var reportService = new ReportService();
-        
         await queueService.ProcessQueue(tokenSource.Token);
+        
         Finished = DateTimeOffset.Now;
         
+        var reportService = new ReportService();
         await reportService.GenerateReports();
     }
     
@@ -189,7 +191,7 @@ public static class Program
                         
                         case "external":
                             skips.Add(UrlType.ExternalAsset);
-                            skips.Add(UrlType.ExternalWebpage);
+                            skips.Add(UrlType.ExternalPage);
                             break;
                         
                         case "external-assets":
@@ -197,7 +199,7 @@ public static class Program
                             break;
                         
                         case "external-webpages":
-                            skips.Add(UrlType.ExternalWebpage);
+                            skips.Add(UrlType.ExternalPage);
                             break;
                         
                         case "internal-assets":

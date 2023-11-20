@@ -12,8 +12,8 @@ public enum RenderingEngine
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum UrlType
 {
-    InternalWebpage,
+    InternalPage,
     InternalAsset,
-    ExternalWebpage,
+    ExternalPage,
     ExternalAsset
 }

@@ -73,21 +73,21 @@ public class ScannerService : IScannerService
             }
 
             if (playwrightRequest &&
-                entry.UrlType is UrlType.InternalWebpage)
+                entry.UrlType is UrlType.InternalPage)
             {
                 await this.ExtractNewUrls(entry);
                 await this.RunAxeAccessibilityScan(entry);
             }
 
             if (playwrightRequest &&
-                entry.UrlType is UrlType.InternalWebpage or UrlType.ExternalWebpage &&
+                entry.UrlType is UrlType.InternalPage or UrlType.ExternalPage &&
                 entry.Response is not null)
             {
                 await this.ExtractHtmlData(entry);
             }
 
             if (playwrightRequest &&
-                entry.UrlType is UrlType.InternalWebpage &&
+                entry.UrlType is UrlType.InternalPage &&
                 Program.Options.SaveScreenshots)
             {
                 await this.SaveScreenshot(entry);
@@ -336,22 +336,22 @@ public class ScannerService : IScannerService
                 {
                     urlType = webpageExtensions.Any(ext =>
                         last.EndsWith(ext, StringComparison.InvariantCultureIgnoreCase))
-                        ? UrlType.InternalWebpage
+                        ? UrlType.InternalPage
                         : UrlType.InternalAsset;
                 }
                 else
                 {
                     urlType = webpageExtensions.Any(ext =>
                         last.EndsWith(ext, StringComparison.InvariantCultureIgnoreCase))
-                        ? UrlType.ExternalWebpage
+                        ? UrlType.ExternalPage
                         : UrlType.ExternalAsset;
                 }
             }
             else
             {
                 urlType = Program.Options.InternalDomains.Contains(uri.Host.ToLower())
-                    ? UrlType.InternalWebpage
-                    : UrlType.ExternalWebpage;
+                    ? UrlType.InternalPage
+                    : UrlType.ExternalPage;
             }
         }
         else

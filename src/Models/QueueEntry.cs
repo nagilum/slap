@@ -11,7 +11,12 @@ public class QueueEntry : IQueueEntry
     /// <inheritdoc cref="IQueueEntry.AccessibilityResults"/>
     /// </summary>
     public AccessibilityResult? AccessibilityResults { get; set; }
-    
+
+    /// <summary>
+    /// <inheritdoc cref="IQueueEntry.Created"/>
+    /// </summary>
+    public DateTimeOffset Created { get; } = DateTimeOffset.Now;
+
     /// <summary>
     /// <inheritdoc cref="IQueueEntry.Error"/>
     /// </summary>
@@ -78,7 +83,7 @@ public class QueueEntry : IQueueEntry
     /// </summary>
     /// <param name="url">URL.</param>
     /// <param name="urlType">Type of URL.</param>
-    public QueueEntry(Uri url, UrlType urlType = UrlType.InternalWebpage)
+    public QueueEntry(Uri url, UrlType urlType = UrlType.InternalPage)
     {
         this.IsHttps = url.Scheme.Equals("https", StringComparison.InvariantCultureIgnoreCase);
         this.Url = url;
