@@ -50,6 +50,334 @@ public class ReportService : IReportService
     #region Report generating functions
 
     /// <summary>
+    /// Add the accessibility issues table.
+    /// </summary>
+    private async Task AddAccessibilityIssuesTable(StringBuilder sb)
+    {
+        sb.AppendLine("<h2>Accessibility Issues</h2>");
+        sb.AppendLine("<table><tbody>");
+        
+        var severities = new List<string>();
+
+        foreach (var entry in Program.Queue)
+        {
+            severities.AddRange(
+                from violation in entry.AccessibilityResults?.Violations ?? Array.Empty<AccessibilityResultItem>()
+                select violation.Impact ?? string.Empty);
+        }
+
+        severities = severities
+            .Where(n => !string.IsNullOrWhiteSpace(n.Trim()))
+            .Distinct()
+            .OrderBy(n => n)
+            .ToList();
+
+        if (severities.Count == 0)
+        {
+            sb.AppendLine("<tr><td>None</td></tr>");
+        }
+        else
+        {
+            foreach (var severity in severities)
+            {
+                var items = Program.Queue
+                    .Where(n => n.AccessibilityResults?.Violations?.Any(m => m.Impact == severity) == true)
+                    .ToList();
+
+                var str = $"{severity[..1].ToUpper()}{severity[1..].ToLower()}";
+
+                if (items.Any())
+                {
+                    await this.GenerateSubReport(
+                        $"{severity[..1].ToUpper()}{severity[1..].ToLower()}",
+                        $"All pages that has accessibility issues marked as {severity}",
+                        $"issues{Path.DirectorySeparatorChar}{severity}.html", 
+                        items);
+                    
+                    str = $"<a href=\"issues/{severity}.html\" target=\"_blank\">{str}</a>";
+                }
+                
+                var cssClass = severity switch
+                {
+                    "critical" => "error",
+                    "serious" => "error",
+                    "moderate" => "warning",
+                    _ => string.Empty
+                };
+                
+                sb.AppendLine($"<tr class=\"{cssClass}\"><td>{str}</td><td>{items.Count}</td></tr>");
+            }
+        }
+
+        sb.AppendLine("</tbody></table>");
+    }
+
+    /// <summary>
+    /// Add the response time table.
+    /// </summary>
+    private async Task AddResponseTimeTable(StringBuilder sb)
+    {
+        sb.AppendLine("<h2>Response Times</h2>");
+        sb.AppendLine("<table><tbody>");
+
+        {
+            var items = Program.Queue
+                .Where(n => n.Response?.Time is >= 0 and < 300)
+                .ToList();
+
+            var str = "&lt; 300 ms";
+
+            if (items.Any())
+            {
+                await this.GenerateSubReport(
+                    "&lt; 300 ms",
+                    "All pages and assets that had a response of less than 300 milliseconds.",
+                    $"response-times{Path.DirectorySeparatorChar}less-than-300-ms.html", 
+                    items);
+
+                str = $"<a href=\"response-times/less-than-300-ms.html\" target=\"_blank\">{str}</a>";
+            }
+            
+            sb.AppendLine($"<tr><td>{str}</td><td>{items.Count}</td></tr>");
+        }
+
+        {
+            var items = Program.Queue
+                .Where(n => n.Response?.Time is >= 300 and < 600)
+                .ToList();
+            
+            var str = "&gt; 300 &amp; &lt; 600 ms";
+
+            if (items.Any())
+            {
+                await this.GenerateSubReport(
+                    "&gt; 300 &amp; &lt; 600 ms",
+                    "All pages and assets that had a response time of less than 600 and greater than 300 milliseconds.",
+                    $"response-times{Path.DirectorySeparatorChar}less-than-600-greater-than-300-ms.html", 
+                    items);
+
+                str = $"<a href=\"response-times/less-than-600-greater-than-300-ms.html\" target=\"_blank\">{str}</a>";
+            }
+            
+            sb.AppendLine($"<tr><td>{str}</td><td>{items.Count}</td></tr>");
+        }
+        
+        {
+            var items = Program.Queue
+                .Where(n => n.Response?.Time is >= 600 and < 900)
+                .ToList();
+
+            var str = "&gt; 600 &amp; &lt; 900 ms";
+
+            if (items.Any())
+            {
+                await this.GenerateSubReport(
+                    "&gt; 600 &amp; &lt; 900 ms",
+                    "All pages and assets that had a response time of less than 900 and greater than 600 milliseconds.",
+                    $"response-times{Path.DirectorySeparatorChar}less-than-900-greater-than-600-ms.html", 
+                    items);
+                
+                str = $"<a href=\"response-times/less-than-900-greater-than-600-ms.html\" target=\"_blank\">{str}</a>";
+            }
+            
+            var cssClass = items.Any()
+                ? "warning"
+                : "";
+            
+            sb.AppendLine($"<tr class=\"{cssClass}\"><td>{str}</td><td>{items.Count}</td></tr>");
+        }
+        
+        {
+            var items = Program.Queue
+                .Where(n => n.Response?.Time is >= 900)
+                .ToList();
+            
+            var str = "&gt; 900 ms";
+
+            if (items.Any())
+            {
+                await this.GenerateSubReport(
+                    "&gt; 900 ms",
+                    "All pages and assets that had a response time of greater than 900 milliseconds.",
+                    $"response-times{Path.DirectorySeparatorChar}greater-than-900-ms.html", 
+                    items);
+                
+                str = $"<a href=\"response-times/greater-than-900-ms.html\" target=\"_blank\">{str}</a>";
+            }
+            
+            var cssClass = items.Any()
+                ? "error"
+                : "";
+            
+            sb.AppendLine($"<tr class=\"{cssClass}\"><td>{str}</td><td>{items.Count}</td></tr>");
+        }
+        
+        sb.AppendLine("</tbody></table>");
+    }
+
+    /// <summary>
+    /// Add the status code table.
+    /// </summary>
+    private async Task AddStatusCodeTable(StringBuilder sb)
+    {
+        sb.AppendLine("<h2>Status Codes</h2>");
+        sb.AppendLine("<table><tbody>");
+        
+        var statusCodes = Program.Queue
+            .Select(n => n.Response?.StatusCode ?? 0)
+            .Where(n => n > 0)
+            .Distinct()
+            .OrderBy(n => n)
+            .ToList();
+
+        foreach (var code in statusCodes)
+        {
+            var items = Program.Queue
+                .Where(n => n.Response?.StatusCode == code)
+                .ToList();
+            
+            var str = $"{code} {ScannerService.GetStatusDescription(code)}";
+
+            if (items.Any())
+            {
+                await this.GenerateSubReport(
+                    $"{code} {ScannerService.GetStatusDescription(code)}",
+                    $"All pages and assets matching the response status {code} {ScannerService.GetStatusDescription(code)}",
+                    $"statuses{Path.DirectorySeparatorChar}{code}.html", 
+                    items);
+
+                str = $"<a href=\"statuses/{code}.html\" target=\"_blank\">{str}</a>";
+            }
+
+            var cssClass = code switch
+            {
+                >= 200 and < 300 => "",
+                >= 300 and < 400 => "warning",
+                _ => "error"
+            };
+
+            sb.AppendLine($"<tr class=\"{cssClass}\"><td>{str}</td>");
+            sb.AppendLine($"<td>{items.Count}</td></tr>");
+        }
+
+        {
+            var items = Program.Queue
+                .Where(n => n.Response is null && !n.Skipped)
+                .ToList();
+
+            var str = "Failed";
+            
+            if (items.Any())
+            {
+                await this.GenerateSubReport(
+                    "Failed",
+                    "All pages and assets that failed.",
+                    $"statuses{Path.DirectorySeparatorChar}failed.html", 
+                    items);
+
+                str = "<a href=\"statuses/failed.html\" target=\"_blank\">Failed</a>";
+            }
+            
+            var cssClass = items.Any()
+                ? "error"
+                : "";
+            
+            sb.AppendLine($"<tr class=\"{cssClass}\"><td>{str}</td>");
+            sb.AppendLine($"<td>{items.Count}</td></tr>");
+        }
+
+        {
+            var items = Program.Queue
+                .Where(n => n.Skipped)
+                .ToList();
+            
+            var str = "Skipped";
+            
+            if (items.Any())
+            {
+                await this.GenerateSubReport(
+                    "Skipped",
+                    "All pages and assets that were skipped.",
+                    $"statuses{Path.DirectorySeparatorChar}skipped.html", 
+                    items);
+
+                str = "<a href=\"statuses/failed.html\" target=\"_blank\">Skipped</a>";
+            }
+            
+            var cssClass = items.Any()
+                ? "warning"
+                : "";
+            
+            sb.AppendLine($"<tr class=\"{cssClass}\"><td>{str}</td>");
+            sb.AppendLine($"<td>{items.Count}</td></tr>");
+        }
+        
+        sb.AppendLine("</tbody></table>");
+    }
+
+    /// <summary>
+    /// Add the types table.
+    /// </summary>
+    private async Task AddTypesTable(StringBuilder sb)
+    {
+        sb.AppendLine("<h2>Types</h2>");
+        sb.AppendLine("<table><tbody>");
+
+        foreach (var urlType in Enum.GetValues<UrlType>())
+        {
+            var title = urlType switch
+            {
+                UrlType.InternalPage => "Internal Pages",
+                UrlType.InternalAsset => "Internal Assets",
+                UrlType.ExternalPage => "External Pages",
+                UrlType.ExternalAsset => "External Asset",
+                _ => throw new Exception($"Invalid URL type: {urlType}")
+            };
+            
+            var description = urlType switch
+            {
+                UrlType.InternalPage => "HTML pages matching the list of internal domains. This always includes the hostname of the initial URL to be scanned.",
+                UrlType.InternalAsset => "All pages and assets apart from HTML pages matching the list of internal domains. This always includes the hostname of the initial URL to be scanned.",
+                UrlType.ExternalPage => "HTML pages that doesn't match the list of internal domains.",
+                UrlType.ExternalAsset => "All pages and assets apart from HTML pages that doesn't match the list of internal domains.",
+                _ => throw new Exception($"Invalid URL type: {urlType}")
+            };
+
+            var items = Program.Queue
+                .Where(n => n.UrlType == urlType)
+                .ToList();
+
+            if (items.Any())
+            {
+                await this.GenerateSubReport(
+                    title,
+                    description,
+                    $"types{Path.DirectorySeparatorChar}{urlType.ToString().ToLower()}.html", 
+                    items);
+                
+                title = $"<a href=\"types/{urlType.ToString().ToLower()}.html\" target=\"_blank\">{title}</a>";
+            }
+            
+            sb.AppendLine($"<tr><td>{title}</td>");
+            sb.AppendLine($"<td>{items.Count}</td></tr>");
+        }
+
+        {
+            sb.AppendLine($"<tr><td><a href=\"types{Path.DirectorySeparatorChar}all.html\" target=\"_blank\">Total</a></td>");
+            sb.AppendLine($"<td>{Program.Queue.Count}</td></tr>");
+
+            await this.GenerateSubReport(
+                "All",
+                "All pages and assets, both internal and external.",
+                $"types{Path.DirectorySeparatorChar}all.html", 
+                Program.Queue.ToList(),
+                true);
+        }
+
+        sb.AppendLine("</tbody></table>");
+    }
+
+    /// <summary>
     /// Generate a report for each 
     /// </summary>
     private async Task GenerateQueueEntryReports()
@@ -221,7 +549,6 @@ public class ReportService : IReportService
 
         var sb = new StringBuilder();
         
-        // Stats.
         sb.AppendLine("<h2>Stats</h2>");
         sb.AppendLine("<table><tbody>");
         sb.AppendLine($"<tr><td>Started</td><td>{Program.Started.ToString("yyyy-MM-dd HH:mm:ss")}</td></tr>");
@@ -229,315 +556,11 @@ public class ReportService : IReportService
         sb.AppendLine($"<tr><td>Took</td><td>{(Program.Finished - Program.Started).ToHumanReadable()}</td></tr>");
         sb.AppendLine("</tbody></table>");
 
-        // Types.
-        sb.AppendLine("<h2>Types</h2>");
-        sb.AppendLine("<table><tbody>");
-
-        foreach (var urlType in Enum.GetValues<UrlType>())
-        {
-            var title = urlType switch
-            {
-                UrlType.InternalPage => "Internal Pages",
-                UrlType.InternalAsset => "Internal Assets",
-                UrlType.ExternalPage => "External Pages",
-                UrlType.ExternalAsset => "External Asset",
-                _ => throw new Exception($"Invalid URL type: {urlType}")
-            };
-            
-            var description = urlType switch
-            {
-                UrlType.InternalPage => "HTML pages matching the list of internal domains. This always includes the hostname of the initial URL to be scanned.",
-                UrlType.InternalAsset => "All pages and assets apart from HTML pages matching the list of internal domains. This always includes the hostname of the initial URL to be scanned.",
-                UrlType.ExternalPage => "HTML pages that doesn't match the list of internal domains.",
-                UrlType.ExternalAsset => "All pages and assets apart from HTML pages that doesn't match the list of internal domains.",
-                _ => throw new Exception($"Invalid URL type: {urlType}")
-            };
-
-            var items = Program.Queue
-                .Where(n => n.UrlType == urlType)
-                .ToList();
-
-            if (items.Any())
-            {
-                await this.GenerateSubReport(
-                    title,
-                    description,
-                    $"types{Path.DirectorySeparatorChar}{urlType.ToString().ToLower()}.html", 
-                    items);
-                
-                title = $"<a href=\"types/{urlType.ToString().ToLower()}.html\" target=\"_blank\">{title}</a>";
-            }
-            
-            sb.AppendLine($"<tr><td>{title}</td>");
-            sb.AppendLine($"<td>{items.Count}</td></tr>");
-        }
-
-        {
-            sb.AppendLine($"<tr><td><a href=\"types{Path.DirectorySeparatorChar}all.html\" target=\"_blank\">Total</a></td>");
-            sb.AppendLine($"<td>{Program.Queue.Count}</td></tr>");
-
-            await this.GenerateSubReport(
-                "All",
-                "All pages and assets, both internal and external.",
-                $"types{Path.DirectorySeparatorChar}all.html", 
-                Program.Queue.ToList(),
-                true);
-        }
-
-        sb.AppendLine("</tbody></table>");
-
-        // Status codes.
-        sb.AppendLine("<h2>Status Codes</h2>");
-        sb.AppendLine("<table><tbody>");
+        await this.AddTypesTable(sb);
+        await this.AddStatusCodeTable(sb);
+        await this.AddResponseTimeTable(sb);
+        await this.AddAccessibilityIssuesTable(sb);
         
-        var statusCodes = Program.Queue
-            .Select(n => n.Response?.StatusCode ?? 0)
-            .Where(n => n > 0)
-            .Distinct()
-            .OrderBy(n => n)
-            .ToList();
-
-        foreach (var code in statusCodes)
-        {
-            var items = Program.Queue
-                .Where(n => n.Response?.StatusCode == code)
-                .ToList();
-            
-            var str = $"{code} {ScannerService.GetStatusDescription(code)}";
-
-            if (items.Any())
-            {
-                await this.GenerateSubReport(
-                    $"{code} {ScannerService.GetStatusDescription(code)}",
-                    $"All pages and assets matching the response status {code} {ScannerService.GetStatusDescription(code)}",
-                    $"statuses{Path.DirectorySeparatorChar}{code}.html", 
-                    items);
-
-                str = $"<a href=\"statuses/{code}.html\" target=\"_blank\">{str}</a>";
-            }
-
-            var cssClass = code switch
-            {
-                >= 200 and < 300 => "",
-                >= 300 and < 400 => "warning",
-                _ => "error"
-            };
-
-            sb.AppendLine($"<tr class=\"{cssClass}\"><td>{str}</td>");
-            sb.AppendLine($"<td>{items.Count}</td></tr>");
-        }
-
-        {
-            var items = Program.Queue
-                .Where(n => n.Response is null && !n.Skipped)
-                .ToList();
-
-            var str = "Failed";
-            
-            if (items.Any())
-            {
-                await this.GenerateSubReport(
-                    "Failed",
-                    "All pages and assets that failed.",
-                    $"statuses{Path.DirectorySeparatorChar}failed.html", 
-                    items);
-
-                str = "<a href=\"statuses/failed.html\" target=\"_blank\">Failed</a>";
-            }
-            
-            var cssClass = items.Any()
-                ? "error"
-                : "";
-            
-            sb.AppendLine($"<tr class=\"{cssClass}\"><td>{str}</td>");
-            sb.AppendLine($"<td>{items.Count}</td></tr>");
-        }
-
-        {
-            var items = Program.Queue
-                .Where(n => n.Skipped)
-                .ToList();
-            
-            var str = "Skipped";
-            
-            if (items.Any())
-            {
-                await this.GenerateSubReport(
-                    "Skipped",
-                    "All pages and assets that were skipped.",
-                    $"statuses{Path.DirectorySeparatorChar}skipped.html", 
-                    items);
-
-                str = "<a href=\"statuses/failed.html\" target=\"_blank\">Skipped</a>";
-            }
-            
-            var cssClass = items.Any()
-                ? "warning"
-                : "";
-            
-            sb.AppendLine($"<tr class=\"{cssClass}\"><td>{str}</td>");
-            sb.AppendLine($"<td>{items.Count}</td></tr>");
-        }
-        
-        sb.AppendLine("</tbody></table>");
-
-        // Response times.
-        sb.AppendLine("<h2>Response Times</h2>");
-        sb.AppendLine("<table><tbody>");
-
-        {
-            var items = Program.Queue
-                .Where(n => n.Response?.Time is >= 0 and < 300)
-                .ToList();
-
-            var str = "&lt; 300 ms";
-
-            if (items.Any())
-            {
-                await this.GenerateSubReport(
-                    "&lt; 300 ms",
-                    "All pages and assets that had a response of less than 300 milliseconds.",
-                    $"response-times{Path.DirectorySeparatorChar}less-than-300-ms.html", 
-                    items);
-
-                str = $"<a href=\"response-times/less-than-300-ms.html\" target=\"_blank\">{str}</a>";
-            }
-            
-            sb.AppendLine($"<tr><td>{str}</td><td>{items.Count}</td></tr>");
-        }
-
-        {
-            var items = Program.Queue
-                .Where(n => n.Response?.Time is >= 300 and < 600)
-                .ToList();
-            
-            var str = "&gt; 300 &amp; &lt; 600 ms";
-
-            if (items.Any())
-            {
-                await this.GenerateSubReport(
-                    "&gt; 300 &amp; &lt; 600 ms",
-                    "All pages and assets that had a response time of less than 600 and greater than 300 milliseconds.",
-                    $"response-times{Path.DirectorySeparatorChar}less-than-600-greater-than-300-ms.html", 
-                    items);
-
-                str = $"<a href=\"response-times/less-than-600-greater-than-300-ms.html\" target=\"_blank\">{str}</a>";
-            }
-            
-            sb.AppendLine($"<tr><td>{str}</td><td>{items.Count}</td></tr>");
-        }
-        
-        {
-            var items = Program.Queue
-                .Where(n => n.Response?.Time is >= 600 and < 900)
-                .ToList();
-
-            var str = "&gt; 600 &amp; &lt; 900 ms";
-
-            if (items.Any())
-            {
-                await this.GenerateSubReport(
-                    "&gt; 600 &amp; &lt; 900 ms",
-                    "All pages and assets that had a response time of less than 900 and greater than 600 milliseconds.",
-                    $"response-times{Path.DirectorySeparatorChar}less-than-900-greater-than-600-ms.html", 
-                    items);
-                
-                str = $"<a href=\"response-times/less-than-900-greater-than-600-ms.html\" target=\"_blank\">{str}</a>";
-            }
-            
-            var cssClass = items.Any()
-                ? "warning"
-                : "";
-            
-            sb.AppendLine($"<tr class=\"{cssClass}\"><td>{str}</td><td>{items.Count}</td></tr>");
-        }
-        
-        {
-            var items = Program.Queue
-                .Where(n => n.Response?.Time is >= 900)
-                .ToList();
-            
-            var str = "&gt; 900 ms";
-
-            if (items.Any())
-            {
-                await this.GenerateSubReport(
-                    "&gt; 900 ms",
-                    "All pages and assets that had a response time of greater than 900 milliseconds.",
-                    $"response-times{Path.DirectorySeparatorChar}greater-than-900-ms.html", 
-                    items);
-                
-                str = $"<a href=\"response-times/greater-than-900-ms.html\" target=\"_blank\">{str}</a>";
-            }
-            
-            var cssClass = items.Any()
-                ? "error"
-                : "";
-            
-            sb.AppendLine($"<tr class=\"{cssClass}\"><td>{str}</td><td>{items.Count}</td></tr>");
-        }
-        
-        sb.AppendLine("</tbody></table>");
-
-        // Accessibility issues.
-        sb.AppendLine("<h2>Accessibility Issues</h2>");
-        sb.AppendLine("<table><tbody>");
-        
-        var severities = new List<string>();
-
-        foreach (var entry in Program.Queue)
-        {
-            severities.AddRange(
-                from violation in entry.AccessibilityResults?.Violations ?? Array.Empty<AccessibilityResultItem>()
-                select violation.Impact ?? string.Empty);
-        }
-
-        severities = severities
-            .Where(n => !string.IsNullOrWhiteSpace(n.Trim()))
-            .Distinct()
-            .OrderBy(n => n)
-            .ToList();
-
-        if (severities.Count == 0)
-        {
-            sb.AppendLine("<tr><td>None</td></tr>");
-        }
-        else
-        {
-            foreach (var severity in severities)
-            {
-                var items = Program.Queue
-                    .Where(n => n.AccessibilityResults?.Violations?.Any(m => m.Impact == severity) == true)
-                    .ToList();
-
-                var str = $"{severity[..1].ToUpper()}{severity[1..].ToLower()}";
-
-                if (items.Any())
-                {
-                    await this.GenerateSubReport(
-                        $"{severity[..1].ToUpper()}{severity[1..].ToLower()}",
-                        $"All pages that has accessibility issues marked as {severity}",
-                        $"issues{Path.DirectorySeparatorChar}{severity}.html", 
-                        items);
-                    
-                    str = $"<a href=\"issues/{severity}.html\" target=\"_blank\">{str}</a>";
-                }
-                
-                var cssClass = severity switch
-                {
-                    "critical" => "error",
-                    "serious" => "error",
-                    "moderate" => "warning",
-                    _ => string.Empty
-                };
-                
-                sb.AppendLine($"<tr class=\"{cssClass}\"><td>{str}</td><td>{items.Count}</td></tr>");
-            }
-        }
-
-        sb.AppendLine("</tbody></table>");
-        
-        // Done.
         var html = this.GetBaseReport()
             .Replace("{BodyOverride}", "summary")
             .Replace("{HtmlTitle}", host)
@@ -545,7 +568,6 @@ public class ReportService : IReportService
             .Replace("{ReportDescription}", string.Empty)
             .Replace("{ReportContent}", sb.ToString());
         
-        // Write to disk.
         var path = Path.Combine(
             Program.Options.ReportPath!,
             "report.html");
@@ -555,7 +577,7 @@ public class ReportService : IReportService
     
     #endregion
     
-    #region Report assist functions
+    #region Helper functions
 
     /// <summary>
     /// Get the base HTML and CSS for the report.
@@ -688,15 +710,15 @@ public class ReportService : IReportService
                         }
                         
                         tr.error:hover td:nth-child(2) {
-                            border-right-color: rgba(153, 0, 0, 1);
+                            border-right: solid 3px rgba(153, 0, 0, 1);
                         }
                         
                         tr.success:hover td:nth-child(2) {
-                            border-right-color: rgba(0, 102, 0, 1);
+                            border-right: solid 3px rgba(0, 102, 0, 1);
                         }
                         
                         tr.warning:hover td:nth-child(2) {
-                            border-right-color: rgba(102, 102, 0, 1);
+                            border-right: solid 3px rgba(102, 102, 0, 1);
                         }
                         
                         td.error {
@@ -704,11 +726,11 @@ public class ReportService : IReportService
                         }
                         
                         td.success {
-                            color: rgba(0, 102, 0, 1);
+                            color: rgba(0, 153, 0, 1);
                         }
                         
                         td.warning {
-                            color: rgba(102, 102, 0, 1);
+                            color: rgba(153, 153, 0, 1);
                         }
                         
                         body.summary article,
@@ -755,10 +777,6 @@ public class ReportService : IReportService
             .Replace("{GeneratedAt}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"))
             .Replace("{ProgramVersion}", Program.Version.ToString());
     }
-    
-    #endregion
-    
-    #region Helper functions
     
     /// <summary>
     /// Write the queue to disk as JSON.
