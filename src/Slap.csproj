@@ -16,23 +16,4 @@
       <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
     </ItemGroup>
 
-    <ItemGroup>
-      <None Update="Template\report-template.html">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        <TargetPath>report-template.html</TargetPath>
-      </None>
-      <None Update="Template\entry-template.html">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        <TargetPath>entry-template.html</TargetPath>
-      </None>
-      <None Update="Template\severity-template.html">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        <TargetPath>severity-template.html</TargetPath>
-      </None>
-      <None Update="Template\custom-template.html">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        <TargetPath>custom-template.html</TargetPath>
-      </None>
-    </ItemGroup>
-
 </Project>
