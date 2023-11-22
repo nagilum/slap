@@ -68,10 +68,13 @@ public static class Program
             //
         }
 
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .WriteTo.Console()
-            .CreateLogger();
+        if (Options.LogLevel != LogLevel.Silent)
+        {
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.Console()
+                .CreateLogger();
+        }
 
         var queueService = new QueueService();
         var reportService = new ReportService();
@@ -371,6 +374,16 @@ public static class Program
                     Options.AllowAutoRedirect = true;
                     break;
                 
+                // Display more detailed info while logging to console.
+                case "--verbose":
+                    Options.LogLevel = LogLevel.Verbose;
+                    break;
+                
+                // Do not display any logs in console.
+                case "--silent":
+                    Options.LogLevel = LogLevel.Silent;
+                    break;
+                
                 // Parse as URL.
                 default:
                     if (!Uri.TryCreate(args[i], UriKind.Absolute, out var url))
@@ -425,6 +438,8 @@ public static class Program
             "  --load <file>             Load a queue file, but only process the entries that failed.",
             "  --parallelism <count>     Sets the maximum number of concurrent URL scans.",
             "  --allow-redirects         Allows the program to follow redirection responses.",
+            "  --verbose                 Display more detailed info while logging to console.",
+            "  --silent                  Do not display any logs in console.",
             "",
             "Source and documentation available at https://github.com/nagilum/slap"
         };

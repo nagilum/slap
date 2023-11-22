@@ -59,6 +59,8 @@ public class QueueService : IQueueService
                 break;
             }
 
+            var skipping = 0;
+
             foreach (var entry in entries)
             {
                 var skip = Program.Options.UrlTypesToSkip.Contains(entry.UrlType) ||
@@ -71,31 +73,53 @@ public class QueueService : IQueueService
                 }
 
                 index++;
+                skipping++;
 
-                Log.Warning(
-                    "Skipping {index} of {total} : {url}",
-                    index,
-                    Program.Queue.Count,
-                    entry.Url.ToString().Replace(" ", "%20"));
+                if (Program.Options.LogLevel == LogLevel.Verbose)
+                {
+                    Log.Warning(
+                        "Skipping {index} of {total} : {url}",
+                        index,
+                        Program.Queue.Count,
+                        entry.Url.ToString().Replace(" ", "%20"));    
+                }
 
                 entry.Processed = true;
                 entry.Skipped = true;
+            }
+
+            if (Program.Options.LogLevel == LogLevel.Normal && skipping > 0)
+            {
+                Log.Warning(
+                    "Skipping {count} entries.",
+                    skipping);
             }
 
             entries = entries
                 .Where(n => !n.Skipped)
                 .ToList();
 
+            if (Program.Options.LogLevel == LogLevel.Normal)
+            {
+                Log.Information(
+                    "Processing {count} {entries}",
+                    entries.Count,
+                    entries.Count == 1 ? "entry" : "entries");
+            }
+
             await Parallel.ForEachAsync(
                 entries,
                 parallelOptions,
                 async (entry, token) =>
                 {
-                    Log.Information(
-                        "Processing {index} of {total} : {url}",
-                        ++index,
-                        Program.Queue.Count,
-                        entry.Url.ToString().Replace(" ", "%20"));
+                    if (Program.Options.LogLevel == LogLevel.Verbose)
+                    {
+                        Log.Information(
+                            "Processing {index} of {total} : {url}",
+                            ++index,
+                            Program.Queue.Count,
+                            entry.Url.ToString().Replace(" ", "%20"));    
+                    }
                     
                     await this._scanner.PerformRequest(entry, token);
                 });

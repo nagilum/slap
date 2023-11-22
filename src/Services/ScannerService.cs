@@ -183,7 +183,10 @@ public class ScannerService : IScannerService
     {
         try
         {
-            Log.Information("Setting up Playwright..");
+            if (Program.Options.LogLevel == LogLevel.Verbose)
+            {
+                Log.Information("Setting up Playwright..");                
+            }
             
             Microsoft.Playwright.Program.Main(
                 new[]
@@ -265,6 +268,8 @@ public class ScannerService : IScannerService
             { "script", "src" }
         };
 
+        var added = 0;
+
         foreach (var (tag, attr) in selectors)
         {
             var hrefs = entry.Page!.Locator($"//{tag}[@{attr}]");
@@ -291,9 +296,14 @@ public class ScannerService : IScannerService
 
                 if (newEntry is null)
                 {
-                    Log.Information(
-                        "Added {url} to queue.",
-                        uri.ToString().Replace(" ", "%20"));
+                    if (Program.Options.LogLevel == LogLevel.Verbose)
+                    {
+                        Log.Information(
+                            "Added {url} to queue.",
+                            uri.ToString().Replace(" ", "%20"));    
+                    }
+
+                    added++;
 
                     newEntry = new(uri, this.GetUrlType(uri, tag));
                     Program.Queue.Add(newEntry);
@@ -304,6 +314,13 @@ public class ScannerService : IScannerService
                     newEntry.LinkedFrom.Add(entry.Url);
                 }
             }
+        }
+
+        if (Program.Options.LogLevel == LogLevel.Normal && added > 0)
+        {
+            Log.Information(
+                "Added {count} to queue.",
+                added);
         }
     }
 

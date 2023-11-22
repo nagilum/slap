@@ -2,6 +2,13 @@
 
 namespace Slap.Core;
 
+public enum LogLevel
+{
+    Silent,
+    Normal,
+    Verbose
+}
+
 public enum RenderingEngine
 {
     Chromium,

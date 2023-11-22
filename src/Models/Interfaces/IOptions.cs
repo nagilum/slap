@@ -25,6 +25,11 @@ public interface IOptions
     List<string> InternalDomains { get; }
     
     /// <summary>
+    /// Log level.
+    /// </summary>
+    LogLevel LogLevel { get; }
+    
+    /// <summary>
     /// Maximum number of concurrent URL scans.
     /// </summary>
     int? Parallelism { get; }

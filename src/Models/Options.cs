@@ -26,6 +26,11 @@ public class Options : IOptions
     public List<string> InternalDomains { get; } = new();
 
     /// <summary>
+    /// <inheritdoc cref="IOptions.LogLevel"/>
+    /// </summary>
+    public LogLevel LogLevel { get; set; } = LogLevel.Normal;
+
+    /// <summary>
     /// <inheritdoc cref="IOptions.Parallelism"/>
     /// </summary>
     public int? Parallelism { get; set; }
