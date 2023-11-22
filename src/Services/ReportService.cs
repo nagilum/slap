@@ -4,6 +4,7 @@ using Serilog;
 using Slap.Core;
 using Slap.Extenders;
 using Slap.Models;
+using Slap.Models.Interfaces;
 using Slap.Services.Interfaces;
 
 namespace Slap.Services;
@@ -110,6 +111,92 @@ public class ReportService : IReportService
         }
 
         sb.AppendLine("</tbody></table>");
+    }
+
+    /// <summary>
+    /// Add a row with entry and response info.
+    /// </summary>
+    private void AddQueueEntryResponseRow(StringBuilder sb, IQueueEntry entry)
+    {
+        var cssClass = string.Empty;
+
+        if (entry.Error is not null)
+        {
+            cssClass = "error";
+        }
+
+        if (entry.Skipped)
+        {
+            cssClass = "warning";
+        }
+
+        sb.AppendLine(
+            $"<tr class=\"{cssClass}\"><td><a href=\"../entries/entry-{entry.Id}.html\" target=\"_blank\">{entry.Url}</a></td>");
+
+        // Error!
+        if (entry.Error is not null)
+        {
+            sb.AppendLine($"<td colspan=\"3\" class=\"error\">{entry.Error}</td></tr>");
+            return;
+        }
+
+        // Skipped!
+        if (entry.Skipped)
+        {
+            sb.AppendLine($"<td colspan=\"3\">Skipped!</td></tr>");
+            return;
+        }
+
+        // Status code.
+        if (entry.Response?.StatusCode > 0)
+        {
+            cssClass = entry.Response.StatusCode switch
+            {
+                >= 200 and <= 299 => "success",
+                <= 399 => "warning",
+                _ => "error"
+            };
+
+            sb.AppendLine($"<td class=\"{cssClass}\">{entry.Response.GetStatusFormatted()}</td>");
+        }
+        else
+        {
+            sb.AppendLine("<td>-</td>");
+        }
+
+        // Response time.
+        if (entry.Response?.Time > 0)
+        {
+            cssClass = entry.Response.Time switch
+            {
+                > 1000 => "error",
+                > 300 => "warning",
+                _ => "success"
+            };
+
+            sb.AppendLine($"<td class=\"{cssClass}\">{entry.Response.GetTimeFormatted()}</td>");
+        }
+        else
+        {
+            sb.AppendLine("<td>-</td>");
+        }
+
+        // Document size.
+        if (entry.Response?.Size > 0)
+        {
+            cssClass = entry.Response.Size switch
+            {
+                > 1000000 => "error",
+                > 500000 => "warning",
+                _ => "success"
+            };
+
+            sb.AppendLine($"<td class=\"{cssClass}\">{entry.Response.GetSizeFormatted()}</td></tr>");
+        }
+        else
+        {
+            sb.AppendLine("<td>-</td></tr>");
+        }
     }
 
     /// <summary>
@@ -382,6 +469,127 @@ public class ReportService : IReportService
     /// </summary>
     private async Task GenerateQueueEntryReports()
     {
+        foreach (var entry in Program.Queue)
+        {
+            var sb = new StringBuilder();
+            
+            // Request and document info.
+            if (entry.Response is not null)
+            {
+                sb.AppendLine("<table><tbody>");
+                sb.AppendLine($"<tr><td>URL</td><td><a href=\"{entry.Url}\" target=\"_blank\">{entry.Url}</a></td></tr>");
+                sb.AppendLine($"<tr><td>Skipped</td><td>{(entry.Skipped ? "Yes" : "No")}</td></tr>");
+                sb.AppendLine($"<tr><td>Status Code</td><td>{entry.Response.GetStatusFormatted()}</td></tr>");
+                sb.AppendLine($"<tr><td>Response Time</td><td>{entry.Response.GetTimeFormatted()}</td></tr>");
+                sb.AppendLine($"<tr><td>Document Size</td><td>{entry.Response.GetSizeFormatted()}</td></tr>");
+                sb.AppendLine($"<tr><td>Document Title</td><td>{entry.Response.DocumentTitle}</td></tr>");
+                sb.AppendLine("</tbody></table>");
+            }
+
+            // Show screenshot.
+            if (entry.ScreenshotSaved)
+            {
+                var url = $"../screenshots/screenshot-{entry.Id}.png";
+
+                sb.AppendLine("<h2>Screenshot</h2>");
+                sb.AppendLine($"<div class=\"screenshot\"><a href=\"{url}\" target=\"_blank\"><img src=\"{url}\" alt=\"Screenshot for {url}\"></a></div>");
+            }
+            
+            // Response headers.
+            if (entry.Response?.Headers?.Count > 0)
+            {
+                sb.AppendLine("<h2>Headers</h2>");
+                sb.AppendLine("<table><tbody>");
+
+                foreach (var (key, value) in entry.Response.Headers)
+                {
+                    sb.AppendLine($"<tr><td>{key}</td><td>{value}</td></tr>");
+                }
+                
+                sb.AppendLine("</tbody></table>");
+            }
+            
+            // Meta tags.
+            if (entry.Response?.MetaTags?.Count > 0)
+            {
+                sb.AppendLine("<h2>Meta Tags</h2>");
+                sb.AppendLine("<table><tbody>");
+
+                foreach (var tag in entry.Response.MetaTags)
+                {
+                    sb.AppendLine($"<tr><td>{tag.Name ?? tag.Property ?? tag.HttpEquiv ?? "&nbsp;"}</td>");
+                    sb.AppendLine($"<td>{tag.Content ?? $"Charset {tag.Charset}"}</td></tr>");
+                }
+                
+                sb.AppendLine("</tbody></table>");
+            }
+            
+            // Linked from.
+            if (entry.LinkedFrom.Count > 0)
+            {
+                sb.AppendLine("<h2>Linked From</h2>");
+                sb.AppendLine("<table class=\"links\"><tbody>");
+
+                foreach (var url in entry.LinkedFrom)
+                {
+                    var item = Program.Queue
+                        .FirstOrDefault(n => n.Url == url);
+                    
+                    this.AddQueueEntryResponseRow(sb, item ?? new QueueEntry(url));
+                }
+                
+                sb.AppendLine("</tbody></table>");
+            }
+            
+            // Accessibility issues.
+            if (entry.AccessibilityResults?.Violations?.Length > 0)
+            {
+                var severities = entry.AccessibilityResults?.Violations?
+                    .Select(n => n.Impact)
+                    .Where(n => !string.IsNullOrWhiteSpace(n?.Trim()))
+                    .Distinct()
+                    .OrderBy(n => n)
+                    .ToList();
+
+                if (severities is not null)
+                {
+                    foreach (var severity in severities.Where(n => n is not null))
+                    {
+                        sb.AppendLine($"<h2>{severity![..1].ToUpper()}{severity[1..].ToLower()} Accessibility Issues</h2>");
+                        sb.AppendLine("<table><tbody>");
+
+                        sb.AppendLine("</tbody></table>");
+                    }
+                }
+            }
+            
+            // Done.
+            var error = entry.Error is not null
+                ? $"<p class=\"error\">{entry.ErrorType}<br>{entry.Error}</p>"
+                : string.Empty;
+            
+            var html = this.GetBaseReport()
+                .Replace("{BodyOverride}", "entry")
+                .Replace("{HtmlTitle}", entry.Url.ToString())
+                .Replace("{ReportTitle}", "Details")
+                .Replace("{ReportDescription}", error)
+                .Replace("{ReportContent}", sb.ToString());
+
+            var path = Path.Combine(
+                Program.Options.ReportPath!,
+                "entries");
+
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+
+            path = Path.Combine(
+                path,
+                $"entry-{entry.Id}.html");
+            
+            await File.WriteAllTextAsync(path, html, Encoding.UTF8);
+        }
     }
 
     /// <summary>
@@ -432,84 +640,7 @@ public class ReportService : IReportService
 
             foreach (var item in items)
             {
-                var trCssClass = string.Empty;
-
-                if (item.Error is not null)
-                {
-                    trCssClass = "error";
-                }
-
-                if (item.Skipped)
-                {
-                    trCssClass = "warning";
-                }
-                
-                sb.AppendLine($"<tr class=\"{trCssClass}\"><td><a href=\"../entries/entry-{item.Id}.html\" target=\"_blank\">{item.Url}</a></td>");
-
-                // Error!
-                if (item.Error is not null)
-                {
-                    sb.AppendLine($"<td colspan=\"3\" class=\"error\">{item.Error}</td></tr>");
-                    continue;
-                }
-
-                // Skipped!
-                if (item.Skipped)
-                {
-                    sb.AppendLine($"<td colspan=\"3\">Skipped!</td></tr>");
-                    continue;
-                }
-
-                // Status code.
-                if (item.Response?.StatusCode > 0)
-                {
-                    var cssClass = item.Response.StatusCode switch
-                    {
-                        >= 200 and <= 299 => "success",
-                        <= 399 => "warning",
-                        _ => "error"
-                    };
-
-                    sb.AppendLine($"<td class=\"{cssClass}\">{item.Response.GetStatusFormatted()}</td>");
-                }
-                else
-                {
-                    sb.AppendLine("<td>-</td>");
-                }
-                
-                // Response time.
-                if (item.Response?.Time > 0)
-                {
-                    var cssClass = item.Response.Time switch
-                    {
-                        > 1000 => "error",
-                        > 300 => "warning",
-                        _ => "success"
-                    };
-                    
-                    sb.AppendLine($"<td class=\"{cssClass}\">{item.Response.GetTimeFormatted()}</td>");
-                }
-                else
-                {
-                    sb.AppendLine("<td>-</td>");
-                }
-                
-                // Document size.
-                if (item.Response?.Size > 0)
-                {
-                    var cssClass = item.Response.Size switch
-                    {
-                        > 1000000 => "error",
-                        > 500000 => "warning",
-                        _ => "success"
-                    };
-                    
-                    sb.AppendLine($"<td class=\"{cssClass}\">{item.Response.GetSizeFormatted()}</td></tr>");
-                }
-                else
-                {
-                    sb.AppendLine("<td>-</td></tr>");
-                }
+                this.AddQueueEntryResponseRow(sb, item);
             }
             
             sb.AppendLine("</tbody></table>");
@@ -636,6 +767,7 @@ public class ReportService : IReportService
                         
                         h1 {
                             color: #e0dde6;
+                            font-weight: normal;
                             margin: 0;
                             padding: 0;
                             text-transform: uppercase;
@@ -643,8 +775,10 @@ public class ReportService : IReportService
                         
                         h2 {
                             color: #d0cdd6;
+                            font-weight: normal;
                             margin: 0;
                             padding: 30px 0 10px 0;
+                            text-transform: uppercase;
                         }
                         
                         header {
@@ -721,6 +855,7 @@ public class ReportService : IReportService
                             border-right: solid 3px rgba(102, 102, 0, 1);
                         }
                         
+                        p.error,
                         td.error {
                             color: rgba(153, 0, 0, 1);
                         }
@@ -752,6 +887,39 @@ public class ReportService : IReportService
                         
                         body.report article {
                             padding-top: 50px;
+                        }
+                        
+                        body.entry tbody tr td:nth-child(1) {
+                            width: 200px;
+                        }
+                        
+                        body.entry tbody tr td:nth-child(2) {
+                            text-align: left;
+                            width: auto;
+                        }
+                        
+                        body.entry table.links tbody tr td:nth-child(1) {
+                            width: auto;
+                        }
+                        
+                        body.entry table.links tbody tr td:nth-child(2) {
+                            text-align: right;
+                            width: 200px;
+                        }
+                        
+                        body.entry table.links tbody tr td:nth-child(3),
+                        body.entry table.links tbody tr td:nth-child(4) {
+                            text-align: right;
+                            width: 100px;
+                        }
+                        
+                        div.screenshot {
+                            margin: 0 0 30px;
+                        }
+                        
+                        div.screenshot a img {
+                            max-height: 400px;
+                            max-width: 400px;
                         }
                     </style>
                 </head>
