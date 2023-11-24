@@ -3,6 +3,11 @@
 public interface IResultItemNode
 {
     /// <summary>
+    /// Unique ID.
+    /// </summary>
+    Guid Guid { get; }
+    
+    /// <summary>
     /// Source HTML.
     /// </summary>
     string? Html { get; }

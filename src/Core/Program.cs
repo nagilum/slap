@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Text.Json;
 using Serilog;
+using Slap.Extenders;
 using Slap.Models;
 using Slap.Services;
 
@@ -79,6 +80,12 @@ public static class Program
         await queueService.ProcessQueue(tokenSource.Token);
         
         Finished = DateTimeOffset.Now;
+        
+        Log.Information(
+            "Run started at {started} and ran till {finished} which took {took}",
+            Started.ToString("yyyy-MM-dd HH:mm:ss"),
+            Finished.ToString("yyyy-MM-dd HH:mm:ss"),
+            (Finished - Started).ToHumanReadable());
         
         var reportService = new ReportService();
         await reportService.GenerateReports();
