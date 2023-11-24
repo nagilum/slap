@@ -425,13 +425,10 @@ public class ReportService : IReportService
 
             var description = urlType switch
             {
-                UrlType.InternalPage =>
-                    "HTML pages matching the list of internal domains. This always includes the hostname of the initial URL to be scanned.",
-                UrlType.InternalAsset =>
-                    "All pages and assets apart from HTML pages matching the list of internal domains. This always includes the hostname of the initial URL to be scanned.",
+                UrlType.InternalPage => "HTML pages matching the list of internal domains. This always includes the hostname of the initial URL to be scanned.",
+                UrlType.InternalAsset => "All pages and assets apart from HTML pages matching the list of internal domains. This always includes the hostname of the initial URL to be scanned.",
                 UrlType.ExternalPage => "HTML pages that doesn't match the list of internal domains.",
-                UrlType.ExternalAsset =>
-                    "All pages and assets apart from HTML pages that doesn't match the list of internal domains.",
+                UrlType.ExternalAsset => "All pages and assets apart from HTML pages that doesn't match the list of internal domains.",
                 _ => throw new Exception($"Invalid URL type: {urlType}")
             };
 
@@ -455,8 +452,7 @@ public class ReportService : IReportService
         }
 
         {
-            sb.AppendLine(
-                $"<tr><td><a href=\"types{Path.DirectorySeparatorChar}all.html\" target=\"_blank\">Total</a></td>");
+            sb.AppendLine($"<tr><td><a href=\"types{Path.DirectorySeparatorChar}all.html\" target=\"_blank\">Total</a></td>");
             sb.AppendLine($"<td>{Program.Queue.Count}</td></tr>");
 
             await this.GenerateSubReport(
@@ -517,60 +513,52 @@ public class ReportService : IReportService
             sb.AppendLine($"<h2 class=\"no-bottom-padding\">{violation.Id}</h2>");
             sb.AppendLine($"<p>{violation.Help ?? violation.Description}");
             sb.AppendLine($"{(violation.HelpUrl is not null ? $" (<a href=\"{violation.HelpUrl}\" target=\"_blank\">read more</a>)" : string.Empty)}</p>");
-            
-            
-        }
 
-        /*
-        foreach (var violation in violations)
-        {
-            sb.AppendLine($"<h2 class=\"no-bottom-padding\">{violation.Id}</h2>");
-            sb.AppendLine($"<p>{violation.Help ?? violation.Description}");
-            sb.AppendLine($"{(violation.HelpUrl is not null ? $" (<a href=\"{violation.HelpUrl}\" target=\"_blank\">read more</a>)" : string.Empty)}</p>");
+            var query =
+                from n in entries
+                where n.AccessibilityResults?.Violations?.Any(m => m.Id == violation.Id) == true
+                select n;
 
-            if (!(violation.Nodes?.Length > 0))
+            foreach (var entry in query)
             {
-                continue;
-            }
+                var temp = entry.AccessibilityResults?.Violations?
+                    .FirstOrDefault(n => n.Id == violation.Id);
 
-            foreach (var node in violation.Nodes)
-            {
-                var lines = new List<string>();
-
-                if (node.Message is not null)
+                if (temp?.Nodes is null)
                 {
-                    lines.Add(node.Message);
+                    continue;
                 }
-
-                if (node.Html is not null)
-                {
-                    lines.Add($"HTML {node.Html?.Replace("<", "&lt;").Replace(">", "&gt;")}");
-                }
-                    
-                lines.Add($"Selector: {
-                    node.XPath?.Selector?.Replace("<", "&lt;").Replace(">", "&gt;") ??
-                    node.Target?.Selector?.Replace("<", "&lt;").Replace(">", "&gt;")}");
-
-                sb.AppendLine($"<div class=\"\">{string.Join("<br>", lines)}</div>");
-
-                var query =
-                    from n in entries
-                    where n.AccessibilityResults?.Violations?
-                        .Any(m => m.Nodes?
-                            .Any(o => o.Guid == node.Guid) == true) == true
-                    select n;
-                    
+                
                 sb.AppendLine("<table><tbody>");
-
-                foreach (var entry in query)
-                {
-                    this.AddQueueEntryResponseRow(sb, entry);
-                }
-
+                this.AddQueueEntryResponseRow(sb, entry);
                 sb.AppendLine("</tbody></table>");
+
+                foreach (var node in temp.Nodes!)
+                {
+                    var lines = new List<string>();
+
+                    if (node.Html is not null)
+                    {
+                        lines.Add($"<div class=\"html\" title=\"Affected HTML code\">{node.Html?
+                            .Replace("<", "&lt;").Replace(">", "&gt;")}</div>");
+                    }
+
+                    if (node.Target?.Selector is not null)
+                    {
+                        lines.Add($"<div class=\"selector\" title=\"DOM selector\">{node.Target?.Selector
+                            .Replace("<", "&lt;").Replace(">", "&gt;")}</div>");
+                    }
+
+                    if (node.XPath?.Selector is not null)
+                    {
+                        lines.Add($"<div class=\"selector\" title=\"DOM selector\">{node.XPath?.Selector
+                            .Replace("<", "&lt;").Replace(">", "&gt;")}</div>");
+                    }
+                    
+                    sb.AppendLine($"<div class=\"violation\">{string.Join(string.Empty, lines)}</div>");
+                }
             }
         }
-        */
 
         // Done.
         var html = this.GetBaseReport()
@@ -688,9 +676,10 @@ public class ReportService : IReportService
                 {
                     foreach (var severity in severities.Where(n => n is not null))
                     {
-                        sb.AppendLine(
-                            $"<h2>{severity![..1].ToUpper()}{severity[1..].ToLower()} Accessibility Issues</h2>");
+                        sb.AppendLine($"<h2>{severity![..1].ToUpper()}{severity[1..].ToLower()} Accessibility Issues</h2>");
                         sb.AppendLine("<table><tbody>");
+                        
+                        // TODO
 
                         sb.AppendLine("</tbody></table>");
                     }
@@ -1058,6 +1047,47 @@ public class ReportService : IReportService
                         div.screenshot a img {
                             max-height: 400px;
                             max-width: 400px;
+                        }
+                        
+                        div.violation {
+                            border-left: solid 3px #c0bdc6;
+                            font-family: monospace;
+                            margin: 10px 0;
+                            padding: 0 0 0 10px;
+                            transition: .25s;
+                        }
+                        
+                        div.violation div.html::before {
+                            color: rgba(102, 102, 255, 1);
+                            content: '<>';
+                            display: inline-block;
+                            padding-right: 8px;
+                            text-align: center;
+                            transition: .25s;
+                            width: 20px;
+                        }
+                        
+                        div.violation div.selector::before {
+                            color: rgba(102, 102, 255, 1);
+                            content: '#';
+                            display: inline-block;
+                            padding-right: 8px;
+                            text-align: center;
+                            transition: .25s;
+                            width: 20px;
+                        }
+                        
+                        div.violation:hover {
+                            border-left-color: rgba(153, 153, 0, 1);
+                            color: #e0dde6;
+                        }
+                        
+                        div.violation:hover div.html::before {
+                            color: rgba(153, 153, 255, 1);
+                        }
+                        
+                        div.violation:hover div.selector::before {
+                            color: rgba(153, 153, 255, 1);
                         }
                     </style>
                 </head>
