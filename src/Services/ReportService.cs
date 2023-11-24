@@ -209,12 +209,13 @@ public class ReportService : IReportService
         sb.AppendLine("<h2>Response Times</h2>");
         sb.AppendLine("<table><tbody>");
 
+        string link;
+        string cssClass;
+
         {
             var items = Program.Queue
                 .Where(n => n.Response?.Time is >= 0 and < 300)
                 .ToList();
-
-            var str = "&lt; 300 ms";
 
             if (items.Any())
             {
@@ -224,18 +225,16 @@ public class ReportService : IReportService
                     $"response-times{Path.DirectorySeparatorChar}less-than-300-ms.html",
                     items);
 
-                str = $"<a href=\"response-times/less-than-300-ms.html\" target=\"_blank\">{str}</a>";
+                link = "<a href=\"response-times/less-than-300-ms.html\" target=\"_blank\">&lt; 300 ms</a>";
+                
+                sb.AppendLine($"<tr><td>{link}</td><td>{items.Count}</td></tr>");
             }
-
-            sb.AppendLine($"<tr><td>{str}</td><td>{items.Count}</td></tr>");
         }
 
         {
             var items = Program.Queue
                 .Where(n => n.Response?.Time is >= 300 and < 600)
                 .ToList();
-
-            var str = "&gt; 300 &amp; &lt; 600 ms";
 
             if (items.Any())
             {
@@ -245,18 +244,16 @@ public class ReportService : IReportService
                     $"response-times{Path.DirectorySeparatorChar}less-than-600-greater-than-300-ms.html",
                     items);
 
-                str = $"<a href=\"response-times/less-than-600-greater-than-300-ms.html\" target=\"_blank\">{str}</a>";
+                link = "<a href=\"response-times/less-than-600-greater-than-300-ms.html\" target=\"_blank\">&gt; 300 &amp; &lt; 600 ms</a>";
+                
+                sb.AppendLine($"<tr><td>{link}</td><td>{items.Count}</td></tr>");
             }
-
-            sb.AppendLine($"<tr><td>{str}</td><td>{items.Count}</td></tr>");
         }
 
         {
             var items = Program.Queue
                 .Where(n => n.Response?.Time is >= 600 and < 900)
                 .ToList();
-
-            var str = "&gt; 600 &amp; &lt; 900 ms";
 
             if (items.Any())
             {
@@ -265,23 +262,18 @@ public class ReportService : IReportService
                     "All pages and assets that had a response time of less than 900 and greater than 600 milliseconds.",
                     $"response-times{Path.DirectorySeparatorChar}less-than-900-greater-than-600-ms.html",
                     items);
+                
+                link = "<a href=\"response-times/less-than-900-greater-than-600-ms.html\" target=\"_blank\">&gt; 600 &amp; &lt; 900 ms</a>";
+                cssClass = items.Any() ? "warning" : "";
 
-                str = $"<a href=\"response-times/less-than-900-greater-than-600-ms.html\" target=\"_blank\">{str}</a>";
+                sb.AppendLine($"<tr class=\"{cssClass}\"><td>{link}</td><td>{items.Count}</td></tr>");
             }
-
-            var cssClass = items.Any()
-                ? "warning"
-                : "";
-
-            sb.AppendLine($"<tr class=\"{cssClass}\"><td>{str}</td><td>{items.Count}</td></tr>");
         }
 
         {
             var items = Program.Queue
                 .Where(n => n.Response?.Time is >= 900)
                 .ToList();
-
-            var str = "&gt; 900 ms";
 
             if (items.Any())
             {
@@ -291,14 +283,11 @@ public class ReportService : IReportService
                     $"response-times{Path.DirectorySeparatorChar}greater-than-900-ms.html",
                     items);
 
-                str = $"<a href=\"response-times/greater-than-900-ms.html\" target=\"_blank\">{str}</a>";
+                link = "<a href=\"response-times/greater-than-900-ms.html\" target=\"_blank\">&gt; 900 ms</a>";
+                cssClass = items.Any() ? "error" : "";
+
+                sb.AppendLine($"<tr class=\"{cssClass}\"><td>{link}</td><td>{items.Count}</td></tr>");
             }
-
-            var cssClass = items.Any()
-                ? "error"
-                : "";
-
-            sb.AppendLine($"<tr class=\"{cssClass}\"><td>{str}</td><td>{items.Count}</td></tr>");
         }
 
         sb.AppendLine("</tbody></table>");
@@ -319,33 +308,36 @@ public class ReportService : IReportService
             .OrderBy(n => n)
             .ToList();
 
+        string link;
+        string cssClass;
+
         foreach (var code in statusCodes)
         {
             var items = Program.Queue
                 .Where(n => n.Response?.StatusCode == code)
                 .ToList();
 
-            var str = $"{code} {ScannerService.GetStatusDescription(code)}";
-
-            if (items.Any())
+            if (!items.Any())
             {
-                await this.GenerateSubReport(
-                    $"{code} {ScannerService.GetStatusDescription(code)}",
-                    $"All pages and assets matching the response status {code} {ScannerService.GetStatusDescription(code)}",
-                    $"statuses{Path.DirectorySeparatorChar}{code}.html",
-                    items);
-
-                str = $"<a href=\"statuses/{code}.html\" target=\"_blank\">{str}</a>";
+                continue;
             }
 
-            var cssClass = code switch
+            await this.GenerateSubReport(
+                $"{code} {ScannerService.GetStatusDescription(code)}",
+                $"All pages and assets matching the response status {code} {ScannerService.GetStatusDescription(code)}",
+                $"statuses{Path.DirectorySeparatorChar}{code}.html",
+                items);
+
+            link = $"<a href=\"statuses/{code}.html\" target=\"_blank\">{code} {ScannerService.GetStatusDescription(code)}</a>";
+                
+            cssClass = code switch
             {
                 >= 200 and < 300 => "",
                 >= 300 and < 400 => "warning",
                 _ => "error"
             };
-
-            sb.AppendLine($"<tr class=\"{cssClass}\"><td>{str}</td>");
+                
+            sb.AppendLine($"<tr class=\"{cssClass}\"><td>{link}</td>");
             sb.AppendLine($"<td>{items.Count}</td></tr>");
         }
 
@@ -353,8 +345,6 @@ public class ReportService : IReportService
             var items = Program.Queue
                 .Where(n => n.Response is null && !n.Skipped)
                 .ToList();
-
-            var str = "Failed";
 
             if (items.Any())
             {
@@ -364,23 +354,18 @@ public class ReportService : IReportService
                     $"statuses{Path.DirectorySeparatorChar}failed.html",
                     items);
 
-                str = "<a href=\"statuses/failed.html\" target=\"_blank\">Failed</a>";
+                link = "<a href=\"statuses/failed.html\" target=\"_blank\">Failed</a>";
+                cssClass = items.Any() ? "error" : "";
+                
+                sb.AppendLine($"<tr class=\"{cssClass}\"><td>{link}</td>");
+                sb.AppendLine($"<td>{items.Count}</td></tr>");
             }
-
-            var cssClass = items.Any()
-                ? "error"
-                : "";
-
-            sb.AppendLine($"<tr class=\"{cssClass}\"><td>{str}</td>");
-            sb.AppendLine($"<td>{items.Count}</td></tr>");
         }
 
         {
             var items = Program.Queue
                 .Where(n => n.Skipped)
                 .ToList();
-
-            var str = "Skipped";
 
             if (items.Any())
             {
@@ -390,15 +375,12 @@ public class ReportService : IReportService
                     $"statuses{Path.DirectorySeparatorChar}skipped.html",
                     items);
 
-                str = "<a href=\"statuses/failed.html\" target=\"_blank\">Skipped</a>";
+                link = "<a href=\"statuses/failed.html\" target=\"_blank\">Skipped</a>";
+                cssClass = items.Any() ? "warning" : "";
+                
+                sb.AppendLine($"<tr class=\"{cssClass}\"><td>{link}</td>");
+                sb.AppendLine($"<td>{items.Count}</td></tr>");
             }
-
-            var cssClass = items.Any()
-                ? "warning"
-                : "";
-
-            sb.AppendLine($"<tr class=\"{cssClass}\"><td>{str}</td>");
-            sb.AppendLine($"<td>{items.Count}</td></tr>");
         }
 
         sb.AppendLine("</tbody></table>");
