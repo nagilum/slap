@@ -378,7 +378,7 @@ public class ReportService : IReportService
                     $"statuses{Path.DirectorySeparatorChar}skipped.html",
                     items);
 
-                link = "<a href=\"statuses/failed.html\" target=\"_blank\">Skipped</a>";
+                link = "<a href=\"statuses/skipped.html\" target=\"_blank\">Skipped</a>";
                 cssClass = items.Any() ? "warning" : "";
 
                 sb.AppendLine($"<tr class=\"{cssClass}\"><td>{link}</td>");
