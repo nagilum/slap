@@ -469,7 +469,8 @@ public class ScannerService : IScannerService
         stopwatch.Stop();
         
         var body = await res.Content.ReadAsByteArrayAsync(cancellationToken);
-        
+
+        string? redirectUrl = null;
         string? contentType = null;
         var headers = new Dictionary<string, string?>();
 
@@ -483,6 +484,11 @@ public class ScannerService : IScannerService
                 value is not null)
             {
                 contentType = value;
+            }
+
+            if (key.Equals("location", StringComparison.InvariantCultureIgnoreCase))
+            {
+                redirectUrl = value;
             }
 
             headers.TryAdd(key, value);
@@ -501,6 +507,38 @@ public class ScannerService : IScannerService
             }
 
             headers.TryAdd(key, value);
+        }
+
+        if (redirectUrl is not null &&
+            Program.Options.AllowAutoRedirect &&
+            Uri.TryCreate(entry.Url, redirectUrl, out var uri) &&
+            uri.IsAbsoluteUri &&
+            !string.IsNullOrWhiteSpace(uri.DnsSafeHost))
+        {
+            var newEntry = Program.Queue
+                .FirstOrDefault(n => n.Url == uri);
+
+            if (newEntry is null)
+            {
+                if (Program.Options.LogLevel == LogLevel.Verbose)
+                {
+                    Log.Information(
+                        "Added {url} to queue.",
+                        uri.ToString().Replace(" ", "%20"));    
+                }
+                else
+                {
+                    Log.Information("Added 1 to queue.");
+                }
+
+                newEntry = new(uri, this.GetUrlType(uri, "a"));
+                Program.Queue.Add(newEntry);
+            }
+
+            if (!newEntry.LinkedFrom.Contains(entry.Url))
+            {
+                newEntry.LinkedFrom.Add(entry.Url);
+            }
         }
 
         headers = headers
