@@ -24,7 +24,7 @@ cd slap/src
 dotnet build
 ```
 
-Slap is written in C#, [.NET 7](https://dotnet.microsoft.com/en-us/download/dotnet/7.0#runtime-7.0.13), and uses [Microsoft Playwright](https://www.nuget.org/packages/Microsoft.Playwright) to perform the internal webpage requests. This allows us to take screenshots run [Axe Core](https://www.nuget.org/packages/Deque.AxeCore.Playwright) accessibility scans. [Serilog](https://www.nuget.org/packages/Serilog) is used for logging during run.
+Slap is written in C#, [.NET 7](https://dotnet.microsoft.com/en-us/download/dotnet/7.0#runtime-7.0.13), and uses [Microsoft Playwright](https://www.nuget.org/packages/Microsoft.Playwright) to perform the internal webpage requests. This allows us to take screenshots and run [Axe Core](https://www.nuget.org/packages/Deque.AxeCore.Playwright) accessibility scans. [Serilog](https://www.nuget.org/packages/Serilog) is used for logging during run.
 
 ## How To Run
 
