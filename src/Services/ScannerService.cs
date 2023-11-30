@@ -319,8 +319,9 @@ public class ScannerService : IScannerService
         if (Program.Options.LogLevel == LogLevel.Normal && added > 0)
         {
             Log.Information(
-                "Added {count} to queue.",
-                added);
+                "Added {count} to queue. Total URLs in queue {total}.",
+                added,
+                Program.Queue.Count);
         }
     }
 
