@@ -316,12 +316,13 @@ public class ScannerService : IScannerService
             }
         }
 
-        if (Program.Options.LogLevel == LogLevel.Normal && added > 0)
+        if (added > 0)
         {
             Log.Information(
-                "Added {count} to queue. Total URLs in queue {total}.",
+                "Added {count} to queue. Total URLs in queue {total}. {left} left to process.",
                 added,
-                Program.Queue.Count);
+                Program.Queue.Count,
+                Program.Queue.Count(n => !n.Processed) - 1);
         }
     }
 
