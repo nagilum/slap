@@ -107,22 +107,35 @@ public class QueueService : IQueueService
                     entries.Count == 1 ? "entry" : "entries");
             }
 
-            await Parallel.ForEachAsync(
-                entries,
-                parallelOptions,
-                async (entry, token) =>
-                {
-                    if (Program.Options.LogLevel == LogLevel.Verbose)
+            try
+            {
+                await Parallel.ForEachAsync(
+                    entries,
+                    parallelOptions,
+                    async (entry, token) =>
                     {
-                        Log.Information(
-                            "Processing {index} of {total} : {url}",
-                            ++index,
-                            Program.Queue.Count,
-                            entry.Url.ToString().Replace(" ", "%20"));    
-                    }
+                        if (Program.Options.LogLevel == LogLevel.Verbose)
+                        {
+                            Log.Information(
+                                "Processing {index} of {total} : {url}",
+                                ++index,
+                                Program.Queue.Count,
+                                entry.Url.ToString().Replace(" ", "%20"));    
+                        }
                     
-                    await this._scanner.PerformRequest(entry, token);
-                });
+                        await this._scanner.PerformRequest(entry, token);
+                    });
+            }
+            catch (TaskCanceledException)
+            {
+                // Do nothing.
+            }
+            catch (Exception ex)
+            {
+                Log.Error(
+                    ex,
+                    "Error while processing entries.");
+            }
         }
 
         await this._scanner.DisposePlaywright();
