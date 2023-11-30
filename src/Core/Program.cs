@@ -32,7 +32,7 @@ public static class Program
     /// <summary>
     /// Program version.
     /// </summary>
-    public static Version Version { get; } = new(1, 4);
+    public static Version Version { get; } = new(1, 5);
     
     /// <summary>
     /// Init all the things..
