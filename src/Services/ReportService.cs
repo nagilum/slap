@@ -424,7 +424,8 @@ public class ReportService : IReportService
                     title,
                     description,
                     $"types{Path.DirectorySeparatorChar}{urlType.ToString().ToLower()}.html",
-                    items);
+                    items,
+                    extraCssClass: "report-padding");
 
                 title = $"<a href=\"types/{urlType.ToString().ToLower()}.html\" target=\"_blank\">{title}</a>";
             }
@@ -493,7 +494,7 @@ public class ReportService : IReportService
         foreach (var violation in violations)
         {
             sb.AppendLine($"<h2 class=\"no-bottom-padding\">{violation.Id}</h2>");
-            sb.AppendLine($"<p>{violation.Help ?? violation.Description}");
+            sb.AppendLine($"<p class=\"violation-summary\">{violation.Help ?? violation.Description}");
             sb.AppendLine($"{(violation.HelpUrl is not null ? $" (<a href=\"{violation.HelpUrl}\" target=\"_blank\">read more</a>)" : string.Empty)}</p>");
 
             var query =
@@ -660,8 +661,49 @@ public class ReportService : IReportService
                     {
                         sb.AppendLine($"<h2>{severity![..1].ToUpper()}{severity[1..].ToLower()} Accessibility Issues</h2>");
                         sb.AppendLine("<table><tbody>");
-                        
-                        // TODO
+
+                        var query =
+                            from n in entry.AccessibilityResults?.Violations
+                            where n.Impact == severity
+                            select n;
+
+                        foreach (var violation in query)
+                        {
+                            if (violation.Nodes is null ||
+                                violation.Nodes.Length == 0)
+                            {
+                                continue;
+                            }
+                            
+                            sb.AppendLine($"<h3 class=\"no-bottom-padding\">{violation.Id}</h3>");
+                            sb.AppendLine($"<p class=\"violation-summary\">{violation.Help ?? violation.Description}");
+                            sb.AppendLine($"{(violation.HelpUrl is not null ? $" (<a href=\"{violation.HelpUrl}\" target=\"_blank\">read more</a>)" : string.Empty)}</p>");
+
+                            foreach (var node in violation.Nodes)
+                            {
+                                var lines = new List<string>();
+
+                                if (node.Html is not null)
+                                {
+                                    lines.Add($"<div class=\"html\" title=\"Affected HTML code\">{node.Html?
+                                        .Replace("<", "&lt;").Replace(">", "&gt;")}</div>");
+                                }
+
+                                if (node.Target?.Selector is not null)
+                                {
+                                    lines.Add($"<div class=\"selector\" title=\"DOM selector\">{node.Target?.Selector
+                                        .Replace("<", "&lt;").Replace(">", "&gt;")}</div>");
+                                }
+
+                                if (node.XPath?.Selector is not null)
+                                {
+                                    lines.Add($"<div class=\"selector\" title=\"DOM selector\">{node.XPath?.Selector
+                                        .Replace("<", "&lt;").Replace(">", "&gt;")}</div>");
+                                }
+                                    
+                                sb.AppendLine($"<div class=\"violation\">{string.Join(string.Empty, lines)}</div>");
+                            }
+                        }
 
                         sb.AppendLine("</tbody></table>");
                     }
@@ -705,12 +747,14 @@ public class ReportService : IReportService
     /// <param name="filename">Filename.</param>
     /// <param name="entries">List of queue entries.</param>
     /// <param name="includeEmptyUrlTypes">Whether to include empty URL types.</param>
+    /// <param name="extraCssClass">Add an extra CSS class to the body.</param>
     private async Task GenerateSubReport(
         string title,
         string description,
         string filename,
         IReadOnlyCollection<QueueEntry> entries,
-        bool includeEmptyUrlTypes = false)
+        bool includeEmptyUrlTypes = false,
+        string? extraCssClass = null)
     {
         var sb = new StringBuilder();
         var urlTypesWithEntries =
@@ -753,7 +797,7 @@ public class ReportService : IReportService
 
         // Done.
         var html = this.GetBaseReport()
-            .Replace("{BodyOverride}", "report")
+            .Replace("{BodyOverride}", $"report {extraCssClass}")
             .Replace("{HtmlTitle}", title)
             .Replace("{ReportTitle}", title)
             .Replace("{ReportDescription}", description)
@@ -886,6 +930,14 @@ public class ReportService : IReportService
                             text-transform: uppercase;
                         }
                         
+                        h3 {
+                            color: #d0cdd6;
+                            font-weight: normal;
+                            margin: 0;
+                            padding: 0;
+                            text-transform: uppercase;
+                        }
+                        
                         h2.no-bottom-padding {
                             padding-bottom: 0;
                         }
@@ -994,7 +1046,7 @@ public class ReportService : IReportService
                             width: 200px;
                         }
                         
-                        body.report article {
+                        body.report-padding article {
                             padding-top: 50px;
                         }
                         
@@ -1037,6 +1089,10 @@ public class ReportService : IReportService
                             margin: 10px 0;
                             padding: 0 0 0 10px;
                             transition: .25s;
+                        }
+                        
+                        p.violation-summary {
+                            margin-top: 0;
                         }
                         
                         div.violation div.html::before {
