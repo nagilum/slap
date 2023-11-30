@@ -16,14 +16,9 @@ public interface IQueueEntry
     DateTimeOffset Created { get; }
     
     /// <summary>
-    /// Error message, if any occurred.
+    /// Error, if any.
     /// </summary>
-    string? Error { get; }
-    
-    /// <summary>
-    /// Type of error.
-    /// </summary>
-    string? ErrorType { get; }
+    ErrorObject? Error { get; }
     
     /// <summary>
     /// Unique ID.

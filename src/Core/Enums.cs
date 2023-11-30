@@ -2,6 +2,13 @@
 
 namespace Slap.Core;
 
+public enum ErrorType
+{
+    RequestTimeout,
+    Unhandled,
+    UnresolvableHostname
+}
+
 public enum LogLevel
 {
     Silent,

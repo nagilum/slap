@@ -20,12 +20,7 @@ public class QueueEntry : IQueueEntry
     /// <summary>
     /// <inheritdoc cref="IQueueEntry.Error"/>
     /// </summary>
-    public string? Error { get; set; }
-    
-    /// <summary>
-    /// <inheritdoc cref="IQueueEntry.ErrorType"/>
-    /// </summary>
-    public string? ErrorType { get; set; }
+    public ErrorObject? Error { get; set; }
 
     /// <summary>
     /// <inheritdoc cref="IQueueEntry.Id"/>

@@ -337,7 +337,6 @@ public static class Program
                         {
                             entry.AccessibilityResults = null;
                             entry.Error = null;
-                            entry.ErrorType = null;
                             entry.Processed = false;
                             entry.Response = null;
                             entry.ScreenshotSaved = false;

@@ -477,7 +477,7 @@ public class ReportService : IReportService
         foreach (var entry in entries.Where(n => n.AccessibilityResults?.Violations?.Length > 0))
         {
             var query = entry.AccessibilityResults!.Violations!
-                .Where(n => n.Impact!.Equals(severity, StringComparison.InvariantCultureIgnoreCase) == true &&
+                .Where(n => n.Impact!.Equals(severity, StringComparison.InvariantCultureIgnoreCase) &&
                             n.Id is not null);
 
             foreach (var violation in query)
@@ -591,16 +591,40 @@ public class ReportService : IReportService
             var sb = new StringBuilder();
 
             // Request and document info.
+            sb.AppendLine("<table><tbody>");
+            sb.AppendLine($"<tr><td>URL</td><td><a href=\"{entry.Url}\" target=\"_blank\">{entry.Url}</a></td></tr>");
+            sb.AppendLine($"<tr><td>Skipped</td><td>{(entry.Skipped ? "Yes" : "No")}</td></tr>");
+
             if (entry.Response is not null)
             {
+                sb.AppendLine($"<tr><td>Status Code</td><td>{entry.Response?.GetStatusFormatted()}</td></tr>");
+                sb.AppendLine($"<tr><td>Response Time</td><td>{entry.Response?.GetTimeFormatted()}</td></tr>");
+                sb.AppendLine($"<tr><td>Document Size</td><td>{entry.Response?.GetSizeFormatted()}</td></tr>");
+                sb.AppendLine($"<tr><td>Document Title</td><td>{entry.Response?.DocumentTitle}</td></tr>");    
+            }
+            
+            sb.AppendLine("</tbody></table>");
+            
+            // Error.
+            if (entry.Error is not null)
+            {
+                sb.AppendLine("<h2>Error</h2>");
                 sb.AppendLine("<table><tbody>");
-                sb.AppendLine(
-                    $"<tr><td>URL</td><td><a href=\"{entry.Url}\" target=\"_blank\">{entry.Url}</a></td></tr>");
-                sb.AppendLine($"<tr><td>Skipped</td><td>{(entry.Skipped ? "Yes" : "No")}</td></tr>");
-                sb.AppendLine($"<tr><td>Status Code</td><td>{entry.Response.GetStatusFormatted()}</td></tr>");
-                sb.AppendLine($"<tr><td>Response Time</td><td>{entry.Response.GetTimeFormatted()}</td></tr>");
-                sb.AppendLine($"<tr><td>Document Size</td><td>{entry.Response.GetSizeFormatted()}</td></tr>");
-                sb.AppendLine($"<tr><td>Document Title</td><td>{entry.Response.DocumentTitle}</td></tr>");
+                sb.AppendLine($"<tr><td>Message</td><td>{entry.Error.Message}</td></tr>");
+
+                if (entry.Error.Namespace is not null)
+                {
+                    sb.AppendLine($"<tr><td>Namespace</td><td>{entry.Error.Namespace}</td></tr>");
+                }
+
+                if (entry.Error.Data?.Count > 0)
+                {
+                    foreach (var (key, value) in entry.Error.Data)
+                    {
+                        sb.AppendLine($"<tr><td>{key}</td><td>{value}</td></tr>");
+                    }
+                }
+                
                 sb.AppendLine("</tbody></table>");
             }
 
@@ -610,8 +634,7 @@ public class ReportService : IReportService
                 var url = $"../screenshots/screenshot-{entry.Id}.png";
 
                 sb.AppendLine("<h2>Screenshot</h2>");
-                sb.AppendLine(
-                    $"<div class=\"screenshot\"><a href=\"{url}\" target=\"_blank\"><img src=\"{url}\" alt=\"Screenshot for {url}\"></a></div>");
+                sb.AppendLine($"<div class=\"screenshot\"><a href=\"{url}\" target=\"_blank\"><img src=\"{url}\" alt=\"Screenshot for {url}\"></a></div>");
             }
 
             // Response headers.
@@ -674,8 +697,7 @@ public class ReportService : IReportService
                 {
                     foreach (var severity in severities.Where(n => n is not null))
                     {
-                        sb.AppendLine(
-                            $"<h2>{severity![..1].ToUpper()}{severity[1..].ToLower()} Accessibility Issues</h2>");
+                        sb.AppendLine($"<h2>{severity![..1].ToUpper()}{severity[1..].ToLower()} Accessibility Issues</h2>");
                         sb.AppendLine("<table><tbody>");
 
                         var query =
@@ -693,8 +715,7 @@ public class ReportService : IReportService
 
                             sb.AppendLine($"<h3 class=\"no-bottom-padding\">{violation.Id}</h3>");
                             sb.AppendLine($"<p class=\"violation-summary\">{violation.Help ?? violation.Description}");
-                            sb.AppendLine(
-                                $"{(violation.HelpUrl is not null ? $" (<a href=\"{violation.HelpUrl}\" target=\"_blank\">read more</a>)" : string.Empty)}</p>");
+                            sb.AppendLine($"{(violation.HelpUrl is not null ? $" (<a href=\"{violation.HelpUrl}\" target=\"_blank\">read more</a>)" : string.Empty)}</p>");
 
                             foreach (var node in violation.Nodes)
                             {
@@ -728,15 +749,15 @@ public class ReportService : IReportService
             }
 
             // Done.
-            var error = entry.Error is not null
-                ? $"<p class=\"error\">{entry.ErrorType}<br>{entry.Error}</p>"
-                : string.Empty;
+            // var error = entry.Error is not null
+            //     ? $"<p class=\"error\">{entry.ErrorType}<br>{entry.Error}</p>"
+            //     : string.Empty;
 
             var html = this.GetBaseReport()
                 .Replace("{BodyOverride}", "entry")
                 .Replace("{HtmlTitle}", entry.Url.ToString())
                 .Replace("{ReportTitle}", "Details")
-                .Replace("{ReportDescription}", error)
+                .Replace("{ReportDescription}", string.Empty)
                 .Replace("{ReportContent}", sb.ToString());
 
             var path = Path.Combine(

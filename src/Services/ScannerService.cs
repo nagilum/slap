@@ -68,7 +68,7 @@ public class ScannerService : IScannerService
             {
                 await this.SetupPlaywrightPage(entry);
                 await this.PerformPlaywrightRequest(entry);
-                
+
                 playwrightRequest = true;
             }
 
@@ -101,8 +101,15 @@ public class ScannerService : IScannerService
                     "Unresolvable hostname {host}",
                     entry.Url.Host);
 
-                entry.Error = $"Unresolvable hostname {entry.Url.Host}";
-                entry.ErrorType = "ERR_NAME_NOT_RESOLVED";
+                entry.Error = new()
+                {
+                    Data = new()
+                    {
+                        {"Hostname", entry.Url.Host}
+                    },
+                    Message = "Unresolvable hostname",
+                    Type = ErrorType.UnresolvableHostname
+                };
             }
             else
             {
@@ -110,8 +117,12 @@ public class ScannerService : IScannerService
                     "Error while scanning {url}",
                     entry.Url);
 
-                entry.Error = ex.Message;
-                entry.ErrorType = ex.GetType().ToString();
+                entry.Error = new()
+                {
+                    Message = ex.Message,
+                    Namespace = ex.GetType().ToString(),
+                    Type = ErrorType.Unhandled
+                };
             }
         }
         catch (HttpRequestException ex)
@@ -122,8 +133,15 @@ public class ScannerService : IScannerService
                     "Unresolvable hostname {host}",
                     entry.Url.Host);
 
-                entry.Error = $"Unresolvable hostname {entry.Url.Host}";
-                entry.ErrorType = "ERR_NAME_NOT_RESOLVED";
+                entry.Error = new()
+                {
+                    Data = new()
+                    {
+                        {"Hostname", entry.Url.Host}
+                    },
+                    Message = "Unresolvable hostname",
+                    Type = ErrorType.UnresolvableHostname
+                };
             }
             else
             {
@@ -131,8 +149,12 @@ public class ScannerService : IScannerService
                     "Error while scanning {url}",
                     entry.Url);
 
-                entry.Error = ex.Message;
-                entry.ErrorType = ex.GetType().ToString();
+                entry.Error = new()
+                {
+                    Message = ex.Message,
+                    Namespace = ex.GetType().ToString(),
+                    Type = ErrorType.Unhandled
+                };
             }
         }
         catch (TimeoutException)
@@ -142,8 +164,39 @@ public class ScannerService : IScannerService
                 Program.Options.Timeout,
                 entry.Url);
 
-            entry.Error = $"Timeout after {Program.Options.Timeout} seconds from {entry.Url}";
-            entry.ErrorType = "ERR_TIMEOUT";
+            entry.Error = new()
+            {
+                Data = new()
+                {
+                    {"Seconds", Program.Options.Timeout}
+                },
+                Message = "Request timeout",
+                Type = ErrorType.RequestTimeout
+            };
+        }
+        catch (TaskCanceledException ex)
+        {
+            if (ex.Message.IndexOf("HttpClient.Timeout", StringComparison.InvariantCultureIgnoreCase) > -1)
+            {
+                entry.Error = new()
+                {
+                    Data = new()
+                    {
+                        {"Seconds", Program.Options.Timeout}
+                    },
+                    Message = "Request timeout",
+                    Type = ErrorType.RequestTimeout
+                };
+            }
+            else
+            {
+                entry.Error = new()
+                {
+                    Message = ex.Message,
+                    Namespace = ex.GetType().ToString(),
+                    Type = ErrorType.Unhandled
+                };
+            }
         }
         catch (Exception ex)
         {
@@ -153,8 +206,15 @@ public class ScannerService : IScannerService
                     "Unresolvable hostname {host}",
                     entry.Url.Host);
 
-                entry.Error = $"Unresolvable hostname {entry.Url.Host}";
-                entry.ErrorType = "ERR_NAME_NOT_RESOLVED";
+                entry.Error = new()
+                {
+                    Data = new()
+                    {
+                        {"Hostname", entry.Url.Host}
+                    },
+                    Message = "Unresolvable hostname",
+                    Type = ErrorType.UnresolvableHostname
+                };
             }
             else
             {
@@ -162,8 +222,12 @@ public class ScannerService : IScannerService
                     "Error while scanning {url}",
                     entry.Url);
 
-                entry.Error = ex.Message;
-                entry.ErrorType = ex.GetType().ToString();
+                entry.Error = new()
+                {
+                    Message = ex.Message,
+                    Namespace = ex.GetType().ToString(),
+                    Type = ErrorType.Unhandled
+                };
             }
         }
 
