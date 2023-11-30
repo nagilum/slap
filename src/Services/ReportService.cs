@@ -472,7 +472,6 @@ public class ReportService : IReportService
         IReadOnlyCollection<QueueEntry> entries)
     {
         var sb = new StringBuilder();
-
         var violations = new List<AccessibilityResultItem>();
 
         foreach (var entry in entries.Where(n => n.AccessibilityResults?.Violations?.Length > 0))
@@ -500,8 +499,18 @@ public class ReportService : IReportService
         {
             sb.AppendLine($"<h2 class=\"no-bottom-padding\">{violation.Id}</h2>");
             sb.AppendLine($"<p class=\"violation-summary\">{violation.Help ?? violation.Description}");
-            sb.AppendLine(
-                $"{(violation.HelpUrl is not null ? $" (<a href=\"{violation.HelpUrl}\" target=\"_blank\">read more</a>)" : string.Empty)}</p>");
+
+            if (violation.HelpUrl is not null)
+            {
+                sb.AppendLine($" (<a href=\"{violation.HelpUrl}\" target=\"_blank\">read more</a>)");
+            }
+
+            if (violation.Tags?.Length > 0)
+            {
+                sb.AppendLine($"<br>Tags: {string.Join(", ", violation.Tags)}");
+            }
+
+            sb.AppendLine("</p>");
 
             var query =
                 from n in entries
