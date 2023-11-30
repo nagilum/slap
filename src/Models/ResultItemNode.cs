@@ -6,6 +6,11 @@ namespace Slap.Models;
 public class ResultItemNode : IResultItemNode
 {
     /// <summary>
+    /// <inheritdoc cref="IResultItemNode.Guid"/>
+    /// </summary>
+    public Guid Guid { get; } = Guid.NewGuid();
+
+    /// <summary>
     /// <inheritdoc cref="IResultItemNode.Html"/>
     /// </summary>
     public string? Html { get; init; }

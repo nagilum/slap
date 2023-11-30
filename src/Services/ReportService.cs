@@ -12,16 +12,21 @@ namespace Slap.Services;
 public class ReportService : IReportService
 {
     #region Implementation functions
-    
+
     /// <summary>
     /// <inheritdoc cref="IReportService.GenerateReports"/>
     /// </summary>
     public async Task GenerateReports()
     {
+        if (Program.Queue.IsEmpty)
+        {
+            return;
+        }
+
         var path = Path.GetRelativePath(
-            Directory.GetCurrentDirectory(), 
+            Directory.GetCurrentDirectory(),
             Program.Options.ReportPath!);
-        
+
         Log.Information(
             "Writing reports to .{separator}{path}",
             Path.DirectorySeparatorChar.ToString(),
@@ -30,26 +35,29 @@ public class ReportService : IReportService
         try
         {
             await this.WriteQueueToDisk();
-            await this.GenerateHtmlReports();
+            await this.GenerateSummaryReport();
+            await this.GenerateQueueEntryReports();
         }
         catch (Exception ex)
         {
             Log.Error(
                 ex,
-                "Error while generating and writing reports.");
+                "Error while generating and writing reports to disk.");
         }
     }
-    
+
     #endregion
-    
-    #region Helper functions
+
+    #region Report generating functions
 
     /// <summary>
-    /// Add a list of accessibility issues on the main report.
+    /// Add the accessibility issues table.
     /// </summary>
-    /// <param name="html">HTML.</param>
-    private void AddAccessibilityIssuesToHtmlReport(ref string html)
+    private async Task AddAccessibilityIssuesTable(StringBuilder sb)
     {
+        sb.AppendLine("<h2>Accessibility Issues</h2>");
+        sb.AppendLine("<table><tbody>");
+
         var severities = new List<string>();
 
         foreach (var entry in Program.Queue)
@@ -64,393 +72,237 @@ public class ReportService : IReportService
             .Distinct()
             .OrderBy(n => n)
             .ToList();
-        
-        var sb = new StringBuilder();
 
-        foreach (var severity in severities)
+        if (severities.Count == 0)
         {
-            var count = Program.Queue
-                .Sum(n => n.AccessibilityResults?.Violations?
-                    .Count(m => m.Impact == severity));
-            
-            sb.Append("<tr><td class=\"capitalize\">");
-            sb.Append(severity);
-            sb.Append("</td><td>");
-            sb.Append(count);
-            sb.Append("</td><td>");
-            sb.Append($"<a target=\"_blank\" href=\"issues-{severity}.html\">Details</a>");
-            sb.Append("</td></tr>");
-        }
-        
-        html = html.Replace("{AccessibilityIssuesRows}", sb.ToString());
-    }
-
-    /// <summary>
-    /// Add found accessibility issues to entry report.
-    /// </summary>
-    /// <param name="html">HTML.</param>
-    /// <param name="entry">Queue entry.</param>
-    private void AddAccessibilityIssuesToHtmlEntryReport(ref string html, IQueueEntry entry)
-    {
-        if (entry.AccessibilityResults?.Violations is null ||
-            entry.AccessibilityResults.Violations.Length == 0)
-        {
-            html = html.Replace("{AccessibilityIssues}", string.Empty);
-            return;
-        }
-
-        var sb = new StringBuilder();
-
-        sb.AppendLine("<h2>Accessibility Issues</h2>");
-
-        foreach (var violation in entry.AccessibilityResults.Violations)
-        {
-            var message = violation.Nodes?.FirstOrDefault()?.Message;
-            
-            sb.AppendLine($"<h3>{violation.Id![..1].ToUpper()}{violation.Id[1..].ToLower()}</h3>");
-            sb.AppendLine("<table><tbody>");
-            sb.AppendLine($"<tr><td class=\"info-cell\">Description</td><td>{violation.Description}</td></tr>");
-            sb.AppendLine($"<tr><td class=\"info-cell\">Message</td><td>{message}</td></tr>");
-            sb.AppendLine($"<tr><td class=\"info-cell\">Help</td><td><a target=\"_blank\" href=\"{violation.HelpUrl}\">{violation.Help}</a></td></tr>");
-            sb.AppendLine($"<tr><td class=\"info-cell\">Tags</td><td>{string.Join(", ", violation.Tags ?? Array.Empty<string>())}</td></tr>");
-            sb.AppendLine($"<tr><td class=\"info-cell\">Impact</td><td>{violation.Impact}</td></tr>");
-            sb.AppendLine($"<tr><td class=\"info-cell\">Count</td><td>{violation.Nodes?.Length}</td></tr>");
-            sb.AppendLine("</tbody></table>");
-
-            if (!(violation.Nodes?.Length > 0))
-            {
-                continue;
-            }
-
-            foreach (var node in violation.Nodes)
-            {
-                sb.AppendLine("<div class=\"violation-node\">");
-                sb.AppendLine($"<span>Selector: <code class=\"success\">{node.Target?.Selector}</code></span>");
-                sb.AppendLine($"<span>HTML: <code>{node.Html?.Replace("<", "&lt;").Replace(">", "&gt;")}</code></span>");
-                sb.AppendLine("</div>");
-            }
-        }
-        
-        html = html.Replace("{AccessibilityIssues}", sb.ToString());
-    }
-
-    /// <summary>
-    /// Add error data to entry report.
-    /// </summary>
-    /// <param name="html">HTML.</param>
-    /// <param name="entry">Queue entry.</param>
-    private void AddErrorToHTmlEntryReport(ref string html, IQueueEntry entry)
-    {
-        var error = entry.Error is null
-            ? string.Empty
-            : $"<p class=\"error\">{entry.ErrorType}<br>{entry.Error}</p>";
-
-        html = html.Replace("{Error}", error);
-    }
-    
-    /// <summary>
-    /// Add metadata to HTML report.
-    /// </summary>
-    /// <param name="html">HTML.</param>
-    private void AddMetadataToHtmlReport(ref string html)
-    {
-        html = html.Replace("{Host}", Program.Queue.First().Url.Host);
-        html = html.Replace("{GeneratedAt}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-        html = html.Replace("{ProgramVersion}", Program.Version.ToString());
-    }
-    
-    /// <summary>
-    /// Add metadata to entry report.
-    /// </summary>
-    /// <param name="html">HTML.</param>
-    /// <param name="entry">Queue entry.</param>
-    private void AddMetadataToHtmlEntryReport(ref string html, IQueueEntry entry)
-    {
-        html = html.Replace("{Url}", entry.Url.ToString());
-        html = html.Replace("{GeneratedAt}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-        html = html.Replace("{ProgramVersion}", Program.Version.ToString());
-    }
-
-    /// <summary>
-    /// Add list of linked-from to entry report.
-    /// </summary>
-    /// <param name="html">HTML.</param>
-    /// <param name="entry">Queue entry.</param>
-    private void AddLinkedFromToHtmlEntryReport(ref string html, IQueueEntry entry)
-    {
-        if (entry.LinkedFrom.Count == 0)
-        {
-            html = html.Replace("{LinkedFrom}", "<tr><td><em>None</em></td></tr>");
-            return;
-        }
-
-        var sb = new StringBuilder();
-
-        foreach (var url in entry.LinkedFrom)
-        {
-            sb.AppendLine($"<tr><td><a href=\"{url}\">{url}</a></td></tr>");
-        }
-        
-        html = html.Replace("{LinkedFrom}", sb.ToString());
-    }
-    
-    /// <summary>
-    /// Add links to HTML report.
-    /// </summary>
-    /// <param name="html">HTML.</param>
-    /// <param name="urlType">Link type.</param>
-    private void AddQueueEntriesToHtmlReport(ref string html, UrlType urlType)
-    {
-        var sb = new StringBuilder();
-
-        var entries = Program.Queue
-            .Where(n => n.UrlType == urlType)
-            .OrderBy(n => n.Url.ToString())
-            .ToList();
-
-        if (entries.Count == 0)
-        {
-            html = html.Replace("{Links" + urlType + "}", "<tr><td><em>None Found</em></td></tr>");
-            html = html.Replace("{Hidden" + urlType + "}", "hidden");
-        }
-
-        foreach (var entry in entries)
-        {
-            string cssClass;
-            
-            // URL.
-            sb.Append($"<tr><td class=\"url{(entry.UrlType == UrlType.InternalWebpage ? "-875" : "-700")}\"><a href=\"{entry.Url}\">{entry.Url}</a></td>");
-            
-            // Accessibility issues.
-            if (entry.UrlType == UrlType.InternalWebpage)
-            {
-                var count = entry.AccessibilityResults?.Violations?.Length ?? 0;
-
-                cssClass = count > 0
-                    ? "error"
-                    : "success";
-                
-                sb.Append($"<td class=\"{cssClass} info-cell\">{count}</td>");
-            }
-            
-            // Error?
-            if (entry.Error is not null)
-            {
-                sb.Append($"<td class=\"error\" colspan=\"3\">{entry.Error}</td>");
-            }
-            else if (entry.Skipped)
-            {
-                sb.Append($"<td class=\"warning\" colspan=\"3\">Skipped</td>");
-            }
-            else
-            {
-                // Status code.
-                if (entry.Response?.StatusCode > 0)
-                {
-                    cssClass = entry.Response.StatusCode switch
-                    {
-                        >= 200 and <= 299 => "success",
-                        <= 399 => "warning",
-                        _ => "error"
-                    };
-
-                    sb.Append($"<td class=\"{cssClass} info-cell\">{entry.Response.GetStatusFormatted()}</td>");
-                }
-                else
-                {
-                    sb.Append("<td class=\"info-cell\">-</td>");
-                }
-                
-                // Response time.
-                if (entry.Response?.Time > 0)
-                {
-                    cssClass = entry.Response.Time switch
-                    {
-                        > 1000 => "error",
-                        > 300 => "warning",
-                        _ => "success"
-                    };
-                    
-                    sb.Append($"<td class=\"{cssClass} info-cell\">{entry.Response.GetTimeFormatted()}</td>");
-                }
-                else
-                {
-                    sb.Append("<td class=\"info-cell\">-</td>");
-                }
-                
-                // Document size.
-                if (entry.Response?.Size > 0)
-                {
-                    cssClass = entry.Response.Size switch
-                    {
-                        > 1000000 => "error",
-                        > 500000 => "warning",
-                        _ => "success"
-                    };
-                    
-                    sb.Append($"<td class=\"{cssClass} info-cell\">{entry.Response.GetSizeFormatted()}</td>");
-                }
-                else
-                {
-                    sb.Append("<td class=\"info-cell\">-</td>");
-                }
-            }
-            
-            // Details.
-            sb.AppendLine($"<td class=\"info-cell\"><a target=\"_blank\" href=\"entries/entry-{entry.Id}.html\">Details</a></td></tr>");
-        }
-
-        html = html.Replace("{Links" + urlType + "}", sb.ToString());
-        html = html.Replace("{Hidden" + urlType + "}", string.Empty);
-    }
-
-    /// <summary>
-    /// Add response body data to entry report.
-    /// </summary>
-    /// <param name="html">HTML.</param>
-    /// <param name="entry">Queue entry.</param>
-    private void AddResponseBodyDataToHtmlEntryReport(ref string html, IQueueEntry entry)
-    {
-        // Document title.
-        var title = entry.Response?.DocumentTitle is not null
-            ? $"<strong>{entry.Response.DocumentTitle}</strong><br>"
-            : string.Empty;
-
-        html = html.Replace("{DocumentTitle}", title);
-
-        // Headers.
-        if (entry.Response?.Headers?.Count > 0)
-        {
-            var sb = new StringBuilder();
-
-            foreach (var (key, value) in entry.Response.Headers)
-            {
-                sb.AppendLine($"<tr><td>{key}</td><td>{value}</td></tr>");
-            }
-            
-            html = html.Replace("{HiddenHeaders}", string.Empty);
-            html = html.Replace("{Headers}", sb.ToString()); 
+            sb.AppendLine("<tr><td>None</td></tr>");
         }
         else
         {
-            html = html.Replace("{HiddenHeaders}", "hidden");
-            html = html.Replace("{Headers}", "<tr><td>None</td></tr>");
-        }
-
-        // Meta tags.
-        if (entry.Response?.MetaTags?.Count > 0)
-        {
-            var sb = new StringBuilder();
-
-            foreach (var tag in entry.Response.MetaTags)
+            foreach (var severity in severities)
             {
-                sb.AppendLine(
-                    "<tr>" +
-                    $"<td>{tag.Charset ?? "&nbsp;"}</td>" +
-                    $"<td>{tag.HttpEquiv ?? "&nbsp;"}</td>" +
-                    $"<td>{tag.Name ?? "&nbsp;"}</td>" +
-                    $"<td>{tag.Property ?? "&nbsp;"}</td>" +
-                    $"<td>{tag.Content ?? "&nbsp;"}</td>" +
-                    "</tr>");
+                var items = Program.Queue
+                    .Where(n => n.AccessibilityResults?.Violations?.Any(m => m.Impact == severity) == true)
+                    .ToList();
+
+                var title = $"{severity[..1].ToUpper()}{severity[1..].ToLower()}";
+                var link = title;
+
+                if (items.Any())
+                {
+                    await this.GenerateIssuesReport(
+                        title,
+                        severity,
+                        $"All pages that has accessibility issues marked as {severity}",
+                        $"issues{Path.DirectorySeparatorChar}{severity}.html",
+                        items);
+
+                    link = $"<a href=\"issues/{severity}.html\" target=\"_blank\">{title}</a>";
+                }
+
+                var cssClass = severity switch
+                {
+                    "critical" => "error",
+                    "serious" => "error",
+                    "moderate" => "warning",
+                    _ => string.Empty
+                };
+
+                sb.AppendLine($"<tr class=\"{cssClass}\"><td>{link}</td><td>{items.Count}</td></tr>");
             }
-            
-            html = html.Replace("{HiddenMetaTags}", string.Empty);
-            html = html.Replace("{MetaTags}", sb.ToString());
         }
-        else
-        {
-            html = html.Replace("{HiddenMetaTags}", "hidden");
-            html = html.Replace("{MetaTags}", "<tr><td>None</td></tr>");
-        }
+
+        sb.AppendLine("</tbody></table>");
     }
 
     /// <summary>
-    /// Add response data to entry report.
+    /// Add a row with entry and response info.
     /// </summary>
-    /// <param name="html">HTML.</param>
-    /// <param name="entry">Queue entry.</param>
-    private void AddResponseDataToHtmlEntryReport(ref string html, IQueueEntry entry)
+    private void AddQueueEntryResponseRow(StringBuilder sb, IQueueEntry entry)
     {
-        html = html.Replace("{Skipped}", entry.Skipped ? "Yes" : "No");
-        html = html.Replace("{StatusCode}", entry.Response?.GetStatusFormatted() ?? "-");
-        html = html.Replace("{ResponseTime}", entry.Response?.GetTimeFormatted() ?? "-");
-        html = html.Replace("{DocumentSize}", entry.Response?.GetSizeFormatted() ?? "-");
-    }
+        var cssClass = string.Empty;
 
-    /// <summary>
-    /// Add clickable preview for screenshot.
-    /// </summary>
-    /// <param name="html">HTML.</param>
-    /// <param name="entry">Queue entry.</param>
-    private void AddScreenshotToHtmlEntryReport(ref string html, IQueueEntry entry)
-    {
-        if (!entry.ScreenshotSaved)
+        if (entry.Error is not null)
         {
-            html = html.Replace("{Screenshot}", string.Empty);
+            cssClass = "error";
+        }
+
+        if (entry.Skipped)
+        {
+            cssClass = "warning";
+        }
+
+        sb.AppendLine(
+            $"<tr class=\"{cssClass}\"><td><a href=\"../entries/entry-{entry.Id}.html\" target=\"_blank\">{entry.Url}</a></td>");
+
+        // Error!
+        if (entry.Error is not null)
+        {
+            sb.AppendLine($"<td colspan=\"3\" class=\"error\">{entry.Error}</td></tr>");
             return;
         }
 
-        var url = $"../screenshots/screenshot-{entry.Id}.png";
-        var sb = new StringBuilder();
-
-        sb.Append("<div class=\"screenshot\">");
-        sb.Append($"<a href=\"{url}\">");
-        sb.Append($"<img src=\"{url}\" alt=\"Screenshot for {entry.Url}\">");
-        sb.Append("</a></div>");
-        
-        html = html.Replace("{Screenshot}", sb.ToString());
-    }
-    
-    /// <summary>
-    /// Add stats to HTML report.
-    /// </summary>
-    /// <param name="html">HTML.</param>
-    private void AddStatsToHtmlReport(ref string html)
-    {
-        var took = Program.Finished - Program.Started;
-
-        html = html.Replace("{ScanStarted}", Program.Started.ToString("yyyy-MM-dd HH:mm:ss"));
-        html = html.Replace("{ScanFinished}", Program.Finished.ToString("yyyy-MM-dd HH:mm:ss"));
-        html = html.Replace("{ScanTook}", $"<span title='{took}'>{took.ToHumanReadable()}</span>");
-
-        var sb = new StringBuilder();
-
-        foreach (var urlType in Enum.GetValues<UrlType>())
+        // Skipped!
+        if (entry.Skipped)
         {
-            var title = urlType switch
-            {
-                UrlType.InternalWebpage => "Internal Pages",
-                UrlType.InternalAsset => "Internal Assets",
-                UrlType.ExternalWebpage => "External Pages",
-                UrlType.ExternalAsset => "External Assets",
-                _ => throw new Exception($"Unknown UrlType {urlType}")
-            };
-            
-            var filename = urlType switch
-            {
-                UrlType.InternalWebpage => "type-internal-pages.html",
-                UrlType.InternalAsset => "type-internal-assets.html",
-                UrlType.ExternalWebpage => "type-external-pages.html",
-                UrlType.ExternalAsset => "type-external-assets.html",
-                _ => throw new Exception($"Unknown UrlType {urlType}")
-            };
-            
-            sb.AppendLine("<tr>");
-            sb.AppendLine($"<td class=\"info-cell\">{title}</td>");
-            sb.AppendLine($"<td class=\"info-cell\">{Program.Queue.Count(n => n.UrlType == urlType)}</td>");
-            sb.AppendLine($"<td class=\"info-cell\"><a href=\"{filename}\" target=\"_blank\">Details</a></td>");
-            sb.AppendLine("</tr>");
+            sb.AppendLine($"<td colspan=\"3\">Skipped!</td></tr>");
+            return;
         }
 
-        html = html.Replace("{TypeRows}", sb.ToString());
+        // Status code.
+        if (entry.Response?.StatusCode > 0)
+        {
+            cssClass = entry.Response.StatusCode switch
+            {
+                >= 200 and <= 299 => "success",
+                <= 399 => "warning",
+                _ => "error"
+            };
+
+            sb.AppendLine($"<td class=\"{cssClass}\">{entry.Response.GetStatusFormatted()}</td>");
+        }
+        else
+        {
+            sb.AppendLine("<td>-</td>");
+        }
+
+        // Response time.
+        if (entry.Response?.Time > 0)
+        {
+            cssClass = entry.Response.Time switch
+            {
+                > 1000 => "error",
+                > 300 => "warning",
+                _ => "success"
+            };
+
+            sb.AppendLine($"<td class=\"{cssClass}\">{entry.Response.GetTimeFormatted()}</td>");
+        }
+        else
+        {
+            sb.AppendLine("<td>-</td>");
+        }
+
+        // Document size.
+        if (entry.Response?.Size > 0)
+        {
+            cssClass = entry.Response.Size switch
+            {
+                > 1000000 => "error",
+                > 500000 => "warning",
+                _ => "success"
+            };
+
+            sb.AppendLine($"<td class=\"{cssClass}\">{entry.Response.GetSizeFormatted()}</td></tr>");
+        }
+        else
+        {
+            sb.AppendLine("<td>-</td></tr>");
+        }
     }
-    
+
     /// <summary>
-    /// Add status codes to HTML report.
+    /// Add the response time table.
     /// </summary>
-    /// <param name="html">HTML.</param>
-    private void AddStatusCodesToHtmlReport(ref string html)
+    private async Task AddResponseTimeTable(StringBuilder sb)
     {
+        sb.AppendLine("<h2>Response Times</h2>");
+        sb.AppendLine("<table><tbody>");
+
+        string link;
+        string cssClass;
+
+        {
+            var items = Program.Queue
+                .Where(n => n.Response?.Time is >= 0 and < 300)
+                .ToList();
+
+            if (items.Any())
+            {
+                await this.GenerateSubReport(
+                    "&lt; 300 ms",
+                    "All pages and assets that had a response of less than 300 milliseconds.",
+                    $"response-times{Path.DirectorySeparatorChar}less-than-300-ms.html",
+                    items);
+
+                link = "<a href=\"response-times/less-than-300-ms.html\" target=\"_blank\">&lt; 300 ms</a>";
+
+                sb.AppendLine($"<tr><td>{link}</td><td>{items.Count}</td></tr>");
+            }
+        }
+
+        {
+            var items = Program.Queue
+                .Where(n => n.Response?.Time is >= 300 and < 600)
+                .ToList();
+
+            if (items.Any())
+            {
+                await this.GenerateSubReport(
+                    "&gt; 300 &amp; &lt; 600 ms",
+                    "All pages and assets that had a response time of less than 600 and greater than 300 milliseconds.",
+                    $"response-times{Path.DirectorySeparatorChar}less-than-600-greater-than-300-ms.html",
+                    items);
+
+                link =
+                    "<a href=\"response-times/less-than-600-greater-than-300-ms.html\" target=\"_blank\">&gt; 300 &amp; &lt; 600 ms</a>";
+
+                sb.AppendLine($"<tr><td>{link}</td><td>{items.Count}</td></tr>");
+            }
+        }
+
+        {
+            var items = Program.Queue
+                .Where(n => n.Response?.Time is >= 600 and < 900)
+                .ToList();
+
+            if (items.Any())
+            {
+                await this.GenerateSubReport(
+                    "&gt; 600 &amp; &lt; 900 ms",
+                    "All pages and assets that had a response time of less than 900 and greater than 600 milliseconds.",
+                    $"response-times{Path.DirectorySeparatorChar}less-than-900-greater-than-600-ms.html",
+                    items);
+
+                link =
+                    "<a href=\"response-times/less-than-900-greater-than-600-ms.html\" target=\"_blank\">&gt; 600 &amp; &lt; 900 ms</a>";
+                cssClass = items.Any() ? "warning" : "";
+
+                sb.AppendLine($"<tr class=\"{cssClass}\"><td>{link}</td><td>{items.Count}</td></tr>");
+            }
+        }
+
+        {
+            var items = Program.Queue
+                .Where(n => n.Response?.Time is >= 900)
+                .ToList();
+
+            if (items.Any())
+            {
+                await this.GenerateSubReport(
+                    "&gt; 900 ms",
+                    "All pages and assets that had a response time of greater than 900 milliseconds.",
+                    $"response-times{Path.DirectorySeparatorChar}greater-than-900-ms.html",
+                    items);
+
+                link = "<a href=\"response-times/greater-than-900-ms.html\" target=\"_blank\">&gt; 900 ms</a>";
+                cssClass = items.Any() ? "error" : "";
+
+                sb.AppendLine($"<tr class=\"{cssClass}\"><td>{link}</td><td>{items.Count}</td></tr>");
+            }
+        }
+
+        sb.AppendLine("</tbody></table>");
+    }
+
+    /// <summary>
+    /// Add the status code table.
+    /// </summary>
+    private async Task AddStatusCodeTable(StringBuilder sb)
+    {
+        sb.AppendLine("<h2>Status Codes</h2>");
+        sb.AppendLine("<table><tbody>");
+
         var statusCodes = Program.Queue
             .Select(n => n.Response?.StatusCode ?? 0)
             .Where(n => n > 0)
@@ -458,474 +310,856 @@ public class ReportService : IReportService
             .OrderBy(n => n)
             .ToList();
 
-        var dict = statusCodes
-            .ToDictionary(
-                n => n.ToString(),
-                n => Program.Queue.Count(m => m.Response?.StatusCode == n).ToString());
+        string link;
+        string cssClass;
 
-        var failed = Program.Queue.Count(n => n.Response is null && !n.Skipped);
-        var skipped = Program.Queue.Count(n => n.Skipped);
-
-        if (failed > 0)
+        foreach (var code in statusCodes)
         {
-            dict.Add("Failed", $"<span class=\"error\">{failed}</span>");
-        }
-
-        if (skipped > 0)
-        {
-            dict.Add("Skipped", $"<span class=\"warning\">{skipped}</span>");
-        }
-        
-        var sb = new StringBuilder();
-
-        foreach (var (code, count) in dict)
-        {
-            sb.Append("<tr><td>");
-            sb.Append(code);
-            sb.Append("</td><td>");
-            sb.Append(count);
-            sb.Append("</td><td>");
-            sb.Append($"<a href=\"statuscode-{code.ToLower()}.html\" target=\"_blank\">Details</a>");
-            sb.Append("</td></tr>");
-        }
-
-        html = html.Replace("{StatusCodesRows}", sb.ToString());
-    }
-
-    /// <summary>
-    /// Generate HTML report for a specific accessibility issue severity.
-    /// </summary>
-    /// <param name="severity">Severity.</param>
-    private async Task GenerateAccessibilityIssuesReport(string severity)
-    {
-        var violations = new List<AccessibilityResultItem>();
-
-        foreach (var entry in Program.Queue.Where(n => n.AccessibilityResults?.Violations?.Length > 0))
-        {
-            var query =
-                from n in entry.AccessibilityResults!.Violations
-                where n.Impact == severity
-                select n;
-
-            violations.AddRange(query);
-        }
-
-        if (violations.Count == 0)
-        {
-            return;
-        }
-        
-        var html = await this.GetReportTemplateContent("severity-template.html");
-        
-        //
-        html = html.Replace("{Severity}", $"{severity[..1].ToUpper()}{severity[1..].ToLower()}");
-        html = html.Replace("{GeneratedAt}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-        html = html.Replace("{ProgramVersion}", Program.Version.ToString());
-        
-        //
-        var sb = new StringBuilder();
-
-        var ids = violations
-            .Select(n => n.Id)
-            .Distinct()
-            .OrderBy(n => n)
-            .ToArray();
-
-        foreach (var id in ids)
-        {
-            var details = violations
-                .First(n => n.Id == id);
-
-            var temp = violations.FirstOrDefault(n => n.Id == id);
-            var message = temp?.Nodes?.FirstOrDefault()?.Message;
-            
-            sb.AppendLine($"<h2>{id![..1].ToUpper()}{id[1..].ToLower()}</h2>");
-            sb.AppendLine("<table><tbody>");
-            sb.AppendLine($"<tr><td class=\"info-cell\">Description</td><td>{details.Description}</td></tr>");
-            sb.AppendLine($"<tr><td class=\"info-cell\">Message</td><td>{message}</td></tr>");
-            sb.AppendLine($"<tr><td class=\"info-cell\">Help</td><td><a target=\"_blank\" href=\"{details.HelpUrl}\">{details.Help}</a></td></tr>");
-            sb.AppendLine($"<tr><td class=\"info-cell\">Tags</td><td>{string.Join(", ", details.Tags ?? Array.Empty<string>())}</td></tr>");
-            sb.AppendLine("</tbody></table>");
-
-            var urls = new List<string>();
-            var guids = violations
-                .Where(n => n.Id == id)
-                .Select(n => n.Guid)
-                .ToArray();
-
-            foreach (var entry in Program.Queue)
-            {
-                if (entry.AccessibilityResults?.Violations is null ||
-                    entry.AccessibilityResults.Violations.All(n => !guids.Contains(n.Guid)))
-                {
-                    continue;
-                }
-
-                var url = entry.Url.ToString();
-
-                if (!urls.Contains(url))
-                {
-                    urls.Add(url);
-                }
-            }
-
-            urls = urls
-                .OrderBy(n => n)
+            var items = Program.Queue
+                .Where(n => n.Response?.StatusCode == code)
                 .ToList();
 
-            sb.AppendLine("<h3>Affected URLs</h3>");
-            sb.AppendLine("<table><tbody>");
-
-            foreach (var url in urls)
+            if (!items.Any())
             {
-                sb.AppendLine($"<tr><td><a href=\"{url}\">{url}</a></td></tr>");    
+                continue;
             }
-            
-            sb.AppendLine("</tbody></table>");
-            sb.AppendLine("<h3>Some of the Violations</h3>");
 
-            var count = 0;
-
-            foreach (var violation in violations.Where(n => n.Id == id))
-            {
-                if (!(violation.Nodes?.Length > 0))
-                {
-                    continue;
-                }
-
-                foreach (var node in violation.Nodes)
-                {
-                    count++;
-
-                    if (count == 11)
-                    {
-                        break;
-                    }
-                    
-                    sb.AppendLine("<div class=\"violation-node\">");
-                    sb.AppendLine($"<span>Selector: <code class=\"success\">{node.Target?.Selector}</code></span>");
-                    sb.AppendLine($"<span>HTML: <code>{node.Html?.Replace("<", "&lt;").Replace(">", "&gt;")}</code></span>");
-                    sb.AppendLine("</div>");
-                }
-
-                if (count == 11)
-                {
-                    break;
-                }
-            }
-        }
-
-        html = html.Replace("{AccessibilityIssues}", sb.ToString());
-        
-        var path = Path.Combine(
-            Program.Options.ReportPath!,
-            $"issues-{severity}.html");
-        
-        await File.WriteAllTextAsync(path, html, Encoding.UTF8);
-    }
-
-    /// <summary>
-    /// Generate HTML report for each severity level of accessibility issues.
-    /// </summary>
-    private async Task GenerateAccessibilityIssuesReports()
-    {
-        var severities = new List<string>();
-
-        foreach (var entry in Program.Queue)
-        {
-            severities.AddRange(
-                from violation in entry.AccessibilityResults?.Violations ?? Array.Empty<AccessibilityResultItem>()
-                select violation.Impact ?? string.Empty);
-        }
-
-        severities = severities
-            .Where(n => !string.IsNullOrWhiteSpace(n.Trim()))
-            .Distinct()
-            .OrderBy(n => n)
-            .ToList();
-
-        foreach (var severity in severities)
-        {
-            await this.GenerateAccessibilityIssuesReport(severity);
-        }
-    }
-    
-    /// <summary>
-    /// Generate HTML reports from queue and write to disk.
-    /// </summary>
-    private async Task GenerateHtmlReports()
-    {
-        if (Program.Queue.IsEmpty)
-        {
-            return;
-        }
-
-        await this.GenerateOverviewReport();
-        await this.GenerateAccessibilityIssuesReports();
-        await this.GenerateStatusCodeReports();
-        await this.GenerateTypeReports();
-
-        foreach (var entry in Program.Queue)
-        {
-            await this.GenerateQueueEntryReport(entry);
-        }
-    }
-    
-    /// <summary>
-    /// Generate the main HTML report.
-    /// </summary>
-    private async Task GenerateOverviewReport()
-    {
-        var html = await this.GetReportTemplateContent("report-template.html");
-
-        this.AddMetadataToHtmlReport(ref html);
-        this.AddStatsToHtmlReport(ref html);
-        this.AddAccessibilityIssuesToHtmlReport(ref html);
-        this.AddStatusCodesToHtmlReport(ref html);
-        
-        this.AddQueueEntriesToHtmlReport(ref html, UrlType.InternalWebpage);
-        this.AddQueueEntriesToHtmlReport(ref html, UrlType.InternalAsset);
-        this.AddQueueEntriesToHtmlReport(ref html, UrlType.ExternalWebpage);
-        this.AddQueueEntriesToHtmlReport(ref html, UrlType.ExternalAsset);
-
-        var path = Path.Combine(
-            Program.Options.ReportPath!,
-            "report.html");
-        
-        await File.WriteAllTextAsync(path, html, Encoding.UTF8);
-    }
-    
-    /// <summary>
-    /// Generate a HTML report for the given queue entry.
-    /// </summary>
-    /// <param name="entry">Queue entry.</param>
-    private async Task GenerateQueueEntryReport(IQueueEntry entry)
-    {
-        var html = await this.GetReportTemplateContent("entry-template.html");
-
-        this.AddMetadataToHtmlEntryReport(ref html, entry);
-        this.AddErrorToHTmlEntryReport(ref html, entry);
-        this.AddScreenshotToHtmlEntryReport(ref html, entry);
-        this.AddResponseDataToHtmlEntryReport(ref html, entry);
-        this.AddResponseBodyDataToHtmlEntryReport(ref html, entry);
-        this.AddLinkedFromToHtmlEntryReport(ref html, entry);
-        this.AddAccessibilityIssuesToHtmlEntryReport(ref html, entry);
-
-        var path = Path.Combine(
-            Program.Options.ReportPath!,
-            "entries");
-
-        if (!Directory.Exists(path))
-        {
-            Directory.CreateDirectory(path);
-        }
-
-        path = Path.Combine(
-            path,
-            $"entry-{entry.Id}.html");
-        
-        await File.WriteAllTextAsync(path, html, Encoding.UTF8);
-    }
-
-    /// <summary>
-    /// Generate HTML reports for each status code.
-    /// </summary>
-    private async Task GenerateStatusCodeReports()
-    {
-        var codes = Program.Queue
-            .Select(n => n.Response?.StatusCode ?? 0)
-            .Where(n => n > 0)
-            .Distinct()
-            .OrderBy(n => n)
-            .ToList();
-
-        foreach (var code in codes)
-        {
-            await this.GenerateStatusCodeReport(
+            await this.GenerateSubReport(
                 $"{code} {ScannerService.GetStatusDescription(code)}",
-                $"statuscode-{code}.html",
-                Program.Queue
-                    .Where(n => n.Response?.StatusCode == code)
-                    .Select(n => (IQueueEntry)n)
-                    .ToList());
-        }
+                $"All pages and assets matching the response status {code} {ScannerService.GetStatusDescription(code)}",
+                $"statuses{Path.DirectorySeparatorChar}{code}.html",
+                items);
 
-        await this.GenerateStatusCodeReport(
-            "Failed",
-            "statuscode-failed.html",
-            Program.Queue
-                .Where(n => n.Response is null && !n.Skipped)
-                .Select(n => (IQueueEntry)n)
-                .ToList());
-        
-        await this.GenerateStatusCodeReport(
-            "Skipped",
-            "statuscode-skipped.html",
-            Program.Queue
-                .Where(n => n.Skipped)
-                .Select(n => (IQueueEntry)n)
-                .ToList());
-    }
+            link =
+                $"<a href=\"statuses/{code}.html\" target=\"_blank\">{code} {ScannerService.GetStatusDescription(code)}</a>";
 
-    /// <summary>
-    /// Generate a status-code HTML report with given entries.
-    /// </summary>
-    /// <param name="title">Report title.</param>
-    /// <param name="filename">Filename.</param>
-    /// <param name="entries">Queue entries to write.</param>
-    private async Task GenerateStatusCodeReport(string title, string filename, IReadOnlyList<IQueueEntry> entries)
-    {
-        var html = await this.GetReportTemplateContent("custom-template.html");
-
-        html = html.Replace("{Title}", title);
-        html = html.Replace("{GeneratedAt}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-        html = html.Replace("{ProgramVersion}", Program.Version.ToString());
-
-        var sb = new StringBuilder();
-        var count = 0;
-
-        foreach (var urlType in Enum.GetValues<UrlType>())
-        {
-            var urlTypeTitle = urlType switch
+            cssClass = code switch
             {
-                UrlType.InternalWebpage => "Internal Pages",
-                UrlType.InternalAsset => "Internal Assets",
-                UrlType.ExternalWebpage => "External Pages",
-                UrlType.ExternalAsset => "External Assets",
-                _ => throw new Exception($"Unknown UrlType {urlType}")
+                >= 200 and < 300 => "",
+                >= 300 and < 400 => "warning",
+                _ => "error"
             };
-            
-            sb.AppendLine($"<h2>{urlTypeTitle}</h2>");
-            sb.AppendLine("<table>");
-            sb.AppendLine("<tbody>");
 
-            var urlTypeCount = 0;
-            
-            foreach (var entry in entries.Where(n => n.UrlType == urlType))
-            {
-                sb.AppendLine($"<tr><td><a href=\"{entry.Url}\">{entry.Url}</a></td></tr>");
-                count++;
-                urlTypeCount++;
-            }
-
-            if (urlTypeCount == 0)
-            {
-                sb.AppendLine("<tr><td>None</td></tr>");
-            }
-            
-            sb.AppendLine("</tbody>");
-            sb.AppendLine("</table>");
+            sb.AppendLine($"<tr class=\"{cssClass}\"><td>{link}</td>");
+            sb.AppendLine($"<td>{items.Count}</td></tr>");
         }
 
-        if (count == 0)
         {
-            return;
+            var items = Program.Queue
+                .Where(n => n.Response is null && !n.Skipped)
+                .ToList();
+
+            if (items.Any())
+            {
+                await this.GenerateSubReport(
+                    "Failed",
+                    "All pages and assets that failed.",
+                    $"statuses{Path.DirectorySeparatorChar}failed.html",
+                    items);
+
+                link = "<a href=\"statuses/failed.html\" target=\"_blank\">Failed</a>";
+                cssClass = items.Any() ? "error" : "";
+
+                sb.AppendLine($"<tr class=\"{cssClass}\"><td>{link}</td>");
+                sb.AppendLine($"<td>{items.Count}</td></tr>");
+            }
         }
 
-        html = html.Replace("{CustomContent}", sb.ToString());
-        
-        var path = Path.Combine(
-            Program.Options.ReportPath!,
-            filename);
-        
-        await File.WriteAllTextAsync(path, html, Encoding.UTF8);
+        {
+            var items = Program.Queue
+                .Where(n => n.Skipped)
+                .ToList();
+
+            if (items.Any())
+            {
+                await this.GenerateSubReport(
+                    "Skipped",
+                    "All pages and assets that were skipped.",
+                    $"statuses{Path.DirectorySeparatorChar}skipped.html",
+                    items);
+
+                link = "<a href=\"statuses/failed.html\" target=\"_blank\">Skipped</a>";
+                cssClass = items.Any() ? "warning" : "";
+
+                sb.AppendLine($"<tr class=\"{cssClass}\"><td>{link}</td>");
+                sb.AppendLine($"<td>{items.Count}</td></tr>");
+            }
+        }
+
+        sb.AppendLine("</tbody></table>");
     }
 
     /// <summary>
-    /// Generate HTML reports for each URL type.
+    /// Add the types table.
     /// </summary>
-    private async Task GenerateTypeReports()
+    private async Task AddTypesTable(StringBuilder sb)
     {
+        sb.AppendLine("<h2>Types</h2>");
+        sb.AppendLine("<table><tbody>");
+
         foreach (var urlType in Enum.GetValues<UrlType>())
         {
             var title = urlType switch
             {
-                UrlType.InternalWebpage => "Internal Pages",
+                UrlType.InternalPage => "Internal Pages",
                 UrlType.InternalAsset => "Internal Assets",
-                UrlType.ExternalWebpage => "External Pages",
-                UrlType.ExternalAsset => "External Assets",
-                _ => throw new Exception($"Unknown UrlType {urlType}")
+                UrlType.ExternalPage => "External Pages",
+                UrlType.ExternalAsset => "External Asset",
+                _ => throw new Exception($"Invalid URL type: {urlType}")
             };
 
-            var slug = urlType switch
+            var description = urlType switch
             {
-                UrlType.InternalWebpage => "internal-pages",
-                UrlType.InternalAsset => "internal-assets",
-                UrlType.ExternalWebpage => "external-pages",
-                UrlType.ExternalAsset => "external-assets",
-                _ => throw new Exception($"Unknown UrlType {urlType}")
+                UrlType.InternalPage =>
+                    "HTML pages matching the list of internal domains. This always includes the hostname of the initial URL to be scanned.",
+                UrlType.InternalAsset =>
+                    "All pages and assets apart from HTML pages matching the list of internal domains. This always includes the hostname of the initial URL to be scanned.",
+                UrlType.ExternalPage => "HTML pages that doesn't match the list of internal domains.",
+                UrlType.ExternalAsset =>
+                    "All pages and assets apart from HTML pages that doesn't match the list of internal domains.",
+                _ => throw new Exception($"Invalid URL type: {urlType}")
             };
-            
-            await this.GenerateTypeReport(
-                title,
-                $"type-{slug}.html",
-                Program.Queue.Where(n => n.UrlType == urlType));
+
+            var items = Program.Queue
+                .Where(n => n.UrlType == urlType)
+                .ToList();
+
+            if (items.Any())
+            {
+                await this.GenerateSubReport(
+                    title,
+                    description,
+                    $"types{Path.DirectorySeparatorChar}{urlType.ToString().ToLower()}.html",
+                    items,
+                    extraCssClass: "report-padding");
+
+                title = $"<a href=\"types/{urlType.ToString().ToLower()}.html\" target=\"_blank\">{title}</a>";
+            }
+
+            sb.AppendLine($"<tr><td>{title}</td>");
+            sb.AppendLine($"<td>{items.Count}</td></tr>");
         }
+
+        {
+            sb.AppendLine(
+                $"<tr><td><a href=\"types{Path.DirectorySeparatorChar}all.html\" target=\"_blank\">Total</a></td>");
+            sb.AppendLine($"<td>{Program.Queue.Count}</td></tr>");
+
+            await this.GenerateSubReport(
+                "All",
+                "All pages and assets, both internal and external.",
+                $"types{Path.DirectorySeparatorChar}all.html",
+                Program.Queue.ToList(),
+                true);
+        }
+
+        sb.AppendLine("</tbody></table>");
     }
 
     /// <summary>
-    /// Generate a type report.
+    /// Generate a accessibility issues report for a specific severity.
     /// </summary>
     /// <param name="title">Title.</param>
+    /// <param name="severity">Severity.</param>
+    /// <param name="description">Description.</param>
     /// <param name="filename">Filename.</param>
-    /// <param name="entries">Entries.</param>
-    private async Task GenerateTypeReport(string title, string filename, IEnumerable<IQueueEntry> entries)
+    /// <param name="entries">List of queue entries.</param>
+    private async Task GenerateIssuesReport(
+        string title,
+        string severity,
+        string description,
+        string filename,
+        IReadOnlyCollection<QueueEntry> entries)
     {
-        var html = await this.GetReportTemplateContent("custom-template.html");
-
-        html = html.Replace("{Title}", title);
-        html = html.Replace("{GeneratedAt}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-        html = html.Replace("{ProgramVersion}", Program.Version.ToString());
-
         var sb = new StringBuilder();
 
-        sb.AppendLine("<table>");
-        sb.AppendLine("<tbody>");
+        var violations = new List<AccessibilityResultItem>();
 
-        foreach (var entry in entries)
+        foreach (var entry in entries.Where(n => n.AccessibilityResults?.Violations?.Length > 0))
         {
-            sb.AppendLine($"<tr><td><a href=\"{entry.Url}\">{entry.Url}</a></td></tr>");
+            var query = entry.AccessibilityResults!.Violations!
+                .Where(n => n.Impact!.Equals(severity, StringComparison.InvariantCultureIgnoreCase) == true &&
+                            n.Id is not null);
+
+            foreach (var violation in query)
+            {
+                if (violations.Any(n => n.Id == violation.Id))
+                {
+                    continue;
+                }
+
+                violations.Add(violation);
+            }
         }
-        
-        sb.AppendLine("</tbody>");
-        sb.AppendLine("</table>");
-        
-        html = html.Replace("{CustomContent}", sb.ToString());
-        
+
+        violations = violations
+            .OrderBy(n => n.Id)
+            .ToList();
+
+        foreach (var violation in violations)
+        {
+            sb.AppendLine($"<h2 class=\"no-bottom-padding\">{violation.Id}</h2>");
+            sb.AppendLine($"<p class=\"violation-summary\">{violation.Help ?? violation.Description}");
+            sb.AppendLine(
+                $"{(violation.HelpUrl is not null ? $" (<a href=\"{violation.HelpUrl}\" target=\"_blank\">read more</a>)" : string.Empty)}</p>");
+
+            var query =
+                from n in entries
+                where n.AccessibilityResults?.Violations?.Any(m => m.Id == violation.Id) == true
+                select n;
+
+            foreach (var entry in query)
+            {
+                var temp = entry.AccessibilityResults?.Violations?
+                    .FirstOrDefault(n => n.Id == violation.Id);
+
+                if (temp?.Nodes is null)
+                {
+                    continue;
+                }
+
+                sb.AppendLine("<table><tbody>");
+                this.AddQueueEntryResponseRow(sb, entry);
+                sb.AppendLine("</tbody></table>");
+
+                foreach (var node in temp.Nodes!)
+                {
+                    var lines = new List<string>();
+
+                    if (node.Html is not null)
+                    {
+                        lines.Add($"<div class=\"html\" title=\"Affected HTML code\">{node.Html?
+                            .Replace("<", "&lt;").Replace(">", "&gt;")}</div>");
+                    }
+
+                    if (node.Target?.Selector is not null)
+                    {
+                        lines.Add($"<div class=\"selector\" title=\"DOM selector\">{node.Target?.Selector
+                            .Replace("<", "&lt;").Replace(">", "&gt;")}</div>");
+                    }
+
+                    if (node.XPath?.Selector is not null)
+                    {
+                        lines.Add($"<div class=\"selector\" title=\"DOM selector\">{node.XPath?.Selector
+                            .Replace("<", "&lt;").Replace(">", "&gt;")}</div>");
+                    }
+
+                    sb.AppendLine($"<div class=\"violation\">{string.Join(string.Empty, lines)}</div>");
+                }
+            }
+        }
+
+        // Done.
+        var html = this.GetBaseReport()
+            .Replace("{BodyOverride}", "report")
+            .Replace("{HtmlTitle}", title)
+            .Replace("{ReportTitle}", title)
+            .Replace("{ReportDescription}", description)
+            .Replace("{ReportContent}", sb.ToString());
+
+        // Write to disk.
         var path = Path.Combine(
             Program.Options.ReportPath!,
             filename);
-        
+
+        var dir = Path.GetDirectoryName(path);
+
+        if (dir is not null && !Directory.Exists(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
+
         await File.WriteAllTextAsync(path, html, Encoding.UTF8);
     }
 
     /// <summary>
-    /// Get the file content of the given report template.
+    /// Generate a report for each 
     /// </summary>
-    /// <param name="filename">Filename.</param>
-    /// <returns>HTML.</returns>
-    private async Task<string> GetReportTemplateContent(string filename)
+    private async Task GenerateQueueEntryReports()
     {
-        var path = Path.GetDirectoryName(
-            System.Reflection.Assembly.GetExecutingAssembly().Location);
-
-        if (path is null)
+        foreach (var entry in Program.Queue)
         {
-            throw new Exception("Unable to locate report template folder.");
-        }
-        
-        var file = Path.Combine(path, filename);
-        
-        if (!File.Exists(file))
-        {
-            throw new Exception("Unable to locate report template file.");
-        }
-        
-        var html = await File.ReadAllTextAsync(file);
+            var sb = new StringBuilder();
 
-        return html;
+            // Request and document info.
+            if (entry.Response is not null)
+            {
+                sb.AppendLine("<table><tbody>");
+                sb.AppendLine(
+                    $"<tr><td>URL</td><td><a href=\"{entry.Url}\" target=\"_blank\">{entry.Url}</a></td></tr>");
+                sb.AppendLine($"<tr><td>Skipped</td><td>{(entry.Skipped ? "Yes" : "No")}</td></tr>");
+                sb.AppendLine($"<tr><td>Status Code</td><td>{entry.Response.GetStatusFormatted()}</td></tr>");
+                sb.AppendLine($"<tr><td>Response Time</td><td>{entry.Response.GetTimeFormatted()}</td></tr>");
+                sb.AppendLine($"<tr><td>Document Size</td><td>{entry.Response.GetSizeFormatted()}</td></tr>");
+                sb.AppendLine($"<tr><td>Document Title</td><td>{entry.Response.DocumentTitle}</td></tr>");
+                sb.AppendLine("</tbody></table>");
+            }
+
+            // Show screenshot.
+            if (entry.ScreenshotSaved)
+            {
+                var url = $"../screenshots/screenshot-{entry.Id}.png";
+
+                sb.AppendLine("<h2>Screenshot</h2>");
+                sb.AppendLine(
+                    $"<div class=\"screenshot\"><a href=\"{url}\" target=\"_blank\"><img src=\"{url}\" alt=\"Screenshot for {url}\"></a></div>");
+            }
+
+            // Response headers.
+            if (entry.Response?.Headers?.Count > 0)
+            {
+                sb.AppendLine("<h2>Headers</h2>");
+                sb.AppendLine("<table><tbody>");
+
+                foreach (var (key, value) in entry.Response.Headers)
+                {
+                    sb.AppendLine($"<tr><td>{key}</td><td>{value}</td></tr>");
+                }
+
+                sb.AppendLine("</tbody></table>");
+            }
+
+            // Meta tags.
+            if (entry.Response?.MetaTags?.Count > 0)
+            {
+                sb.AppendLine("<h2>Meta Tags</h2>");
+                sb.AppendLine("<table><tbody>");
+
+                foreach (var tag in entry.Response.MetaTags)
+                {
+                    sb.AppendLine($"<tr><td>{tag.Name ?? tag.Property ?? tag.HttpEquiv ?? "&nbsp;"}</td>");
+                    sb.AppendLine($"<td>{tag.Content ?? $"Charset {tag.Charset}"}</td></tr>");
+                }
+
+                sb.AppendLine("</tbody></table>");
+            }
+
+            // Linked from.
+            if (entry.LinkedFrom.Count > 0)
+            {
+                sb.AppendLine("<h2>Linked From</h2>");
+                sb.AppendLine("<table class=\"links\"><tbody>");
+
+                foreach (var url in entry.LinkedFrom)
+                {
+                    var item = Program.Queue
+                        .FirstOrDefault(n => n.Url == url);
+
+                    this.AddQueueEntryResponseRow(sb, item ?? new QueueEntry(url));
+                }
+
+                sb.AppendLine("</tbody></table>");
+            }
+
+            // Accessibility issues.
+            if (entry.AccessibilityResults?.Violations?.Length > 0)
+            {
+                var severities = entry.AccessibilityResults?.Violations?
+                    .Select(n => n.Impact)
+                    .Where(n => !string.IsNullOrWhiteSpace(n?.Trim()))
+                    .Distinct()
+                    .OrderBy(n => n)
+                    .ToList();
+
+                if (severities is not null)
+                {
+                    foreach (var severity in severities.Where(n => n is not null))
+                    {
+                        sb.AppendLine(
+                            $"<h2>{severity![..1].ToUpper()}{severity[1..].ToLower()} Accessibility Issues</h2>");
+                        sb.AppendLine("<table><tbody>");
+
+                        var query =
+                            from n in entry.AccessibilityResults?.Violations
+                            where n.Impact == severity
+                            select n;
+
+                        foreach (var violation in query)
+                        {
+                            if (violation.Nodes is null ||
+                                violation.Nodes.Length == 0)
+                            {
+                                continue;
+                            }
+
+                            sb.AppendLine($"<h3 class=\"no-bottom-padding\">{violation.Id}</h3>");
+                            sb.AppendLine($"<p class=\"violation-summary\">{violation.Help ?? violation.Description}");
+                            sb.AppendLine(
+                                $"{(violation.HelpUrl is not null ? $" (<a href=\"{violation.HelpUrl}\" target=\"_blank\">read more</a>)" : string.Empty)}</p>");
+
+                            foreach (var node in violation.Nodes)
+                            {
+                                var lines = new List<string>();
+
+                                if (node.Html is not null)
+                                {
+                                    lines.Add($"<div class=\"html\" title=\"Affected HTML code\">{node.Html?
+                                        .Replace("<", "&lt;").Replace(">", "&gt;")}</div>");
+                                }
+
+                                if (node.Target?.Selector is not null)
+                                {
+                                    lines.Add($"<div class=\"selector\" title=\"DOM selector\">{node.Target?.Selector
+                                        .Replace("<", "&lt;").Replace(">", "&gt;")}</div>");
+                                }
+
+                                if (node.XPath?.Selector is not null)
+                                {
+                                    lines.Add($"<div class=\"selector\" title=\"DOM selector\">{node.XPath?.Selector
+                                        .Replace("<", "&lt;").Replace(">", "&gt;")}</div>");
+                                }
+
+                                sb.AppendLine($"<div class=\"violation\">{string.Join(string.Empty, lines)}</div>");
+                            }
+                        }
+
+                        sb.AppendLine("</tbody></table>");
+                    }
+                }
+            }
+
+            // Done.
+            var error = entry.Error is not null
+                ? $"<p class=\"error\">{entry.ErrorType}<br>{entry.Error}</p>"
+                : string.Empty;
+
+            var html = this.GetBaseReport()
+                .Replace("{BodyOverride}", "entry")
+                .Replace("{HtmlTitle}", entry.Url.ToString())
+                .Replace("{ReportTitle}", "Details")
+                .Replace("{ReportDescription}", error)
+                .Replace("{ReportContent}", sb.ToString());
+
+            var path = Path.Combine(
+                Program.Options.ReportPath!,
+                "entries");
+
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+
+            path = Path.Combine(
+                path,
+                $"entry-{entry.Id}.html");
+
+            await File.WriteAllTextAsync(path, html, Encoding.UTF8);
+        }
     }
-    
+
+    /// <summary>
+    /// Generate a generic sub-report for a given dataset.
+    /// </summary>
+    /// <param name="title">Title.</param>
+    /// <param name="description">Description.</param>
+    /// <param name="filename">Filename.</param>
+    /// <param name="entries">List of queue entries.</param>
+    /// <param name="includeEmptyUrlTypes">Whether to include empty URL types.</param>
+    /// <param name="extraCssClass">Add an extra CSS class to the body.</param>
+    private async Task GenerateSubReport(
+        string title,
+        string description,
+        string filename,
+        IReadOnlyCollection<QueueEntry> entries,
+        bool includeEmptyUrlTypes = false,
+        string? extraCssClass = null)
+    {
+        var sb = new StringBuilder();
+        var urlTypesWithEntries =
+            Enum.GetValues<UrlType>().Count(urlType => entries.Any(n => n.UrlType == urlType));
+
+        foreach (var urlType in Enum.GetValues<UrlType>())
+        {
+            var items = entries
+                .Where(n => n.UrlType == urlType)
+                .ToList();
+
+            if (!items.Any() && !includeEmptyUrlTypes)
+            {
+                continue;
+            }
+
+            var enumTitle = urlType switch
+            {
+                UrlType.InternalPage => "Internal Pages",
+                UrlType.InternalAsset => "Internal Assets",
+                UrlType.ExternalPage => "External Pages",
+                UrlType.ExternalAsset => "External Asset",
+                _ => throw new Exception($"Invalid URL type: {urlType}")
+            };
+
+            if (urlTypesWithEntries > 1)
+            {
+                sb.AppendLine($"<h2>{enumTitle}</h2>");
+            }
+
+            sb.AppendLine("<table><tbody>");
+
+            foreach (var item in items)
+            {
+                this.AddQueueEntryResponseRow(sb, item);
+            }
+
+            sb.AppendLine("</tbody></table>");
+        }
+
+        // Done.
+        var html = this.GetBaseReport()
+            .Replace("{BodyOverride}", $"report {extraCssClass}")
+            .Replace("{HtmlTitle}", title)
+            .Replace("{ReportTitle}", title)
+            .Replace("{ReportDescription}", description)
+            .Replace("{ReportContent}", sb.ToString());
+
+        // Write to disk.
+        var path = Path.Combine(
+            Program.Options.ReportPath!,
+            filename);
+
+        var dir = Path.GetDirectoryName(path);
+
+        if (dir is not null && !Directory.Exists(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
+
+        await File.WriteAllTextAsync(path, html, Encoding.UTF8);
+    }
+
+    /// <summary>
+    /// Generate the summary report page.
+    /// </summary>
+    private async Task GenerateSummaryReport()
+    {
+        var host = Program.Queue
+            .OrderBy(n => n.Created)
+            .First().Url.Host;
+
+        var sb = new StringBuilder();
+
+        sb.AppendLine("<h2>Stats</h2>");
+        sb.AppendLine("<table><tbody>");
+        sb.AppendLine($"<tr><td>Started</td><td>{Program.Started.ToString("yyyy-MM-dd HH:mm:ss")}</td></tr>");
+        sb.AppendLine($"<tr><td>Finished</td><td>{Program.Finished.ToString("yyyy-MM-dd HH:mm:ss")}</td></tr>");
+        sb.AppendLine($"<tr><td>Took</td><td>{(Program.Finished - Program.Started).ToHumanReadable()}</td></tr>");
+        sb.AppendLine("</tbody></table>");
+
+        await this.AddTypesTable(sb);
+        await this.AddStatusCodeTable(sb);
+        await this.AddResponseTimeTable(sb);
+        await this.AddAccessibilityIssuesTable(sb);
+
+        var html = this.GetBaseReport()
+            .Replace("{BodyOverride}", "summary")
+            .Replace("{HtmlTitle}", host)
+            .Replace("{ReportTitle}", host)
+            .Replace("{ReportDescription}", string.Empty)
+            .Replace("{ReportContent}", sb.ToString());
+
+        var path = Path.Combine(
+            Program.Options.ReportPath!,
+            "report.html");
+
+        await File.WriteAllTextAsync(path, html, Encoding.UTF8);
+    }
+
+    #endregion
+
+    #region Helper functions
+
+    /// <summary>
+    /// Get the base HTML and CSS for the report.
+    /// </summary>
+    /// <returns>HTML and CSS.</returns>
+    private string GetBaseReport()
+    {
+        const string html =
+            """
+            <!DOCTYPE html>
+            <html lang="en">
+                <head>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1">
+                    <title>Slap Report - {HtmlTitle}</title>
+                    <style>
+                        * {
+                            box-sizing: border-box;
+                        }
+                        
+                        a {
+                            color: #ba9ffb;
+                            text-decoration: none;
+                        }
+                        
+                        a:hover {
+                            text-decoration: underline;
+                        }
+                        
+                        a:visited {
+                            color: #a688fa;
+                            text-decoration: none;
+                        }
+                        
+                        article {
+                            margin: 0;
+                            padding: 10px 0 0 0;
+                        }
+                        
+                        body {
+                            background-color: #121212;
+                            color: #c0bdc6;
+                            font-family: sans-serif;
+                            font-size: 13px;
+                            margin: 0;
+                            padding: 50px;
+                            transition: .25s;
+                        }
+                        
+                        footer {
+                            font-size: smaller;
+                            margin: 0 auto;
+                            padding: 150px 0 0 0;
+                            text-align: right;
+                        }
+                        
+                        h1 {
+                            color: #e0dde6;
+                            font-weight: normal;
+                            margin: 0;
+                            padding: 0;
+                            text-transform: uppercase;
+                        }
+                        
+                        h2 {
+                            color: #d0cdd6;
+                            font-weight: normal;
+                            margin: 0;
+                            padding: 30px 0 10px 0;
+                            text-transform: uppercase;
+                        }
+                        
+                        h3 {
+                            color: #d0cdd6;
+                            font-weight: normal;
+                            margin: 0;
+                            padding: 0;
+                            text-transform: uppercase;
+                        }
+                        
+                        h2.no-bottom-padding {
+                            padding-bottom: 0;
+                        }
+                        
+                        header {
+                            margin: 0;
+                            padding: 0;
+                        }
+                        
+                        table {
+                            border-collapse: collapse;
+                            width: 100%;
+                        }
+                        
+                        thead tr th {
+                            font-weight: normal;
+                            margin: 0;
+                            padding: 7px 10px;
+                            text-align: left;;
+                        }
+                        
+                        thead tr th:nth-child(2),
+                        tbody tr td:nth-child(2) {
+                            text-align: right;
+                            width: 200px;
+                        }
+                        
+                        thead tr th:nth-child(3),
+                        thead tr th:nth-child(4),
+                        tbody tr td:nth-child(3),
+                        tbody tr td:nth-child(4) {
+                            text-align: right;
+                            width: 100px;
+                        }
+                        
+                        tr,
+                        tr td {
+                            transition: .25s;
+                        }
+                        
+                        tr td {
+                            margin: 0;
+                            padding: 7px 10px;
+                        }
+                        
+                        tr:nth-child(even) td {
+                            background-color: #171717;
+                        }
+                        
+                        tr.error td:nth-child(2) {
+                            border-right: solid 3px rgba(153, 0, 0, 0.5);
+                        }
+                        
+                        tr.success td:nth-child(2) {
+                            border-right: solid 3px rgba(0, 102, 0, 0.5);
+                        }
+                        
+                        tr.warning td:nth-child(2) {
+                            border-right: solid 3px rgba(102, 102, 0, 0.5);
+                        }
+                        
+                        tr:hover td {
+                            background-color: #272727;
+                            color: #e0dde6;
+                        }
+                        
+                        tr.error:hover td:nth-child(2) {
+                            border-right: solid 3px rgba(153, 0, 0, 1);
+                        }
+                        
+                        tr.success:hover td:nth-child(2) {
+                            border-right: solid 3px rgba(0, 102, 0, 1);
+                        }
+                        
+                        tr.warning:hover td:nth-child(2) {
+                            border-right: solid 3px rgba(102, 102, 0, 1);
+                        }
+                        
+                        p.error,
+                        td.error {
+                            color: rgba(153, 0, 0, 1);
+                        }
+                        
+                        td.success {
+                            color: rgba(0, 153, 0, 1);
+                        }
+                        
+                        td.warning {
+                            color: rgba(153, 153, 0, 1);
+                        }
+                        
+                        body.summary article,
+                        body.summary footer,
+                        body.summary header {
+                            margin-left: auto;
+                            margin-right: auto;
+                            width: 400px;
+                        }
+                        
+                        body.summary tr td:first-child {
+                            width: 200px;
+                        }
+                        
+                        body.summary tr td:nth-child(2) {
+                            text-align: right;
+                            width: 200px;
+                        }
+                        
+                        body.report-padding article {
+                            padding-top: 50px;
+                        }
+                        
+                        body.entry tbody tr td:nth-child(1) {
+                            width: 200px;
+                        }
+                        
+                        body.entry tbody tr td:nth-child(2) {
+                            text-align: left;
+                            width: auto;
+                        }
+                        
+                        body.entry table.links tbody tr td:nth-child(1) {
+                            width: auto;
+                        }
+                        
+                        body.entry table.links tbody tr td:nth-child(2) {
+                            text-align: right;
+                            width: 200px;
+                        }
+                        
+                        body.entry table.links tbody tr td:nth-child(3),
+                        body.entry table.links tbody tr td:nth-child(4) {
+                            text-align: right;
+                            width: 100px;
+                        }
+                        
+                        div.screenshot {
+                            margin: 0 0 30px;
+                        }
+                        
+                        div.screenshot a img {
+                            max-height: 400px;
+                            max-width: 400px;
+                        }
+                        
+                        div.violation {
+                            border-left: solid 3px #c0bdc6;
+                            font-family: monospace;
+                            margin: 10px 0;
+                            padding: 0 0 0 10px;
+                            transition: .25s;
+                        }
+                        
+                        p.violation-summary {
+                            margin-top: 0;
+                        }
+                        
+                        div.violation div.html::before {
+                            color: rgba(102, 102, 255, 1);
+                            content: '<>';
+                            display: inline-block;
+                            padding-right: 8px;
+                            text-align: center;
+                            transition: .25s;
+                            width: 20px;
+                        }
+                        
+                        div.violation div.selector::before {
+                            color: rgba(102, 102, 255, 1);
+                            content: '#';
+                            display: inline-block;
+                            padding-right: 8px;
+                            text-align: center;
+                            transition: .25s;
+                            width: 20px;
+                        }
+                        
+                        div.violation:hover {
+                            border-left-color: rgba(153, 153, 0, 1);
+                            color: #e0dde6;
+                        }
+                        
+                        div.violation:hover div.html::before {
+                            color: rgba(153, 153, 255, 1);
+                        }
+                        
+                        div.violation:hover div.selector::before {
+                            color: rgba(153, 153, 255, 1);
+                        }
+                    </style>
+                </head>
+                <body class="{BodyOverride}">
+                    <header>
+                        <h1>{ReportTitle}</h1>
+                        {ReportDescription}
+                    </header>
+                    
+                    <article>
+                        {ReportContent}
+                    </article>
+                    
+                    <footer>
+                        Generated at {GeneratedAt} by Slap v{ProgramVersion}<br>
+                        <a href="https://github.com/nagilum/slap">https://github.com/nagilum/slap</a>
+                    </footer>
+                </body>
+            </html>
+            """;
+
+        return html
+            .Replace("{GeneratedAt}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"))
+            .Replace("{ProgramVersion}", Program.Version.ToString());
+    }
+
     /// <summary>
     /// Write the queue to disk as JSON.
     /// </summary>
@@ -934,17 +1168,17 @@ public class ReportService : IReportService
         var path = Path.Combine(
             Program.Options.ReportPath!,
             "queue.json");
-        
+
         await using var stream = File.OpenWrite(path);
         await JsonSerializer.SerializeAsync(
             stream,
-            Program.Queue,
+            Program.Queue.OrderBy(n => n.Created),
             new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 WriteIndented = true
             });
     }
-    
+
     #endregion
 }

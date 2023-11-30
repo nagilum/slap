@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Text.Json;
 using Serilog;
+using Slap.Extenders;
 using Slap.Models;
 using Slap.Services;
 
@@ -26,12 +27,12 @@ public static class Program
     /// <summary>
     /// When the scan started.
     /// </summary>
-    public static DateTimeOffset Started { get; } = DateTimeOffset.Now;
+    public static DateTimeOffset Started { get; private set; }
 
     /// <summary>
     /// Program version.
     /// </summary>
-    public static Version Version { get; } = new(1, 4);
+    public static Version Version { get; } = new(1, 5);
     
     /// <summary>
     /// Init all the things..
@@ -75,13 +76,21 @@ public static class Program
                 .WriteTo.Console()
                 .CreateLogger();
         }
+        
+        Started = DateTimeOffset.Now;
 
         var queueService = new QueueService();
-        var reportService = new ReportService();
-        
         await queueService.ProcessQueue(tokenSource.Token);
+        
         Finished = DateTimeOffset.Now;
         
+        Log.Information(
+            "Run started at {started} and ran till {finished} which took {took}",
+            Started.ToString("yyyy-MM-dd HH:mm:ss"),
+            Finished.ToString("yyyy-MM-dd HH:mm:ss"),
+            (Finished - Started).ToHumanReadable());
+        
+        var reportService = new ReportService();
         await reportService.GenerateReports();
     }
     
@@ -192,7 +201,7 @@ public static class Program
                         
                         case "external":
                             skips.Add(UrlType.ExternalAsset);
-                            skips.Add(UrlType.ExternalWebpage);
+                            skips.Add(UrlType.ExternalPage);
                             break;
                         
                         case "external-assets":
@@ -200,7 +209,7 @@ public static class Program
                             break;
                         
                         case "external-webpages":
-                            skips.Add(UrlType.ExternalWebpage);
+                            skips.Add(UrlType.ExternalPage);
                             break;
                         
                         case "internal-assets":
