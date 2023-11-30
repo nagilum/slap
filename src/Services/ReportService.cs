@@ -138,7 +138,7 @@ public class ReportService : IReportService
         // Error!
         if (entry.Error is not null)
         {
-            sb.AppendLine($"<td colspan=\"3\" class=\"error\">{entry.Error}</td></tr>");
+            sb.AppendLine($"<td colspan=\"3\" class=\"error\">{entry.Error.Message}</td></tr>");
             return;
         }
 
@@ -749,10 +749,6 @@ public class ReportService : IReportService
             }
 
             // Done.
-            // var error = entry.Error is not null
-            //     ? $"<p class=\"error\">{entry.ErrorType}<br>{entry.Error}</p>"
-            //     : string.Empty;
-
             var html = this.GetBaseReport()
                 .Replace("{BodyOverride}", "entry")
                 .Replace("{HtmlTitle}", entry.Url.ToString())
