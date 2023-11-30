@@ -426,7 +426,7 @@ public static class Program
         var lines = new[]
         {
             $"Slap v{Version}",
-            "Slap a site and see what falls out. A simple CLI to assist in QA checking of a site.",
+            "Slap a site and see what falls out. A simple program to assist in QA checking of a site.",
             "",
             "If you slap https://example.com it will crawl all URLs found, both internal and external, but not move beyond the initial domain. After it is done, it will generate a report.",
             "",
@@ -446,9 +446,9 @@ public static class Program
             "  --size <width>x<height>   Set the viewport size, for the screenshots and accessibility checks. Defaults to 1920x1080.",
             "  --load <file>             Load a queue file, but only process the entries that failed.",
             "  --parallelism <count>     Sets the maximum number of concurrent URL scans.",
-            "  --allow-redirects         Allows the program to follow redirection responses.",
-            "  --verbose                 Display more detailed info while logging to console.",
-            "  --silent                  Do not display any logs in console.",
+            "  --allow-redirects         Allows the program to follow redirection responses, such as 301.",
+            "  --verbose                 Display more detailed logs.",
+            "  --silent                  Do not display any logs.",
             "",
             "Source and documentation available at https://github.com/nagilum/slap"
         };
