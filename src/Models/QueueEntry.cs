@@ -1,26 +1,11 @@
-﻿using System.Text.Json.Serialization;
-using Microsoft.Playwright;
-using Slap.Core;
-using Slap.Models.Interfaces;
+﻿namespace Slap.Models;
 
-namespace Slap.Models;
-
-public class QueueEntry : IQueueEntry
+public class QueueEntry(Uri url, EntryType entryType) : IQueueEntry
 {
     /// <summary>
-    /// <inheritdoc cref="IQueueEntry.AccessibilityResults"/>
+    /// <inheritdoc cref="IQueueEntry.Finished"/>
     /// </summary>
-    public AccessibilityResult? AccessibilityResults { get; set; }
-
-    /// <summary>
-    /// <inheritdoc cref="IQueueEntry.Created"/>
-    /// </summary>
-    public DateTimeOffset Created { get; } = DateTimeOffset.Now;
-
-    /// <summary>
-    /// <inheritdoc cref="IQueueEntry.Error"/>
-    /// </summary>
-    public ErrorObject? Error { get; set; }
+    public DateTime? Finished { get; set; }
 
     /// <summary>
     /// <inheritdoc cref="IQueueEntry.Id"/>
@@ -28,60 +13,22 @@ public class QueueEntry : IQueueEntry
     public Guid Id { get; } = Guid.NewGuid();
 
     /// <summary>
-    /// <inheritdoc cref="IQueueEntry.IsHttps"/>
+    /// <inheritdoc cref="IQueueEntry.Started"/>
     /// </summary>
-    public bool IsHttps { get; init; }
+    public DateTime? Started { get; set; }
 
     /// <summary>
-    /// <inheritdoc cref="IQueueEntry.LinkedFrom"/>
+    /// <inheritdoc cref="IQueueEntry.Type"/>
     /// </summary>
-    public List<Uri> LinkedFrom { get; } = new();
+    public EntryType Type { get; } = entryType;
 
     /// <summary>
-    /// <inheritdoc cref="IQueueEntry.Page"/>
+    /// <inheritdoc cref="IQueueEntry.Responses"/>
     /// </summary>
-    [JsonIgnore]
-    public IPage? Page { get; set; }
-
-    /// <summary>
-    /// <inheritdoc cref="IQueueEntry.Processed"/>
-    /// </summary>
-    public bool Processed { get; set; }
-
-    /// <summary>
-    /// <inheritdoc cref="IQueueEntry.Response"/>
-    /// </summary>
-    public QueueResponse? Response { get; set; }
-
-    /// <summary>
-    /// <inheritdoc cref="IQueueEntry.ScreenshotSaved"/>
-    /// </summary>
-    public bool ScreenshotSaved { get; set; }
-
-    /// <summary>
-    /// <inheritdoc cref="IQueueEntry.Skipped"/>
-    /// </summary>
-    public bool Skipped { get; set; }
+    public List<IQueueResponse> Responses { get; } = [];
 
     /// <summary>
     /// <inheritdoc cref="IQueueEntry.Url"/>
     /// </summary>
-    public Uri Url { get; }
-
-    /// <summary>
-    /// <inheritdoc cref="IQueueEntry.UrlType"/>
-    /// </summary>
-    public UrlType UrlType { get; }
-
-    /// <summary>
-    /// Initialize a new instance of a <see cref="QueueEntry"/> class.
-    /// </summary>
-    /// <param name="url">URL.</param>
-    /// <param name="urlType">Type of URL.</param>
-    public QueueEntry(Uri url, UrlType urlType = UrlType.InternalPage)
-    {
-        this.IsHttps = url.Scheme.Equals("https", StringComparison.InvariantCultureIgnoreCase);
-        this.Url = url;
-        this.UrlType = urlType;
-    }
+    public Uri Url { get; } = url;
 }

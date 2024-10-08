@@ -1,31 +1,29 @@
-﻿using Slap.Models.Interfaces;
+﻿namespace Slap.Models;
 
-namespace Slap.Models;
-
-public class MetaTag : IMetaTag
+public class ResponseMetaTag : IResponseMetaTag
 {
     /// <summary>
-    /// <inheritdoc cref="IMetaTag.Charset"/>
+    /// <inheritdoc cref="IResponseMetaTag.Charset"/>
     /// </summary>
     public string? Charset { get; init; }
     
     /// <summary>
-    /// <inheritdoc cref="IMetaTag.Content"/>
+    /// <inheritdoc cref="IResponseMetaTag.Content"/>
     /// </summary>
     public string? Content { get; init; }
     
     /// <summary>
-    /// <inheritdoc cref="IMetaTag.HttpEquiv"/>
+    /// <inheritdoc cref="IResponseMetaTag.HttpEquiv"/>
     /// </summary>
     public string? HttpEquiv { get; init; }
     
     /// <summary>
-    /// <inheritdoc cref="IMetaTag.Name"/>
+    /// <inheritdoc cref="IResponseMetaTag.Name"/>
     /// </summary>
     public string? Name { get; init; }
     
     /// <summary>
-    /// <inheritdoc cref="IMetaTag.Property"/>
+    /// <inheritdoc cref="IResponseMetaTag.Property"/>
     /// </summary>
     public string? Property { get; init; }
 }

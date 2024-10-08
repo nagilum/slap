@@ -1,128 +1,83 @@
-﻿using System.Globalization;
-using Slap.Models.Interfaces;
-
-namespace Slap.Models;
+﻿namespace Slap.Models;
 
 public class QueueResponse : IQueueResponse
 {
-    #region Fields
-    
     /// <summary>
-    /// Culture, for formatting.
+    /// <inheritdoc cref="IQueueResponse.BrowserType"/>
     /// </summary>
-    private readonly CultureInfo _culture;
-    
-    #endregion
-    
-    #region Properties
-    
-    /// <summary>
-    /// <inheritdoc cref="IQueueResponse.ContentType"/>
-    /// </summary>
-    public string? ContentType { get; set; }
+    public required BrowserType BrowserType { get; init; }
 
     /// <summary>
-    /// <inheritdoc cref="IQueueResponse.DocumentTitle"/>
+    /// <inheritdoc cref="IQueueResponse.Error"/>
     /// </summary>
-    public string? DocumentTitle { get; set; }
+    public string? Error { get; init; }
+
+    /// <summary>
+    /// <inheritdoc cref="IQueueResponse.ErrorCode"/>
+    /// </summary>
+    public string? ErrorCode { get; init; }
 
     /// <summary>
     /// <inheritdoc cref="IQueueResponse.Headers"/>
     /// </summary>
-    public Dictionary<string, string?>? Headers { get; init; }
+    public Dictionary<string, string>? Headers { get; init; }
 
     /// <summary>
     /// <inheritdoc cref="IQueueResponse.MetaTags"/>
     /// </summary>
-    public List<MetaTag>? MetaTags { get; set; }
+    public List<ResponseMetaTag>? MetaTags { get; set; }
+
+    /// <summary>
+    /// <inheritdoc cref="IQueueResponse.StatusCode"/>
+    /// </summary>
+    public int? StatusCode { get; init; }
+
+    /// <summary>
+    /// <inheritdoc cref="IQueueResponse.StatusDescription"/>
+    /// </summary>
+    public string? StatusDescription { get; init; }
 
     /// <summary>
     /// <inheritdoc cref="IQueueResponse.Size"/>
     /// </summary>
     public int? Size { get; init; }
-    
-    /// <summary>
-    /// <inheritdoc cref="IQueueResponse.StatusCode"/>
-    /// </summary>
-    public int? StatusCode { get; init; }
-    
-    /// <summary>
-    /// <inheritdoc cref="IQueueResponse.StatusDescription"/>
-    /// </summary>
-    public string? StatusDescription { get; init; }
-    
+
     /// <summary>
     /// <inheritdoc cref="IQueueResponse.Time"/>
     /// </summary>
     public long? Time { get; init; }
-    
-    #endregion
-    
-    #region Constructor
 
     /// <summary>
-    /// Initialize a new instance of a <see cref="QueueResponse"/> class.
+    /// <inheritdoc cref="IQueueResponse.Timeout"/>
     /// </summary>
-    public QueueResponse()
-    {
-        this._culture = new CultureInfo("en-US");
-    }
-    
-    #endregion
-    
-    #region Implementation functions
+    public bool Timeout { get; init; }
 
     /// <summary>
-    /// <inheritdoc cref="IQueueResponse.GetSizeFormatted"/>
+    /// <inheritdoc cref="IQueueResponse.Title"/>
     /// </summary>
-    public string? GetSizeFormatted()
+    public string? Title { get; set; }
+
+    /// <summary>
+    /// <inheritdoc cref="IQueueResponse.GetContentType"/>
+    /// </summary>
+    public string? GetContentType()
     {
-        if (!this.Size.HasValue)
+        if (this.Headers is null)
         {
-            return null;
+            return default;
         }
 
-        var text = this.Size switch
+        foreach (var (key, value) in this.Headers)
         {
-            > 1000000 => $"{(this.Size.Value / 1000000M).ToString("#.##", this._culture)} MB",
-            > 1000 => $"{(this.Size.Value / 1000M).ToString("#.##", this._culture)} KB",
-            _ => $"{this.Size.Value} B"
-        };
+            if (!key.Equals("content-type", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
 
-        return text;
-    }
-
-    /// <summary>
-    /// <inheritdoc cref="IQueueResponse.GetStatusFormatted"/>
-    /// </summary>
-    public string? GetStatusFormatted()
-    {
-        var text = this.StatusCode is not null
-            ? $"{this.StatusCode} {this.StatusDescription}".Trim()
-            : null;
-
-        return text;
-    }
-
-    /// <summary>
-    /// <inheritdoc cref="IQueueResponse.GetTimeFormatted"/>
-    /// </summary>
-    public string? GetTimeFormatted()
-    {
-        if (!this.Time.HasValue)
-        {
-            return null;
+            var parts = value.Split(';');
+            return parts[0];
         }
-
-        var text = this.Time switch
-        {
-            > 60 * 1000 => $"{(this.Time.Value / (60M * 1000M)).ToString(this._culture)} m",
-            > 1000 => $"{(this.Time.Value / 1000M).ToString(this._culture)} s",
-            _ => $"{this.Time.Value} ms"
-        };
-
-        return text;
+        
+        return default;
     }
-    
-    #endregion
 }

@@ -1,77 +1,76 @@
-﻿using Slap.Core;
-using Slap.Models.Interfaces;
+﻿using Microsoft.Playwright;
 
 namespace Slap.Models;
 
 public class Options : IOptions
 {
     /// <summary>
-    /// <inheritdoc cref="IOptions.AllowAutoRedirect"/>
+    /// <inheritdoc cref="IOptions.BrowserNewPageOptions"/>
     /// </summary>
-    public bool AllowAutoRedirect { get; set; }
+    public required BrowserNewPageOptions BrowserNewPageOptions { get; init;}
+    
+    /// <summary>
+    /// <inheritdoc cref="IOptions.BrowserLaunchOptions"/>
+    /// </summary>
+    public required BrowserTypeLaunchOptions BrowserLaunchOptions { get; init;}
 
     /// <summary>
-    /// <inheritdoc cref="IOptions.CaptureFullPage"/>
+    /// <inheritdoc cref="IOptions.FollowRedirects"/>
     /// </summary>
-    public bool CaptureFullPage { get; set; }
+    public bool FollowRedirects { get; set; }
 
     /// <summary>
-    /// <inheritdoc cref="IOptions.DomainsToSkip"/>
+    /// <inheritdoc cref="IOptions.InitialUrls"/>
     /// </summary>
-    public List<string> DomainsToSkip { get; } = new();
+    public List<Uri> InitialUrls { get; } = [];
 
     /// <summary>
     /// <inheritdoc cref="IOptions.InternalDomains"/>
     /// </summary>
-    public List<string> InternalDomains { get; } = new();
+    public List<string> InternalDomains { get; } = [];
 
     /// <summary>
-    /// <inheritdoc cref="IOptions.LogLevel"/>
+    /// <inheritdoc cref="IOptions.PageGotoOptions"/>
     /// </summary>
-    public LogLevel LogLevel { get; set; } = LogLevel.Normal;
+    public required PageGotoOptions PageGotoOptions { get; init;}
 
-    /// <summary>
-    /// <inheritdoc cref="IOptions.Parallelism"/>
-    /// </summary>
-    public int? Parallelism { get; set; }
-
-    /// <summary>
-    /// <inheritdoc cref="IOptions.RegExMatchesToSkip"/>
-    /// </summary>
-    public List<string> RegExMatchesToSkip { get; } = new();
-
-    /// <summary>
-    /// <inheritdoc cref="IOptions.RenderingEngine"/>
-    /// </summary>
-    public RenderingEngine RenderingEngine { get; set; } = RenderingEngine.Chromium;
-    
     /// <summary>
     /// <inheritdoc cref="IOptions.ReportPath"/>
     /// </summary>
-    public string? ReportPath { get; set; }
-
+    public string ReportPath { get; set; } = Directory.GetCurrentDirectory();
+    
+    /// <summary>
+    /// <inheritdoc cref="IOptions.SaveFullPageScreenshots"/>
+    /// </summary>
+    public bool SaveFullPageScreenshots { get; set; }
+    
     /// <summary>
     /// <inheritdoc cref="IOptions.SaveScreenshots"/>
     /// </summary>
     public bool SaveScreenshots { get; set; }
 
     /// <summary>
-    /// <inheritdoc cref="IOptions.Timeout"/>
+    /// <inheritdoc cref="IOptions.SkipAssets"/>
     /// </summary>
-    public int Timeout { get; set; } = 10;
+    public bool SkipAssets { get; set; }
+    
+    /// <summary>
+    /// <inheritdoc cref="IOptions.SkipExternal"/>
+    /// </summary>
+    public bool SkipExternal { get; set; }
 
     /// <summary>
-    /// <inheritdoc cref="IOptions.UrlTypesToSkip"/>
+    /// <inheritdoc cref="IOptions.SkipRegexMatches"/>
     /// </summary>
-    public List<UrlType> UrlTypesToSkip { get; } = new();
-
+    public List<string> SkipRegexMatches { get; } = [];
+    
     /// <summary>
     /// <inheritdoc cref="IOptions.ViewportHeight"/>
     /// </summary>
-    public int ViewportHeight { get; set; } = 1080;
-
+    public int ViewportHeight { get; set; }
+    
     /// <summary>
     /// <inheritdoc cref="IOptions.ViewportWidth"/>
     /// </summary>
-    public int ViewportWidth { get; set; } = 1920;
+    public int ViewportWidth { get; set; }
 }

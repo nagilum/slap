@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Slap Report - {{Host}}</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        a {
+            color: #ba9ffb;
+            font-size: .75rem;
+            text-decoration: none;
+            transition: .25s;
+        }
+        a:hover {
+            color: #908d96;
+            text-decoration: underline;
+        }
+
+        body {
+            background-color: #282828;
+            color: #908d96;
+            font-family: sans-serif;
+            font-size: 15px;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: normal;
+            margin: 50px 0;
+            padding: 0;
+        }
+        h1 span {
+            display: block;
+            font-size: 3rem;
+            font-weight: lighter;
+            text-transform: uppercase;
+        }
+        
+        h2 {
+            font-size: 1.5rem;
+            font-weight: normal;
+            margin: 50px 0 0;
+            padding: 0;
+        }
+        
+        i {
+            color: #5e5a66;
+        }
+        
+        img.browser-type {
+            margin: 0 0 0 5px;
+        }
+
+        main {
+            margin: 0 auto;
+            padding: 0;
+            width: 1024px;
+        }
+        
+        table {
+            border-collapse: collapse;
+            border-spacing: 0;
+        }
+
+        table thead tr th {
+            color: #5e5a66;
+            font-weight: lighter;
+            text-align: left;
+        }
+        
+        table.stats tbody tr td:first-child {
+            padding-right: 50px;
+        }
+        table.stats tbody tr td:not(:first-child) {
+            color: #ba9ffb;
+        }
+
+        table.queue-entries {
+            width: 100%;
+        }
+        table.queue-entries tbody tr td:not(:first-child) {
+            text-align: right;
+            width: 150px;
+        }
+        table.queue-entries tbody tr:nth-child(even) {
+            background-color: #2d2d2d;
+        }
+        table.queue-entries tbody tr td {
+            height: 24px;
+            padding: 5px;
+        }
+        table.queue-entries tbody tr td:nth-child(2) {
+            padding-bottom: 2px;
+        }
+
+        .highlight {
+            color: #ba9ffb;
+        }
+
+        .width-200 {
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Slap Report <span class="highlight">{{Host}}</span></h1>
+    
+        <table class="stats">
+            <tr>
+                <td>Started:</td>
+                <td>{{Started}}</td>
+            </tr>
+            <tr>
+                <td>Finished:</td>
+                <td>{{Finished}}</td>
+            </tr>
+            <tr>
+                <td>Took:</td>
+                <td>{{Took}}</td>
+            </tr>
+            <tr>
+                <td>Total URLs:</td>
+                <td>{{TotalUrls}}</td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+            </tr>
+            {{ResponseTypes}}
+        </table>
+        
+        <h2>HTML Documents</h2>
+        {{HtmlDocuments}}
+        
+        <h2>Assets</h2>
+        {{Assets}}
+    
+        <h2>External Links</h2>
+        {{ExternalLinks}}
+    </main>
+</body>
+</html>

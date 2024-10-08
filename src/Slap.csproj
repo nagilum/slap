@@ -2,18 +2,39 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <AssemblyVersion>1.4</AssemblyVersion>
-        <FileVersion>1.4</FileVersion>
+        <LangVersion>12</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Deque.AxeCore.Playwright" Version="4.8.0" />
-      <PackageReference Include="Microsoft.Playwright" Version="1.39.0" />
-      <PackageReference Include="Serilog" Version="3.0.1" />
-      <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
+        <PackageReference Include="Deque.AxeCore.Playwright" Version="4.10.0" />
+        <PackageReference Include="HtmlAgilityPack" Version="1.11.67" />
+        <PackageReference Include="Microsoft.Playwright" Version="1.47.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Update="Templates\report.html">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+            <TargetPath>report.html</TargetPath>
+        </None>
+        <None Update="Templates\chromium.png">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+            <TargetPath>chromium.png</TargetPath>
+        </None>
+        <None Update="Templates\firefox.png">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+            <TargetPath>firefox.png</TargetPath>
+        </None>
+        <None Update="Templates\http.png">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+            <TargetPath>http.png</TargetPath>
+        </None>
+        <None Update="Templates\webkit.png">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+            <TargetPath>webkit.png</TargetPath>
+        </None>
     </ItemGroup>
 
 </Project>

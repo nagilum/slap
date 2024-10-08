@@ -1,29 +1,29 @@
-﻿namespace Slap.Models.Interfaces;
+﻿namespace Slap.Models;
 
-public interface IMetaTag
+public interface IResponseMetaTag
 {
     /// <summary>
     /// Character set.
     /// </summary>
-    string? Charset { get; }
+    string? Charset { get; init; }
     
     /// <summary>
     /// Content.
     /// </summary>
-    string? Content { get; }
+    string? Content { get; init; }
     
     /// <summary>
     /// HTTP equivalent.
     /// </summary>
-    string? HttpEquiv { get; }
+    string? HttpEquiv { get; init; }
     
     /// <summary>
     /// Name.
     /// </summary>
-    string? Name { get; }
+    string? Name { get; init; }
     
     /// <summary>
     /// Property.
     /// </summary>
-    string? Property { get; }
+    string? Property { get; init; }
 }

@@ -3,7 +3,7 @@
 public static class TimeSpanExtender
 {
     /// <summary>
-    /// Return a more human readable version of the TimeSpan value.
+    /// Return a more human-readable version of the TimeSpan value.
     /// </summary>
     /// <param name="ts">TimeSpan.</param>
     /// <returns>Human readable TimeSpan value.</returns>
@@ -29,6 +29,10 @@ public static class TimeSpanExtender
         if (ts.Seconds > 0)
         {
             parts.Add($"{ts.Seconds}s");
+        }
+        else if (ts is { Minutes: 0, Hours: 0, Days: 0 })
+        {
+            parts.Add("0s");
         }
 
         return parts.Count switch
