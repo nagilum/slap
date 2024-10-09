@@ -2,7 +2,7 @@
 
 namespace Slap;
 
-[Newtonsoft.Json.JsonConverter(typeof(JsonStringEnumConverter))]
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum BrowserType
 {
     HttpClient,
@@ -11,6 +11,7 @@ public enum BrowserType
     Webkit
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum EntryType
 {
     Asset,

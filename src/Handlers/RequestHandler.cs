@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Text;
+using Deque.AxeCore.Playwright;
 using HtmlAgilityPack;
 using Microsoft.Playwright;
 using Slap.Models;
@@ -105,12 +106,18 @@ public class RequestHandler(IOptions options) : IRequestHandler
         }
         catch (Exception ex)
         {
-            entry.Responses.Add(
-                new QueueResponse
-                {
-                    BrowserType = BrowserType.HttpClient,
-                    Error = ex.Message
-                });
+            var response = new QueueResponse
+            {
+                BrowserType = BrowserType.HttpClient
+            };
+            
+            response.Errors.Add(new()
+            {
+                Code = ex.Message.Contains("SSL", StringComparison.OrdinalIgnoreCase) ? "SSL_CERTIFICATE_ERROR" : "GENERAL",
+                Message = ex.Message
+            });
+            
+            entry.Responses.Add(response);
             
             this.IncrementResponseTypeCount("Error");
         }
@@ -154,11 +161,7 @@ public class RequestHandler(IOptions options) : IRequestHandler
             
             this.IncrementResponseTypeCount($"{response.StatusCode} {this.GetStatusCodeDescription(response.StatusCode)}");
 
-            if (entry.Type is not EntryType.HtmlDocument)
-            {
-                return;
-            }
-            
+            await this.RunAxeAccessibilityScan(response, page);
             await this.ParseContentForMetadata(response, page);
             await this.ParseContentForNewUrls(entry, page);
         }
@@ -179,20 +182,16 @@ public class RequestHandler(IOptions options) : IRequestHandler
         }
         catch (Exception ex)
         {
-            string? errorCode = default;
-
-            if (ex.Message.Contains("SSL"))
+            var response = new QueueResponse
             {
-                errorCode = "SSL Certificate Error";
-            }
-            
-            entry.Responses.Add(
-                new QueueResponse
-                {
-                    BrowserType = browserType,
-                    Error = ex.Message,
-                    ErrorCode = errorCode
-                });
+                BrowserType = browserType
+            };
+
+            response.Errors.Add(new()
+            {
+                Code = ex.Message.Contains("SSL", StringComparison.OrdinalIgnoreCase) ? "SSL_CERTIFICATE_ERROR" : "GENERAL",
+                Message = ex.Message
+            });
             
             this.IncrementResponseTypeCount("Error");
         }
@@ -503,6 +502,29 @@ public class RequestHandler(IOptions options) : IRequestHandler
                     Globals.QueueEntries.Add(new(uri, newType));
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Run Axe accessibility scan.
+    /// </summary>
+    /// <param name="response">Response wrapper.</param>
+    /// <param name="page">Playwright page.</param>
+    private async Task RunAxeAccessibilityScan(QueueResponse response, IPage page)
+    {
+        try
+        {
+            var results = await page.RunAxe();
+
+            response.AccessibilityResult = new(results);
+        }
+        catch (Exception ex)
+        {
+            response.Errors.Add(new()
+            {
+                Code = "AXE_ACCESSIBILITY_SCAN_FAILED",
+                Message = ex.Message
+            });
         }
     }
 }

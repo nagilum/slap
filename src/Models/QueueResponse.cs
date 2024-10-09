@@ -3,19 +3,19 @@
 public class QueueResponse : IQueueResponse
 {
     /// <summary>
+    /// <inheritdoc cref="IQueueResponse.AccessibilityResult"/>
+    /// </summary>
+    public AccessibilityResult? AccessibilityResult { get; set; }
+
+    /// <summary>
     /// <inheritdoc cref="IQueueResponse.BrowserType"/>
     /// </summary>
     public required BrowserType BrowserType { get; init; }
 
     /// <summary>
-    /// <inheritdoc cref="IQueueResponse.Error"/>
+    /// <inheritdoc cref="IQueueResponse.Errors"/>
     /// </summary>
-    public string? Error { get; init; }
-
-    /// <summary>
-    /// <inheritdoc cref="IQueueResponse.ErrorCode"/>
-    /// </summary>
-    public string? ErrorCode { get; init; }
+    public List<Error> Errors { get; } = [];
 
     /// <summary>
     /// <inheritdoc cref="IQueueResponse.Headers"/>

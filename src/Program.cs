@@ -58,14 +58,15 @@ public static class Program
         uiHandler.Setup(token);
         
         await queueHandler.ProcessQueue(token);
+        
+        uiHandler.UpdateUi();
+        
         await reportHandler.WriteReports();
         
         if (!token.IsCancellationRequested)
         {
             await tokenSource.CancelAsync();    
         }
-        
-        uiHandler.UpdateUi();
         
         Console.ResetColor();
         Console.CursorTop = 10 + Globals.ResponseTypeCounts.Count;

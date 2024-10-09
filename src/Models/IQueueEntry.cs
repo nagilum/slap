@@ -3,7 +3,7 @@
 public interface IQueueEntry
 {
     /// <summary>
-    /// Whether all requests was finished.
+    /// Whether all requests were finished.
     /// </summary>
     DateTime? Finished { get; set; }
     

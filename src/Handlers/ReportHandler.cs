@@ -329,7 +329,7 @@ public class ReportHandler(IOptions options) : IReportHandler
                     _ => throw new Exception("Invalid browser type.")
                 };
 
-                var parts = new List<string>
+                var parts = new List<string?>
                 {
                     response.BrowserType switch
                     {
@@ -342,34 +342,13 @@ public class ReportHandler(IOptions options) : IReportHandler
                 {
                     parts.Add($"{response.StatusCode} {response.StatusDescription}".Trim());
                 }
-                
-                var time = this.GetTimeFormatted(response);
-                var size = this.GetSizeFormatted(response);
-                var error = response.Timeout ? "Connection Timed Out" : response.ErrorCode ?? response.Error;
-                var contentType = response.GetContentType();
 
-                if (contentType is not null)
-                {
-                    parts.Add(contentType);
-                }
+                parts.Add(response.GetContentType());
+                parts.Add(this.GetTimeFormatted(response));
+                parts.Add(this.GetSizeFormatted(response));
+                parts.Add(response.Timeout ? "Connection Timed Out" : response.Errors.FirstOrDefault()?.Code);
 
-                if (time is not null)
-                {
-                    parts.Add(time);
-                }
-
-                if (size is not null)
-                {
-                    parts.Add(size);
-                }
-
-                if (error is not null)
-                {
-                    parts.Add(error);
-                }
-
-                var tooltip = string.Join(" - ", parts);
-                
+                var tooltip = string.Join(" - ", parts.Where(n => n is not null));
                 var html = $"<img class=\"browser-type\" src=\"{filename}\" alt=\"{tooltip}\" title=\"{tooltip}\" />";
 
                 responseIcons.Add(html);

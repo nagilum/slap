@@ -3,19 +3,19 @@
 public interface IQueueResponse
 {
     /// <summary>
+    /// Results from Axe accessibility scan.
+    /// </summary>
+    AccessibilityResult? AccessibilityResult { get; set; }
+    
+    /// <summary>
     /// Browser type.
     /// </summary>
     BrowserType BrowserType { get; init; }
     
     /// <summary>
-    /// Exception message, if any.
+    /// Errors, if any.
     /// </summary>
-    string? Error { get; init; }
-    
-    /// <summary>
-    /// Specific error code.
-    /// </summary>
-    string? ErrorCode { get; init; }
+    List<Error> Errors { get; }
     
     /// <summary>
     /// Headers.
