@@ -3,11 +3,6 @@
 public interface IError
 {
     /// <summary>
-    /// Error code.
-    /// </summary>
-    string Code { get; init; }
-    
-    /// <summary>
     /// When the error happened.
     /// </summary>
     DateTime Happened { get; }
@@ -16,4 +11,9 @@ public interface IError
     /// Error message.
     /// </summary>
     string Message { get; init; }
+    
+    /// <summary>
+    /// Error type.
+    /// </summary>
+    string Type { get; init; }
 }

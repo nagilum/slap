@@ -10,6 +10,11 @@ public class UiHandler : IUiHandler
     private ConsoleColor DefaultForegroundColor { get; } = Console.ForegroundColor;
     
     /// <summary>
+    /// Whether stop has been requested.
+    /// </summary>
+    private bool IsStopRequested { get; set; }
+    
+    /// <summary>
     /// Last count of response type, for clear-check.
     /// </summary>
     private int LastResponseTypeCount { get; set; }
@@ -32,14 +37,21 @@ public class UiHandler : IUiHandler
     /// <summary>
     /// <inheritdoc cref="IUiHandler.Setup"/>
     /// </summary>
-    public void Setup(CancellationToken cancellationToken)
+    public void Setup()
     {
         this.UiThread = new Thread(() =>
         {
-            while (!cancellationToken.IsCancellationRequested)
+            while (!this.IsStopRequested)
             {
-                this.UpdateUi();
-                Thread.Sleep(100);
+                try
+                {
+                    this.UpdateUi();
+                    Thread.Sleep(100);
+                }
+                catch
+                {
+                    break;
+                }
             }
         });
 
@@ -47,7 +59,15 @@ public class UiHandler : IUiHandler
     }
 
     /// <summary>
-    /// Update values in the UI, and possibly redraw the whole thing.
+    /// <inheritdoc cref="IUiHandler.Stop"/>
+    /// </summary>
+    public void Stop()
+    {
+        this.IsStopRequested = true;
+    }
+
+    /// <summary>
+    /// <inheritdoc cref="IUiHandler.UpdateUi"/>
     /// </summary>
     public void UpdateUi()
     {

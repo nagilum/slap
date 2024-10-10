@@ -55,22 +55,16 @@ public static class Program
             return;
         }
         
-        uiHandler.Setup(token);
+        uiHandler.Setup();
         
         await queueHandler.ProcessQueue(token);
         
+        uiHandler.Stop();
         uiHandler.UpdateUi();
         
         await reportHandler.WriteReports();
         
-        if (!token.IsCancellationRequested)
-        {
-            await tokenSource.CancelAsync();    
-        }
-        
         Console.ResetColor();
-        Console.CursorTop = 10 + Globals.ResponseTypeCounts.Count;
-        Console.CursorLeft = 0;
     }
 
     /// <summary>

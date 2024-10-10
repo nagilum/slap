@@ -76,17 +76,18 @@ public class ReportHandler(IOptions options) : IReportHandler
     /// </summary>
     public async Task WriteReports()
     {
-        Console.ResetColor();
+        Console.ResetColor(); 
         Console.CursorTop = 7 + Globals.ResponseTypeCounts.Count;
         Console.CursorLeft = 0;
         
-        Console.Write("Writing reports to ");
+        Console.WriteLine("Writing reports to:");
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine(this.ReportPath);
 
         this.CopyIcons();
         
         await this.WriteQueueToJson();
+        await this.WriteHtmlEntryReports();
         await this.WriteHtmlReport();
 
         Console.WriteLine();
@@ -133,6 +134,7 @@ public class ReportHandler(IOptions options) : IReportHandler
                 "chromium.png",
                 "firefox.png",
                 "http.png",
+                "warning.png",
                 "webkit.png"
             };
 
@@ -150,34 +152,66 @@ public class ReportHandler(IOptions options) : IReportHandler
             this.WriteError(ex, "Error while copying icons to report path!");
         }
     }
+
+    /// <summary>
+    /// Write an HTML report for each queue entry.
+    /// </summary>
+    private async Task WriteHtmlEntryReports()
+    {
+        try
+        {
+            Console.ResetColor();
+            Console.Write("· ");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("Queue entry reports to HTML");
+
+            var path = Path.Combine(this.ExecPath!, "entry.html");
+            var html = await File.ReadAllTextAsync(path, Encoding.UTF8);
+
+            path = Path.Combine(this.ReportPath!, "entries");
+
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+
+            foreach (var entry in Globals.QueueEntries)
+            {
+                var reportHtml = this.CompileEntryReport(entry, html);
+                var file = Path.Combine(path, $"entry-{entry.Id}.html");
+
+                await File.WriteAllTextAsync(
+                    file,
+                    reportHtml,
+                    Encoding.UTF8);
+            }
+        }
+        catch (Exception ex)
+        {
+            this.WriteError(ex, "Error while writing HTML report!");
+        }
+    }
     
     /// <summary>
-    /// Create an overview HTML document report.
+    /// Write an overview HTML report.
     /// </summary>
     private async Task WriteHtmlReport()
     {
         try
         {
+            Console.ResetColor();
+            Console.Write("· ");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("Main report to HTML");
+            
             const string filename = "report.html";
             
-            Console.ResetColor();
-            Console.Write("> ");
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine(filename);
-            
-            var path = Path.Combine(
-                this.ExecPath!,
-                filename);
-
-            var html = await File.ReadAllTextAsync(
-                path,
-                Encoding.UTF8);
+            var path = Path.Combine(this.ExecPath!, filename);
+            var html = await File.ReadAllTextAsync(path, Encoding.UTF8);
 
             this.CompileReport(ref html);
 
-            path = Path.Combine(
-                this.ReportPath!,
-                filename);
+            path = Path.Combine(this.ReportPath!, filename);
 
             await File.WriteAllTextAsync(
                 path, 
@@ -197,16 +231,12 @@ public class ReportHandler(IOptions options) : IReportHandler
     {
         try
         {
-            const string filename = "queue.json";
-            
             Console.ResetColor();
-            Console.Write("> ");
+            Console.Write("· ");
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine(filename);
+            Console.WriteLine("Queue entries to JSON");
             
-            var path = Path.Combine(
-                this.ReportPath!,
-                filename);
+            var path = Path.Combine(this.ReportPath!, "queue.json");
 
             await using var stream = File.OpenWrite(path);
             await JsonSerializer.SerializeAsync(
@@ -226,7 +256,7 @@ public class ReportHandler(IOptions options) : IReportHandler
     #region Report generating functions
 
     /// <summary>
-    /// Compile and replace all fields in the report.
+    /// Compile and replace all fields in the overview report.
     /// </summary>
     /// <param name="html">HTML source.</param>
     private void CompileReport(ref string html)
@@ -297,6 +327,79 @@ public class ReportHandler(IOptions options) : IReportHandler
     }
 
     /// <summary>
+    /// Compile and replace all fields in the entry report.
+    /// </summary>
+    /// <param name="entry">Queue entry.</param>
+    /// <param name="html">HTML source.</param>
+    /// <returns>New HTML source.</returns>
+    private string CompileEntryReport(QueueEntry entry, string html)
+    {
+        var dict = new Dictionary<string, string>
+        {
+            {"Url", entry.Url.ToString()},
+            {"Started", entry.Started?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-"},
+            {"Finished", entry.Finished?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-"}
+        };
+
+        foreach (var response in entry.Responses)
+        {
+            dict.Add($"{response.BrowserType}Response", this.CompileResponseEntry(response));
+        }
+
+        var output = html;
+
+        foreach (var (key, value) in dict)
+        {
+            output = output.Replace("{{" + key + "}}", value);
+        }
+
+        output = output.Replace("{{HttpClientResponse}}", string.Empty);
+        output = output.Replace("{{ChromiumResponse}}", string.Empty);
+        output = output.Replace("{{FirefoxResponse}}", string.Empty);
+        output = output.Replace("{{WebkitResponse}}", string.Empty);
+        
+        return output;
+    }
+
+    /// <summary>
+    /// Compile HTML for queue response.
+    /// </summary>
+    /// <param name="response">Queue response.</param>
+    /// <returns>HTML.</returns>
+    private string CompileResponseEntry(IQueueResponse response)
+    {
+        var dict = new Dictionary<string, string>
+        {
+            {"BrowserType", response.BrowserType.ToString()}
+        };
+
+        var html =
+            "<h2>{{BrowserType}}</h2>" +
+            "<h3>Headers</h3>" +
+            "{{HeadersTable}}";
+
+        foreach (var (key, value) in dict)
+        {
+            html = html.Replace("{{" + key + "}}", value);
+        }
+
+        if (response.Headers?.Count > 0)
+        {
+            html = html.Replace(
+                "{{HeadersTable}}",
+                "<table class=\"headers\"><tbody><tr>" +
+                string.Join("</tr><tr>", response.Headers.Select(n => $"<td>{n.Key.ToLower()}</td><td>{n.Value}</td>")) +
+                "</tr></tbody></table>");
+        }
+        else
+        {
+            html = html.Replace("{{HeadersTable}}", "<i>None</i>");
+        }
+
+        return html;
+    }
+
+    /// <summary>
     /// Compile HTML table for queue entry rows.
     /// </summary>
     /// <param name="entries">Queue entries.</param>
@@ -311,8 +414,7 @@ public class ReportHandler(IOptions options) : IReportHandler
         var rows = new List<string>();
         const string template =
             "<tr><td>{{Url}}</td>" +
-            "<td>{{Responses}}</td>" +
-            "<td>{{Issues}}</td></tr>";
+            "<td>{{Responses}}</td></tr>";
 
         foreach (var entry in entries)
         {
@@ -329,14 +431,9 @@ public class ReportHandler(IOptions options) : IReportHandler
                     _ => throw new Exception("Invalid browser type.")
                 };
 
-                var parts = new List<string?>
-                {
-                    response.BrowserType switch
-                    {
-                        BrowserType.HttpClient => "HTTP GET",
-                        _ => response.BrowserType.ToString()
-                    }
-                };
+                var parts = new List<string?>();
+                var failed = !response.StatusCode.HasValue ||
+                             response.Error is not null;
 
                 if (response.StatusCode.HasValue)
                 {
@@ -346,29 +443,37 @@ public class ReportHandler(IOptions options) : IReportHandler
                 parts.Add(response.GetContentType());
                 parts.Add(this.GetTimeFormatted(response));
                 parts.Add(this.GetSizeFormatted(response));
-                parts.Add(response.Timeout ? "Connection Timed Out" : response.Errors.FirstOrDefault()?.Code);
+                parts.Add(response.Error?.Type);
 
-                var tooltip = string.Join(" - ", parts.Where(n => n is not null));
-                var html = $"<img class=\"browser-type\" src=\"{filename}\" alt=\"{tooltip}\" title=\"{tooltip}\" />";
+                var tooltip = response.Error is not null ? response.Error.Message : string.Join(" - ", parts.Where(n => n is not null));
+                var html = $"<a href=\"entries/entry-{entry.Id}.html\" target=\"_blank\" class=\"response-icon {(failed ? "failed" : string.Empty)}\" style=\"background-image: url('{filename}');\" title=\"{tooltip}\"></div>";
 
                 responseIcons.Add(html);
             }
+            
+            var hasError = entry.Responses.Any(n => n.Error is not null);
+            var warnings = entry.Responses.Sum(n => n.AccessibilityResult?.Incomplete.Length + n.AccessibilityResult?.Violations.Length);
 
-            var url = entry.Type is not EntryType.External &&
-                      options.InternalDomains.Count is 1
+            if (hasError || warnings > 0)
+            {
+                var tooltip = $"Errors: {(hasError ? 1 : 0)} - Warnings: {warnings}";
+                var html = $"<a href=\"entries/entry-{entry.Id}.html\" target=\"_blank\" class=\"response-icon\" style=\"background-image: url('warning.png');\" title=\"{tooltip}\"></div>";
+                
+                responseIcons.Add(html);
+            }
+
+            var url = entry.Type is not EntryType.External && options.InternalDomains.Count is 1
                 ? entry.Url.ToString()[$"{entry.Url.Scheme}://{entry.Url.Authority}".Length..]
                 : entry.Url.ToString();
-            
+
             rows.Add(
                 template
                     .Replace("{{Url}}", $"<a href=\"{entry.Url}\">{url}</a>")
-                    .Replace("{{Responses}}", responseIcons.Count is 0 ? "-" : string.Join(string.Empty, responseIcons))
-                    .Replace("{{Issues}}", "-"));
+                    .Replace("{{Responses}}", responseIcons.Count is 0 ? "-" : string.Join(string.Empty, responseIcons)));
         }
 
         return
-            "<table class=\"queue-entries\"><thead><tr>" +
-            "</tr></thead><tbody>" +
+            "<table class=\"queue-entries\"><tbody>" +
             string.Join(string.Empty, rows) +
             "</tbody></table>";
     }

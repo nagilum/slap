@@ -13,9 +13,9 @@ public interface IQueueResponse
     BrowserType BrowserType { get; init; }
     
     /// <summary>
-    /// Errors, if any.
+    /// Error, if any.
     /// </summary>
-    List<Error> Errors { get; }
+    Error? Error { get; set; }
     
     /// <summary>
     /// Headers.

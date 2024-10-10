@@ -6,6 +6,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>12</LangVersion>
+        <UserSecretsId>dcbd6a16-b772-4f6c-b4e0-57e91bb3ebe5</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>
@@ -19,6 +20,10 @@
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
             <TargetPath>report.html</TargetPath>
         </None>
+        <None Update="Templates\entry.html">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+            <TargetPath>entry.html</TargetPath>
+        </None>
         <None Update="Templates\chromium.png">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
             <TargetPath>chromium.png</TargetPath>
@@ -30,6 +35,10 @@
         <None Update="Templates\http.png">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
             <TargetPath>http.png</TargetPath>
+        </None>
+        <None Update="Templates\warning.png">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+            <TargetPath>warning.png</TargetPath>
         </None>
         <None Update="Templates\webkit.png">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>

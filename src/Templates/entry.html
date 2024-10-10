@@ -3,13 +3,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Slap Report - {{Host}}</title>
+    <title>Slap Report - {{Url}}</title>
 
     <style>
         * {
             box-sizing: border-box;
         }
-        
+
         a {
             color: #ba9ffb;
             font-size: .75rem;
@@ -38,11 +38,10 @@
         }
         h1 span {
             display: block;
-            font-size: 3rem;
+            font-size: 1rem;
             font-weight: lighter;
-            text-transform: uppercase;
         }
-        
+
         h2 {
             font-size: 1.5rem;
             font-weight: normal;
@@ -50,20 +49,16 @@
             padding: 0;
         }
         
+        h3 {
+            color: #e4e4f2;
+            font-size: 1rem;
+            font-weight: normal;
+            margin: 20px 0 0;
+            padding: 0;
+        }
+
         i {
             color: #5e5a66;
-        }
-        
-        a.response-icon {
-            background-position: center;
-            background-repeat: no-repeat;
-            display: inline-block;
-            height: 24px;
-            margin: 0 0 0 5px;
-            width: 24px;
-        }
-        a.failed {
-            opacity: .25;
         }
 
         main {
@@ -71,30 +66,31 @@
             padding: 0;
             width: 1024px;
         }
-        
+
         table {
             border-collapse: collapse;
             border-spacing: 0;
             width: 100%;
         }
-        
+
+        table.headers tbody tr td {
+            padding: 3px 6px;
+        }
+        table.headers tbody tr td:first-child {
+            width: 200px;
+        }
+        table.headers tbody tr td:last-child {
+            color: #ba9ffb;
+        }
+        table.headers tbody tr:nth-child(even) {
+            background-color: #2d2d2d;
+        }
+
         table.stats tbody tr td:first-child {
             width: 200px;
         }
         table.stats tbody tr td:last-child {
             color: #ba9ffb;
-        }
-
-        table.queue-entries tbody tr:nth-child(even) {
-            background-color: #2d2d2d;
-        }
-        table.queue-entries tbody tr td {
-            height: 24px;
-            padding: 5px 5px 2px 5px;
-        }
-        table.queue-entries tbody tr td:last-child {
-            text-align: right;
-            width: 160px;
         }
 
         .highlight {
@@ -104,8 +100,8 @@
 </head>
 <body>
     <main>
-        <h1>Slap Report <span class="highlight">{{Host}}</span></h1>
-    
+        <h1>Slap Report <span class="highlight">{{Url}}</span></h1>
+        
         <table class="stats">
             <tbody>
                 <tr>
@@ -116,30 +112,16 @@
                     <td>Finished:</td>
                     <td>{{Finished}}</td>
                 </tr>
-                <tr>
-                    <td>Took:</td>
-                    <td>{{Took}}</td>
-                </tr>
-                <tr>
-                    <td>Total URLs:</td>
-                    <td>{{TotalUrls}}</td>
-                </tr>
-                <tr>
-                    <td>&nbsp;</td>
-                    <td>&nbsp;</td>
-                </tr>
-                {{ResponseTypes}}
             </tbody>
         </table>
         
-        <h2>HTML Documents</h2>
-        {{HtmlDocuments}}
-        
-        <h2>Assets</h2>
-        {{Assets}}
-    
-        <h2>External Links</h2>
-        {{ExternalLinks}}
+        {{HttpClientResponse}}
+
+        {{ChromiumResponse}}
+
+        {{FirefoxResponse}}
+
+        {{WebkitResponse}}
     </main>
 </body>
 </html>

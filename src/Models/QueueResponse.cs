@@ -13,9 +13,9 @@ public class QueueResponse : IQueueResponse
     public required BrowserType BrowserType { get; init; }
 
     /// <summary>
-    /// <inheritdoc cref="IQueueResponse.Errors"/>
+    /// <inheritdoc cref="IQueueResponse.Error"/>
     /// </summary>
-    public List<Error> Errors { get; } = [];
+    public Error? Error { get; set; }
 
     /// <summary>
     /// <inheritdoc cref="IQueueResponse.Headers"/>

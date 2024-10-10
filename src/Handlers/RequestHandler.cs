@@ -93,31 +93,18 @@ public class RequestHandler(IOptions options) : IRequestHandler
         {
             // Do nothing.
         }
-        catch (TimeoutException)
-        {
-            entry.Responses.Add(
-                new QueueResponse
-                {
-                    BrowserType = BrowserType.HttpClient,
-                    Timeout = true
-                });
-            
-            this.IncrementResponseTypeCount("Timeout");
-        }
         catch (Exception ex)
         {
-            var response = new QueueResponse
+            entry.Responses.Add(new QueueResponse()
             {
-                BrowserType = BrowserType.HttpClient
-            };
-            
-            response.Errors.Add(new()
-            {
-                Code = ex.Message.Contains("SSL", StringComparison.OrdinalIgnoreCase) ? "SSL_CERTIFICATE_ERROR" : "GENERAL",
-                Message = ex.Message
+                BrowserType = BrowserType.HttpClient,
+                Error = new()
+                {
+                    Message = ex.Message,
+                    Type = ex.GetType().ToString()
+                },
+                Timeout = ex is TimeoutException
             });
-            
-            entry.Responses.Add(response);
             
             this.IncrementResponseTypeCount("Error");
         }
@@ -182,15 +169,15 @@ public class RequestHandler(IOptions options) : IRequestHandler
         }
         catch (Exception ex)
         {
-            var response = new QueueResponse
+            entry.Responses.Add(new QueueResponse()
             {
-                BrowserType = browserType
-            };
-
-            response.Errors.Add(new()
-            {
-                Code = ex.Message.Contains("SSL", StringComparison.OrdinalIgnoreCase) ? "SSL_CERTIFICATE_ERROR" : "GENERAL",
-                Message = ex.Message
+                BrowserType = browserType,
+                Error = new()
+                {
+                    Message = ex.Message,
+                    Type = ex.GetType().ToString()
+                },
+                Timeout = ex is TimeoutException
             });
             
             this.IncrementResponseTypeCount("Error");
@@ -518,13 +505,9 @@ public class RequestHandler(IOptions options) : IRequestHandler
 
             response.AccessibilityResult = new(results);
         }
-        catch (Exception ex)
+        catch
         {
-            response.Errors.Add(new()
-            {
-                Code = "AXE_ACCESSIBILITY_SCAN_FAILED",
-                Message = ex.Message
-            });
+            // Do nothing.
         }
     }
 }
