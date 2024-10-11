@@ -1,7 +1,14 @@
-﻿namespace Slap.Models;
+﻿using System.Globalization;
+
+namespace Slap.Models;
 
 public class QueueResponse : IQueueResponse
 {
+    /// <summary>
+    /// Culture, for formatting.
+    /// </summary>
+    private readonly CultureInfo _culture = new("en-US");
+    
     /// <summary>
     /// <inheritdoc cref="IQueueResponse.AccessibilityResult"/>
     /// </summary>
@@ -79,5 +86,45 @@ public class QueueResponse : IQueueResponse
         }
         
         return default;
+    }
+
+    /// <summary>
+    /// <inheritdoc cref="IQueueResponse.GetSizeFormatted"/>
+    /// </summary>
+    public string? GetSizeFormatted()
+    {
+        if (this.Size is null)
+        {
+            return default;
+        }
+        
+        var text = this.Size switch
+        {
+            > 1000000 => $"{(this.Size.Value / 1000000M).ToString("#.##", _culture)} MB",
+            > 1000 => $"{(this.Size.Value / 1000M).ToString("#.##", _culture)} KB",
+            _ => $"{this.Size.Value} B"
+        };
+
+        return text;
+    }
+
+    /// <summary>
+    /// <inheritdoc cref="IQueueResponse.GetTimeFormatted"/>
+    /// </summary>
+    public string? GetTimeFormatted()
+    {
+        if (this.Time is null)
+        {
+            return default;
+        }
+        
+        var text = this.Time switch
+        {
+            > 60 * 1000 => $"{(this.Time.Value / (60M * 1000M)).ToString(_culture)} mins",
+            > 1000 => $"{(this.Time.Value / 1000M).ToString(_culture)} secs",
+            _ => $"{this.Time.Value} ms"
+        };
+
+        return text;
     }
 }

@@ -62,4 +62,16 @@ public interface IQueueResponse
     /// </summary>
     /// <returns>Content type.</returns>
     string? GetContentType();
+
+    /// <summary>
+    /// Get size formatted.
+    /// </summary>
+    /// <returns>Size formatted.</returns>
+    string? GetSizeFormatted();
+
+    /// <summary>
+    /// Get time formatted.
+    /// </summary>
+    /// <returns>Time formatted.</returns>
+    string? GetTimeFormatted();
 }

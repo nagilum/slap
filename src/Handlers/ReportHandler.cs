@@ -1,5 +1,4 @@
-﻿using System.Globalization;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using Slap.Extenders;
@@ -9,11 +8,6 @@ namespace Slap.Handlers;
 
 public class ReportHandler(IOptions options) : IReportHandler
 {
-    /// <summary>
-    /// Culture, for formatting.
-    /// </summary>
-    private readonly CultureInfo _culture = new("en-US");
-    
     /// <summary>
     /// JSON serializer options.
     /// </summary>
@@ -370,30 +364,46 @@ public class ReportHandler(IOptions options) : IReportHandler
     {
         var dict = new Dictionary<string, string>
         {
-            {"BrowserType", response.BrowserType.ToString()}
+            {"BrowserType", response.BrowserType.ToString()},
+            {"BrowserTypeLowerCase", response.BrowserType.ToString().ToLower()},
+            {"Size", response.GetSizeFormatted() ?? "-"},
+            {"Time", response.GetTimeFormatted() ?? "-"},
+            {"ContentType", response.GetContentType() ?? "-"}
         };
 
         var html =
-            "<h2>{{BrowserType}}</h2>" +
+            "<h2 class=\"icon {{BrowserTypeLowerCase}}\">{{BrowserType}}</h2>" +
+            "<table class=\"stats\"></tbody>" +
+            "<tr><td>Status:</td><td>{{Status}}</td></tr>" +
+            "<tr><td>Size:</td><td>{{Size}}</td></tr>" +
+            "<tr><td>Time:</td><td>{{Time}}</td></tr>" +
+            "<tr><td>Content Type:</td><td>{{ContentType}}</td></tr>" +
+            "</tbody></table>" +
             "<h3>Headers</h3>" +
             "{{HeadersTable}}";
 
-        foreach (var (key, value) in dict)
-        {
-            html = html.Replace("{{" + key + "}}", value);
-        }
+        dict.Add(
+            "Status",
+            response.StatusCode.HasValue
+                ? $"{response.StatusCode} {response.StatusDescription}".Trim()
+                : "-");
 
         if (response.Headers?.Count > 0)
         {
-            html = html.Replace(
-                "{{HeadersTable}}",
+            dict.Add(
+                "HeadersTable",
                 "<table class=\"headers\"><tbody><tr>" +
                 string.Join("</tr><tr>", response.Headers.Select(n => $"<td>{n.Key.ToLower()}</td><td>{n.Value}</td>")) +
                 "</tr></tbody></table>");
         }
         else
         {
-            html = html.Replace("{{HeadersTable}}", "<i>None</i>");
+            dict.Add("HeadersTable", "<i>None</i>");
+        }
+
+        foreach (var (key, value) in dict)
+        {
+            html = html.Replace("{{" + key + "}}", value);
         }
 
         return html;
@@ -441,8 +451,8 @@ public class ReportHandler(IOptions options) : IReportHandler
                 }
 
                 parts.Add(response.GetContentType());
-                parts.Add(this.GetTimeFormatted(response));
-                parts.Add(this.GetSizeFormatted(response));
+                parts.Add(response.GetTimeFormatted());
+                parts.Add(response.GetSizeFormatted());
                 parts.Add(response.Error?.Type);
 
                 var tooltip = response.Error is not null ? response.Error.Message : string.Join(" - ", parts.Where(n => n is not null));
@@ -476,50 +486,6 @@ public class ReportHandler(IOptions options) : IReportHandler
             "<table class=\"queue-entries\"><tbody>" +
             string.Join(string.Empty, rows) +
             "</tbody></table>";
-    }
-
-    /// <summary>
-    /// Get size formatted.
-    /// </summary>
-    /// <param name="response">Queue response entry.</param>
-    /// <returns>Size formatted.</returns>
-    private string? GetSizeFormatted(IQueueResponse response)
-    {
-        if (response.Size is null)
-        {
-            return default;
-        }
-        
-        var text = response.Size switch
-        {
-            > 1000000 => $"{(response.Size.Value / 1000000M).ToString("#.##", _culture)} MB",
-            > 1000 => $"{(response.Size.Value / 1000M).ToString("#.##", _culture)} KB",
-            _ => $"{response.Size.Value} B"
-        };
-
-        return text;
-    }
-
-    /// <summary>
-    /// Get time formatted.
-    /// </summary>
-    /// <param name="response">Queue response entry.</param>
-    /// <returns>Time formatted.</returns>
-    private string? GetTimeFormatted(IQueueResponse response)
-    {
-        if (response.Time is null)
-        {
-            return default;
-        }
-        
-        var text = response.Time switch
-        {
-            > 60 * 1000 => $"{(response.Time.Value / (60M * 1000M)).ToString(_culture)} mins",
-            > 1000 => $"{(response.Time.Value / 1000M).ToString(_culture)} secs",
-            _ => $"{response.Time.Value} ms"
-        };
-
-        return text;
     }
     
     #endregion
